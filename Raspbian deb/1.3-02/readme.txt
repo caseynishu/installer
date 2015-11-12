@@ -3,7 +3,7 @@ To install Weaved to your ARM Debian system:
 2) Run "sudo dpkg -i weavedconnectd-1.3-02.deb"
 3) Now run "sudo weavedinstaller"
 =============================================================
-The weavedconnectd-1.3-02 folder contains the source files for the Debian package creation process.
+The weavedconnectd-1.3-02 folder contains the source files for the Debian package creation process. This is not intended for users who simply wish to use Weaved.
 
 lintpkg.sh is a script you can run on your Debian/Ubuntu system to build, run Lintian, and move the resulting deb to the /var/www folder on your development system.  The assumption is that you have a web server running locally so that you can switch to your target system and easily retrieve the deb file using wget.
 
