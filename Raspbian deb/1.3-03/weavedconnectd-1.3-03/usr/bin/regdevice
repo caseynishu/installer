@@ -12,8 +12,9 @@ VERSION=v1.3-04_Reg
 AUTHOR="Gary Worsham"
 MODIFIED="November 16, 2015"
 DAEMON=weavedconnectd
-USERNAME="faultline1989@yahoo.com"
+USERNAME=""
 PASSWD=""
+# change the WEAVED_PORT to match the installed daemon and enablement file in /etc/weaved/services
 WEAVED_PORT="Weavedweb80"
 # ----------------------------------------
 # folders and files
