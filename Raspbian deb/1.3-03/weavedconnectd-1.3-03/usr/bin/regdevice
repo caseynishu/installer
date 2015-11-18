@@ -2,23 +2,23 @@
 
 #  regdevice
 #
-#  Run 'sudo regdevice' to register a specific device
+#  Run 'sudo ./regdevice' to register a specific device
 #
 #  Weaved, Inc. Copyright 2015. All rights reserved.
 #
 
 ##### Settings #####
-VERSION=v1.3-04_Reg
+VERSION=v1.3-04_Reg-test
 AUTHOR="Gary Worsham"
-MODIFIED="November 16, 2015"
+MODIFIED="November 18, 2015"
 DAEMON=weavedconnectd
 USERNAME=""
 PASSWD=""
-# change the WEAVED_PORT to match the installed daemon and enablement file in /etc/weaved/services
-WEAVED_PORT="Weavedweb80"
+WEAVED_PORT="Weavedssh22"
 # ----------------------------------------
 # folders and files
 WEAVED_DIR=/etc/weaved/services
+WEAVED_LIB_DIR=/usr/share/weavedconnectd
 BIN_DIR=/usr/bin
 TMP_DIR=/tmp
 INIT_DIR=/etc/init.d
@@ -75,16 +75,7 @@ weavedCompatibility()
     fi
 }
 ##### End Compatibility checker #####
-checkPassword()
-{
-	pass=$(grep '^password' $WEAVED_DIR/"$WEAVED_PORT".conf | awk '{ print $2 }' )
-	if [ "$pass" != "" ]; then
-		echo "Error!  $WEAVED_PORT.conf already has a password."
-		echo "Please edit the file and delete the password, "
-		echo "then try again."
-		exit 1
-	fi
-}
+
 
 getUID()
 {
@@ -95,7 +86,7 @@ getUID()
 		echo "you have a working internet connection."
 		exit 1
 	else
-		echo "device UID is $uid" > /dev/null
+		echo "device UID is $uid"
 	fi
 }
 
@@ -222,10 +213,8 @@ signInAPI()
 	token=$(jsonval "$resp" "token")
 #	echo "token: $token"
     else
-	reason=$(jsonval "$resp" "reason")
-	echo "Login failure: $reason"
-    	loginFailed=$(echo "$reason" | grep "The username or password are invalid" | sed 's/"//g')
-	testLogin
+    	loginFailed=$(echo "$resp" | grep "The username or password are invalid" | sed 's/"//g')
+    	login404=$(echo "$resp" | grep 404 | sed 's/"//g')
     fi
 
     # invalid cert can happen if system date is set to before current date
@@ -272,23 +261,16 @@ getSecret()
     test2="$(echo $secretCall | grep -E "missing api token|api token missing" | wc -l)"
     if [ "$status" == "true" ]; then
         secret=$(jsonval "$secretCall" "secret" | sed s/://g)
-	# echo $secret
+	echo $secret
 	echo "# password - erase this line to unregister the device" >> "$WEAVED_DIR"/"$WEAVED_PORT".conf
 	echo "password $secret" >> "$WEAVED_DIR"/"$WEAVED_PORT".conf
+
     elif [ $test2 = 1 ]; then
 	printf "For some reason, you were logged out and must log back in. \n"
 	userLogin
 	getSecret
     else
-	reason=$(jsonval "$secretCall" "reason")
-	echo "Sorry, registration failed for UID $uid: $reason."
-	if [ "$reason" == "DuplicateAddress:" ]; then
-		echo "Duplicate UID found.  This UID has already been registered."
-		echo "Edit the $WEAVED_DIR/$WEAVED_PORT.conf file, delete the UID line, and"
-		echo "restart the daemon by running:"
-		echo "sudo $WEAVED_PORT.sh restart"
-	fi
-	exit 1
+	echo $secretCall
     fi
 }
 
@@ -344,7 +326,6 @@ jsonvalx()
 
 configureConnection()
 {
-    checkPassword
     getUID
     registerDevice
     getSecret
