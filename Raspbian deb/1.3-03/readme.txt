@@ -1,3 +1,5 @@
+This version of the installer is not yet released!
+=============================================================
 To install Weaved to your ARM Debian system:
 1) Copy the deb file to your system.
 2) Run "sudo dpkg -i weavedconnectd-1.3-03.deb"
