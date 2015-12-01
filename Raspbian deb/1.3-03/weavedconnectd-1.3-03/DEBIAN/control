@@ -4,7 +4,7 @@ Section: non-free/net
 Priority: optional
 Homepage: http://www.weaved.com
 Architecture: armhf
-Depends: libc6 (>= 2.1), mawk (>= 1.0), grep (>= 2.1.6), curl (>= 7.25.0), psmisc (>= 22.19-1)
+Depends: libc6 (>= 2.1), mawk (>= 1.0), grep (>= 2.1.6), curl (>= 7.25.0), psmisc (>= 22.19-1), cron (>= 3.0pl1-124)
 Maintainer: Gary Worsham <gary@weaved.com>
 Description: Simplifies remote connections to computers behind NAT firewalls
  weavedconnectd allows you to connect remotely to any tcp-based service running
