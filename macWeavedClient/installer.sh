@@ -76,8 +76,8 @@ chmod 755 /usr/local/bin/smbw.sh
 ln -s /usr/local/bin/smbw.sh /usr/local/bin/smbw
 printf "."
 
-cp weavedConnectd.macosx /usr/local/bin/weavedConectd
-chmod 755 /usr/local/bin/weavedConectd
+cp weavedConnectd.macosx /usr/local/bin/weavedConnectd
+chmod 755 /usr/local/bin/weavedConnectd
 echo " "
 echo " "
 echo "sshw sftpw wweb and smbw are now installed"
