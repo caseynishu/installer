@@ -588,7 +588,7 @@ done
 shift $(($OPTIND-1))
 
 # make sure we have somthing to connect to
-if [ $# -eq 0 ]; then
+if [ $# -eq 0 ] && [ $LIST_ONLY -eq 0 ]; then
     usage
 fi
 
