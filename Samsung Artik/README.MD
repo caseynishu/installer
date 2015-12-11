@@ -9,10 +9,12 @@ tar xvf weaved_artik.tar
 cd weaved_software
 
 ./weavedinstaller
+
 =============================================================
 Then, whenever you wish to add or remove a Weaved service, run:
 
 weavedconfigure
+
 =============================================================
 To uninstall Weaved from your Artik:
 
@@ -25,5 +27,6 @@ cd ~/weaved_software
 cd ..
 
 /bin/rm -r weaved_software
+
 =============================================================
 
