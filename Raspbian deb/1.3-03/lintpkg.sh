@@ -8,7 +8,6 @@
 # LAN using wget
 #
 target=192.168.2.63
-# target=76.103.130.46
 pkgFolder=weavedconnectd-1.3-03
 gzip -9 "$pkgFolder"/usr/share/doc/weavedconnectd/*.man
 sudo chown root:root "$pkgFolder"/usr/share/doc/weavedconnectd/*.gz

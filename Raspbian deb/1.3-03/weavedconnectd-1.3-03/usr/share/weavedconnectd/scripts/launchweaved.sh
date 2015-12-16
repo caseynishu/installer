@@ -6,9 +6,9 @@
 #  Weaved, Inc. Copyright 2015. All rights reserved.
 #
 
-VERSION="v1.3"
+VERSION="v1.31"
 AUTHOR="Gary Worsham"
-MODIFIED="July 31, 2015"
+MODIFIED="December 5, 2015"
 WEAVED_PORT=
 DAEMON=weavedconnectd.pi
 WEAVED_DIR=/etc/weaved/services
@@ -29,7 +29,7 @@ checkPID()
 
 isRunning()
 {
-	isRunning="$(ps ax | grep weaved | grep $WEAVED_PORT | grep -v grep | wc -l)"
+	isRunning="$(ps ax | grep weaved | grep -w $WEAVED_PORT | grep -v grep | wc -l)"
 }
 
 stopWeaved()
