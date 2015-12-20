@@ -11,7 +11,7 @@
 ##### Settings #####
 VERSION=v1.3-03_Pi
 AUTHOR="Gary Worsham"
-MODIFIED="December 16, 2015"
+MODIFIED="December 19, 2015"
 DAEMON=weavedconnectd
 USERNAME=""
 PASSWD=""
@@ -560,7 +560,7 @@ enterVerificationCode()
     printf "\nEnter the verification code which you received by e-mail.\n"
     read registrationCode
     while [ "$passwordOK" != 1 ]; do
-#        clear
+        clear
     	getNewPassword
     done
 
@@ -636,15 +636,17 @@ signInAPI()
 {
     resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR" "$loginURL/$username/$password" 2> $TMP_DIR/.curlerr)
 
-#    echo $resp
+#    echo "resp = " $resp
 
     status=$(jsonval "$resp" "status")
-
+# echo "status = " $status
     if [ "$status" == "true" ]; then
 	token=$(jsonval "$resp" "token")
     else
     	loginFailed=$(echo "$resp" | grep "The username or password are invalid" | sed 's/"//g')
+    	slimError=$(echo "$resp" | grep "Slim Application Error" | sed 's/"//g')
     	login404=$(echo "$resp" | grep 404 | sed 's/"//g')
+#	echo "Error" $loginFailed $slimError $login404
     fi
 
     # invalid cert can happen if system date is set to before current date
@@ -656,7 +658,7 @@ signInAPI()
 ######### Test Login #########
 testLogin()
 {
-    while [ "$loginFailed" != "" ]; do
+    while [ "$loginFailed" != "" ] || [ "$slimError" != "" ]; do
 	clear
 	printf "You have entered either an incorrect username or password. Please try again.\n"
 	printf "Press the 'Enter' key to continue.\n"
@@ -741,7 +743,7 @@ installStartStop()
 	fi
 	checkStartWeaved=$(cat "$BIN_DIR"/$STARTEMUP | grep "$WEAVED_PORT.sh" | wc -l)
 	if [ $checkStartWeaved = 0 ]; then
-	    sed s/REPLACE_TEXT/"$WEAVED_PORT.sh"/ < $WEAVED_LIB_DIR/scripts/weavedstart.add > $TMP_DIR/weavedstart.add
+	    sed s/REPLACE_TEXT/"$WEAVED_PORT"/ < $WEAVED_LIB_DIR/scripts/weavedstart.add > $TMP_DIR/weavedstart.add
 	    sh -c "cat $TMP_DIR/weavedstart.add >> /usr/bin/$STARTEMUP"
             rm $TMP_DIR/weavedstart.add
 	fi
@@ -868,7 +870,7 @@ getSecret()
 registerDevice()
 {
     printf "."
-    #    clear
+#    clear
     #    printf "Service startup script: $WEAVED_PORT.sh\n"
     alias=""
     while [ "$alias" = "" ]; do

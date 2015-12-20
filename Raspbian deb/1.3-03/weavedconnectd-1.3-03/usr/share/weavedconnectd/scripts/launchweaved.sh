@@ -6,9 +6,9 @@
 #  Weaved, Inc. Copyright 2015. All rights reserved.
 #
 
-VERSION="v1.31"
+VERSION="v1.1"
 AUTHOR="Gary Worsham"
-MODIFIED="December 5, 2015"
+MODIFIED="December 20, 2015"
 WEAVED_PORT=
 DAEMON=weavedconnectd.pi
 WEAVED_DIR=/etc/weaved/services
@@ -18,6 +18,19 @@ BIN_PATH=$BIN_DIR/$DAEMON
 PIDPATH=$PID_DIR/$WEAVED_PORT.pid
 LOG_FILE=/dev/null
 LOG_DIR=/var/log
+
+##### Version #####
+displayVersion()
+{
+    printf "Weaved daemon start/stop script Version: %s \n" "$VERSION"
+    # check for sudo user at this point
+    if [[ $EUID -ne 0 ]]; then
+        echo "Running $WEAVED_PORT.sh requires root access." 1>&2
+        echo "Please run sudo $WEAVED_PORT.sh" 1>&2
+	exit 1
+    fi
+}
+##### End Version #####
 
 
 checkPID()
@@ -29,7 +42,7 @@ checkPID()
 
 isRunning()
 {
-	isRunning="$(ps ax | grep weaved | grep -w $WEAVED_PORT | grep -v grep | wc -l)"
+	isRunning="$(ps ax | grep weaved | grep $WEAVED_PORT | grep -v grep | wc -l)"
 }
 
 stopWeaved()
@@ -37,15 +50,11 @@ stopWeaved()
 	isRunning
 	checkPID
 	if [ $isRunning != 0 ]; then
-		if [ "$2" != "-q" ]; then
-			echo "Stopping $WEAVED_PORT..."
-		fi
+		echo "Stopping $WEAVED_PORT..."
 		sudo kill $runningPID 2> /dev/null
 		sudo rm $PIDPATH 2> /dev/null
 	else
-		if [ "$2" != "-q" ]; then
-			echo "$WEAVED_PORT is not currently active. Nothing to stop."
-		fi
+		echo "$WEAVED_PORT is not currently active. Nothing to stop."
 	fi
 }
 
@@ -53,17 +62,11 @@ startWeaved()
 {
 	isRunning
 	if [ $isRunning = 0 ]; then
-		if [ "$2" != "-q" ]; then
-			echo "Starting $WEAVED_PORT..."
-		fi
+		echo "Starting $WEAVED_PORT..."
 		sudo $BIN_DIR/$DAEMON -f $WEAVED_DIR/$WEAVED_PORT.conf -d $PID_DIR/$WEAVED_PORT.pid > $LOG_DIR/$WEAVED_PORT.log
-		if [ "$2" != "-q" ]; then
-			tail $LOG_DIR/$WEAVED_PORT.log
-		fi
+		tail $LOG_DIR/$WEAVED_PORT.log
 	else
-		if [ "$2" != "-q" ]; then
-			echo "$WEAVED_PORT is already started"
-		fi
+		echo "$WEAVED_PORT is already started"
 	fi
 }
 
@@ -73,6 +76,8 @@ restartWeaved()
 	sleep 2
 	startWeaved
 }
+
+displayVersion
 
 if [ -z $1 ]; then
 	echo "You need one of the following arguments: start|stop|restart"
