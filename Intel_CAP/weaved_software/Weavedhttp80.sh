@@ -29,7 +29,7 @@ checkPID()
 
 isRunning()
 {
-	isRunning="$(ps ax | grep weaved | grep $WEAVED_PORT | grep -v grep | wc -l)"
+	isRunning="$(ps ax | grep weaved | grep -w $WEAVED_PORT | grep -v grep | wc -l)"
 }
 
 stopWeaved()

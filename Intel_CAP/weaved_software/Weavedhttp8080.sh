@@ -3,12 +3,12 @@
 #  launchweaved.sh
 #  
 #
-#  Weaved, Inc. Copyright 2014. All rights reserved.
+#  Weaved, Inc. Copyright 2015. All rights reserved.
 #
 
 VERSION="v1.01"
-AUTHOR="Mike Young"
-MODIFIED="December 18, 2015"
+AUTHOR="Gary Worsham"
+MODIFIED="December 21, 2015"
 WEAVED_PORT=Weavedhttp8080
 DAEMON=weavedConnectd.linux
 WEAVED_DIR=/etc/weaved/services
@@ -29,7 +29,7 @@ checkPID()
 
 isRunning()
 {
-	isRunning="$(ps ax | grep weaved | grep $WEAVED_PORT | grep -v grep | wc -l)"
+	isRunning="$(ps ax | grep weaved | grep -w $WEAVED_PORT | grep -v grep | wc -l)"
 }
 
 stopWeaved()

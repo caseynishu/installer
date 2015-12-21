@@ -48,7 +48,7 @@ rm -rf /etc/weaved
 crontab -l | grep -v weavedStart.sh | cat > $TMP_DIR/.crontmp
 crontab $TMP_DIR/.crontmp
 echo
-echo "If you uninstalled Weaved connectd without deleting Device Connections first,"
-echo "there may be orphaned Device Connections in your Device List.  Use the "
-echo "'Settings' link in the web portal Device List to delete these."
+echo "If you uninstalled Weaved connectd without deleting Services first,"
+echo "there may be orphaned Services in your Services List.  Use the "
+echo "'Settings' link in the web portal Services List to delete these."
  
