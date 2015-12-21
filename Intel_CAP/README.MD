@@ -1,4 +1,4 @@
-This file will install Weaved services (daemons) on the Intel CAP device for:
+These instructions show you how to install Weaved services (daemons) on the Intel CAP device for:
 
 ssh on port 22
 
@@ -44,3 +44,5 @@ To reset the services so that they are no longer registered to a user account (i
 
 cd /root/weaved_software
 sudo ./unregister.sh
+
+See additional information in the readme.txt in /root/weaved_software.
