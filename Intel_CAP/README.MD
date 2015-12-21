@@ -7,7 +7,9 @@ http on port 80 (lesson update portal)
 http on port 8080 (admin portal)
 
 Copy the weaved_IntelCAP.tar to the /root folder of the CAP.
+
 cd /root
+
 wget https://github.com/weaved/installer/raw/master/Intel_CAP/weaved_IntelCAP.tar
 
 Run the following command:
