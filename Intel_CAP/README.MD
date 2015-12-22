@@ -6,21 +6,19 @@ These instructions show you how to install Weaved services (daemons) on the Inte
 
 Copy the weaved_IntelCAP.tar to the /root folder of the CAP.
 
-cd /root
-
-wget https://github.com/weaved/installer/raw/master/Intel_CAP/weaved_IntelCAP.tar
+* cd /root
+* wget https://github.com/weaved/installer/raw/master/Intel_CAP/weaved_IntelCAP.tar
 
 Run the following command:
 
-tar xvf weaved_IntelCAP.tar
+* tar xvf weaved_IntelCAP.tar
 
 This creates a folder weaved_software with all of the files needed for installation.
 
 To install the 3 services,
 
-cd /root/weaved_software
-
-sudo ./install.sh
+* cd /root/weaved_software
+* sudo ./install.sh
 
 To register the services to a Weaved account, first create your account at developer.weaved.com, then click on the Services 
 List link at the top of the page.
@@ -36,14 +34,12 @@ console or perform file transfers.
 
 To uninstall the 3 services,
 
-cd /root/weaved_software
-
-sudo ./uninstall.sh
+* cd /root/weaved_software
+* sudo ./uninstall.sh
 
 To reset the services so that they are no longer registered to a user account (i.e. factory reset), run:
 
-cd /root/weaved_software
-
-sudo ./unregister.sh
+* cd /root/weaved_software
+* sudo ./unregister.sh
 
 See additional information in the readme.txt in /root/weaved_software.
