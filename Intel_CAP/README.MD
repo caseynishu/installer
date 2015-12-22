@@ -21,6 +21,7 @@ This creates a folder weaved_software with all of the files needed for installat
 To install the 3 services,
 
 cd /root/weaved_software
+
 sudo ./install.sh
 
 To register the services to a Weaved account, first create your account at developer.weaved.com, then click on the Services 
@@ -38,11 +39,13 @@ console or perform file transfers.
 To uninstall the 3 services,
 
 cd /root/weaved_software
+
 sudo ./uninstall.sh
 
 To reset the services so that they are no longer registered to a user account (i.e. factory reset), run:
 
 cd /root/weaved_software
+
 sudo ./unregister.sh
 
 See additional information in the readme.txt in /root/weaved_software.
