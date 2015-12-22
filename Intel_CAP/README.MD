@@ -1,10 +1,8 @@
 These instructions show you how to install Weaved services (daemons) on the Intel CAP device for:
 
-ssh on port 22
-
-http on port 80 (lesson update portal)
-
-http on port 8080 (admin portal)
+* ssh on port 22
+* http on port 80 (lesson update portal)
+* http on port 8080 (admin portal)
 
 Copy the weaved_IntelCAP.tar to the /root folder of the CAP.
 
