@@ -1,0 +1,158 @@
+N: Using profile ubuntu/main.
+N: Setting up lab in /tmp/temp-lintian-lab-kLcCyQZGWN ...
+N: Unpacking packages in group weavedconnectd/1.3-06
+N: ----
+N: Processing binary package weavedconnectd (version 1.3-06, arch armhf) ...
+X: weavedconnectd: binary-file-built-without-LFS-support usr/bin/schannel.pi
+N: 
+N:    The listed ELF binary appears to be (partially) built without "Large
+N:    File Support" (LFS). If so, it may not be able to handle large files
+N:    correctly.
+N:    
+N:    To support large files, code review might be needed to make sure that
+N:    those files are not slurped into memory or mmap(2)ed, and that correct
+N:    64-bit data types are used (ex: off_t instead of ssize_t), etc. Once
+N:    that has been done ensure _FILE_OFFSET_BITS is defined and set to 64
+N:    before the relevant files are included. This can be done by using the
+N:    AC_SYS_LARGEFILE macro with autoconf.
+N:    
+N:    Take into account that even if this tag is not emitted, that does not
+N:    mean the binary is LFS-safe (ie. no OOM conditions, file truncation or
+N:    overwrite will happen).
+N:    
+N:    Also note that enabling LFS on a shared library is not always safe as it
+N:    might break ABI in case some of the exported types change size, in those
+N:    cases a SOVERSION bump might be required.
+N:    
+N:    Severity: minor, Certainty: possible
+N:    
+N:    Check: binaries, Type: binary, udeb
+N:    
+N:    This tag is marked experimental, which means that the code that
+N:    generates it is not as well-tested as the rest of Lintian and might
+N:    still give surprising results. Feel free to ignore experimental tags
+N:    that do not seem to make sense, though of course bug reports are always
+N:    welcome.
+N: 
+X: weavedconnectd: binary-file-built-without-LFS-support usr/bin/weavedconnectd.pi
+I: weavedconnectd: binary-has-unneeded-section usr/bin/schannel.pi .comment
+N: 
+N:    The binary or shared library is stripped, but still contains a section
+N:    that is not useful. You should call strip with --remove-section=.comment
+N:    --remove-section=.note to remove the .note and .comment sections.
+N:    
+N:    dh_strip will do this automatically for you, but install -s not because
+N:    it calls strip without any arguments.
+N:    
+N:    Severity: wishlist, Certainty: certain
+N:    
+N:    Check: binaries, Type: binary, udeb
+N: 
+W: weavedconnectd: hardening-no-relro usr/bin/schannel.pi
+N: 
+N:    This package provides an ELF binary that lacks the "read-only
+N:    relocation" link flag. This package was likely not built with the
+N:    default Debian compiler flags defined by dpkg-buildflags. If built using
+N:    dpkg-buildflags directly, be sure to import LDFLAGS.
+N:    
+N:    Refer to http://wiki.debian.org/Hardening for details.
+N:    
+N:    Severity: normal, Certainty: certain
+N:    
+N:    Check: binaries, Type: binary, udeb
+N: 
+I: weavedconnectd: binary-has-unneeded-section usr/bin/weavedconnectd.pi .comment
+W: weavedconnectd: hardening-no-relro usr/bin/weavedconnectd.pi
+I: weavedconnectd: hardening-no-fortify-functions usr/bin/weavedconnectd.pi
+N: 
+N:    This package provides an ELF binary that lacks the use of fortified libc
+N:    functions. Either there are no potentially unfortified functions called
+N:    by any routines, all unfortified calls have already been fully validated
+N:    at compile-time, or the package was not built with the default Debian
+N:    compiler flags defined by dpkg-buildflags. If built using
+N:    dpkg-buildflags directly, be sure to import CPPFLAGS.
+N:    
+N:    NB: Due to false-positives, Lintian ignores some unprotected functions
+N:    (e.g. memcpy).
+N:    
+N:    Refer to http://wiki.debian.org/Hardening and
+N:    http://bugs.debian.org/673112 for details.
+N:    
+N:    Severity: normal, Certainty: wild-guess
+N:    
+N:    Check: binaries, Type: binary, udeb
+N: 
+W: weavedconnectd: script-with-language-extension usr/bin/task_notify.sh
+N: 
+N:    When scripts are installed into a directory in the system PATH, the
+N:    script name should not include an extension such as .sh or .pl that
+N:    denotes the scripting language currently used to implement it. The
+N:    implementation language may change; if it does, leaving the name the
+N:    same would be confusing and changing it would be disruptive.
+N:    
+N:    Refer to Debian Policy Manual section 10.4 (Scripts) for details.
+N:    
+N:    Severity: normal, Certainty: certain
+N:    
+N:    Check: files, Type: binary, udeb
+N: 
+W: weavedconnectd: binary-without-manpage usr/bin/launchschannel
+N: 
+N:    Each binary in /usr/bin, /usr/sbin, /bin, /sbin or /usr/games should
+N:    have a manual page
+N:    
+N:    Note that though the man program has the capability to check for several
+N:    program names in the NAMES section, each of these programs should have
+N:    its own manual page (a symbolic link to the appropriate manual page is
+N:    sufficient) because other manual page viewers such as xman or tkman
+N:    don't support this.
+N:    
+N:    If the name of the man page differs from the binary by case, man may be
+N:    able to find it anyway; however, it is still best practice to make the
+N:    case of the man page match the case of the binary.
+N:    
+N:    If the man pages are provided by another package on which this package
+N:    depends, lintian may not be able to determine that man pages are
+N:    available. In this case, after confirming that all binaries do have man
+N:    pages after this package and its dependencies are installed, please add
+N:    a lintian override.
+N:    
+N:    Refer to Debian Policy Manual section 12.1 (Manual pages) for details.
+N:    
+N:    Severity: normal, Certainty: possible
+N:    
+N:    Check: manpages, Type: binary
+N: 
+W: weavedconnectd: binary-without-manpage usr/bin/schannel.pi
+W: weavedconnectd: binary-without-manpage usr/bin/task_notify.sh
+W: weavedconnectd: binary-without-manpage usr/bin/weavedconnectd.pi
+W: weavedconnectd: binary-without-manpage usr/bin/weavedinstaller
+W: weavedconnectd: binary-without-manpage usr/bin/weavedinstaller_OEM
+W: weavedconnectd: binary-without-manpage usr/bin/weavedinstallerlib
+W: weavedconnectd: binary-without-manpage usr/bin/weavedregdevice
+I: weavedconnectd: no-md5sums-control-file
+N: 
+N:    This package does not contain an md5sums control file. This control file
+N:    listing the MD5 checksums of the contents of the package is not
+N:    required, but if present debsums can use it to verify that no files
+N:    shipped with your package have been modified. Providing it is
+N:    recommended.
+N:    
+N:    If you are using debhelper to create your package, just add a call to
+N:    dh_md5sums at the end of your binary-indep or binary-arch target, right
+N:    before dh_builddeb.
+N:    
+N:    Severity: wishlist, Certainty: certain
+N:    
+N:    Check: md5sums, Type: binary
+N: 
+W: weavedconnectd: killall-is-dangerous prerm:13
+N: 
+N:    The maintainer script seems to call killall. Since this utility kills
+N:    processes by name, it may well end up killing unrelated processes. Most
+N:    uses of killall should use invoke-rc.d instead.
+N:    
+N:    Severity: normal, Certainty: possible
+N:    
+N:    Check: scripts, Type: binary
+N: 

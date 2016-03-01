@@ -1,0 +1,93 @@
+#!/bin/bash
+
+#  weavedinstaller_OEM
+#  for mfg line configuration of services.
+#
+#  Run 'sudo weavedinstaller_OEM' to install Weaved
+#  attachment services for tcp listeners.
+#  Installs these Weaved services:
+#
+#  ssh on port 22
+#  http on port 80 (commented out)
+#  tcp on port 3389 (commented out)
+#
+#  Weaved, Inc. Copyright 2016. All rights reserved.
+#
+
+##### Settings #####
+VERSION=v1.3-06_OEM
+AUTHOR="Gary Worsham"
+MODIFIED="February 29, 2016"
+DEBUG="0"
+#=======================================================================
+# Weaved recommends running this script (with real username/password) from /tmp folder.
+# e.g. use wget to copy master script to /tmp from a local web server, then run it.
+# on next boot, /tmp folder is wiped
+#
+# As supplied for demo, script will prompt you for your username and password.
+#
+USERNAME="REPLACE_USERNAME"
+PASSWD="REPLACE_PASSWORD"
+AUTHHASH="REPLACE_AUTHHASH"
+
+#==================================================================================
+# If REGISTERSERVICES is set to 1, then account credentials need to be supplied, either above,
+# or if those are left at default values, then the script asks for username and password.
+# If REGISTERSERVICES is 0, then the enablement files, binaries, installation and startup scripts
+# are installed, but the services are not registered.  In this state they are "ready to register"
+# by the end user.
+REGISTERSERVICE="1"
+
+#==========================================================================
+
+source weavedinstallerlib
+
+######### Main Program #########
+main()
+{
+    displayVersion
+# bashCheck can be commented out on known good platform
+    bashCheck
+    platformDetection
+    echo "Platform = " $PLATFORM 
+# weavedCompatibility can be commented out on known good network
+#    weavedCompatibility
+    if [ "$1" != "" ]; then
+        USERNAME=$1
+    fi
+    if [ "$2" != "" ]; then
+        AUTHHASH=$2
+    fi
+    userLogin
+
+# =============================================    
+#
+# $MAC equates inline to the Ethernet MAC address
+# OEM can supply some other expression here
+    MAC=$(ifconfig eth0 | grep HWaddr | awk '{ print $5 }')
+    echo "MAC=" $MAC
+# =============================================    
+#
+# ----- Edit the lines below to specify which services you want to have installed
+#
+# line syntax is:
+# makeConnection <protocol> <port> <serviceName>
+# <protocol> should be one of: ssh, web, vnc, tcp, rmt3
+# rmt3 is used to enable Remote3.it fleet management services
+#
+# <port> is the port number of the service you wish to connect to
+# except for rmt3, set <port> to 65535
+#
+# <name> is a quote-enclosed expression which should be unique for every device
+# 
+# =============================================    
+    makeConnection rmt3 65535 "$MAC-rmt3"
+
+#   makeConnection ssh 22 "$MAC-ssh-22"
+#    makeConnection web 80 "$MAC-web-80"
+#    makeConnection tcp 3389 "$MAC-tcp-3389"
+# =============================================    
+}
+######### End Main Program #########
+# you can optionally call this script with username and authhash as cmd line parameters
+main $1 $2

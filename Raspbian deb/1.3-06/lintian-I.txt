@@ -1,0 +1,4 @@
+I: weavedconnectd: binary-has-unneeded-section usr/bin/schannel.pi .comment
+I: weavedconnectd: binary-has-unneeded-section usr/bin/weavedconnectd.pi .comment
+I: weavedconnectd: hardening-no-fortify-functions usr/bin/weavedconnectd.pi
+I: weavedconnectd: no-md5sums-control-file

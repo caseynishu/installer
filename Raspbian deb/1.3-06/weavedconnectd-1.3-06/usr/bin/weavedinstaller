@@ -1,0 +1,30 @@
+#!/bin/bash
+
+#  weavedinstaller
+#
+#  Run 'sudo weavedinstaller' to install, configure or remove Weaved
+#  attachment services for tcp listeners.
+#
+#  Weaved, Inc. Copyright 2016. All rights reserved.
+#
+
+##### Settings #####
+VERSION=v1.3-06_Pi
+AUTHOR="Gary Worsham"
+MODIFIED="February 29, 2016"
+
+USERNAME="REPLACE_USERNAME"
+PASSWD="REPLACE_PASSWORD"
+AUTHHASH="REPLACE_AUTHHASH"
+REGISTERSERVICES=1
+DEBUG=0
+
+source weavedinstallerlib
+
+######### Main Program #########
+main()
+{
+    interactiveInstall $1
+}
+######### End Main Program #########
+main

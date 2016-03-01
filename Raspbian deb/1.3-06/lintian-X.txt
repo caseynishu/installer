@@ -1,0 +1,2 @@
+X: weavedconnectd: binary-file-built-without-LFS-support usr/bin/schannel.pi
+X: weavedconnectd: binary-file-built-without-LFS-support usr/bin/weavedconnectd.pi
