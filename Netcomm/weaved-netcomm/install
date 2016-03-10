@@ -4,12 +4,22 @@ chmod +x /usr/bin/weavedConnectd
 cp schannel.arm-gnueabi /usr/bin/schannel.arm-gnueabi
 chmod +x /usr/bin/schannel.arm-gnueabi
 # copy enablements & schannel config file
-mkdir /etc/weaved
+if [ ! -d /etc/weaved/ ]; then
+    mkdir /etc/weaved
+fi
 #
-cp enablements/ssh.netcomm /etc/weaved
-cp enablements/rmt3.netcomm /etc/weaved
-cp enablements/web.netcomm /etc/weaved
-cp enablements/schannel.conf /etc/weaved
+if [ ! -f /etc/weaved/ssh.netcomm ]; then
+    cp enablements/ssh.netcomm /etc/weaved
+fi
+if [ ! -f /etc/weaved/rmt3.netcomm ]; then
+    cp enablements/rmt3.netcomm /etc/weaved
+fi
+if [ ! -f /etc/weaved/web.netcomm ]; then
+    cp enablements/web.netcomm /etc/weaved
+fi
+if [ ! -f /etc/weaved/schannel.conf ]; then
+    cp enablements/schannel.conf /etc/weaved
+fi
 
 # copy startup scripts
 cp weavedSSH /etc/init.d/rc.d
