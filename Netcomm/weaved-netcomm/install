@@ -8,15 +8,24 @@ if [ ! -d /etc/weaved/ ]; then
     mkdir /etc/weaved
 fi
 #
-if [ ! -f /etc/weaved/ssh.netcomm ]; then
-    cp enablements/ssh.netcomm /etc/weaved
+if [ -f /etc/weaved/ssh.netcomm ]; then
+     grep UID /etc/weaved/ssh.netcomm >> enablements/ssh.netcomm 
+     grep password /etc/weaved/ssh.netcomm >> enablements/ssh.netcomm 
 fi
-if [ ! -f /etc/weaved/rmt3.netcomm ]; then
-    cp enablements/rmt3.netcomm /etc/weaved
+cp enablements/ssh.netcomm /etc/weaved
+
+if [ -f /etc/weaved/rmt3.netcomm ]; then
+     grep UID /etc/weaved/rmt3.netcomm >> enablements/rmt3.netcomm 
+     grep password /etc/weaved/rmt3.netcomm >> enablements/rmt3.netcomm 
 fi
-if [ ! -f /etc/weaved/web.netcomm ]; then
-    cp enablements/web.netcomm /etc/weaved
+cp enablements/rmt3.netcomm /etc/weaved
+
+if [ -f /etc/weaved/web.netcomm ]; then
+     grep UID /etc/weaved/web.netcomm >> enablements/web.netcomm 
+     grep password /etc/weaved/web.netcomm >> enablements/web.netcomm 
 fi
+cp enablements/web.netcomm /etc/weaved
+
 if [ ! -f /etc/weaved/schannel.conf ]; then
     cp enablements/schannel.conf /etc/weaved
 fi
