@@ -19,6 +19,7 @@ grep E: lintian-result.txt > lintian-E.txt
 grep W: lintian-result.txt > lintian-W.txt
 grep I: lintian-result.txt > lintian-I.txt
 grep X: lintian-result.txt > lintian-X.txt
+rm lintian-result.txt
 sudo cp "$pkgFolder".deb /var/www
 ls -l *.txt
 # scp ./$pkgFolder.deb pi@$target:/tmp/$pkgFolder.deb

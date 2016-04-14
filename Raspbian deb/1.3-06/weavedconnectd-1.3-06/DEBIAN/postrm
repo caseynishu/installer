@@ -39,9 +39,9 @@ case "$1" in
     crontab -l | grep -v weavedstart.sh | cat > $TMP_DIR/.crontmp
     crontab $TMP_DIR/.crontmp
     echo
-    echo "If you uninstalled Weaved connectd without deleting Device Connections first,"
-    echo "there may be orphaned Device Connections in your Device List.  Use the "
-    echo "'Settings' link in the web portal Device List to delete these."
+    echo "If you uninstalled weavedconnectd without deleting Services first,"
+    echo "there may be orphaned Services in your Service List.  Use the "
+    echo "'Settings' link in the web portal Service List to delete these."
   ;;
 
   remove|failed-upgrade|abort-install|abort-upgrade|disappear)

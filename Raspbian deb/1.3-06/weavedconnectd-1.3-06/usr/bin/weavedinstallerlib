@@ -12,7 +12,7 @@
 ##### Settings #####
 LIBVERSION=lib_v1.3-06_Pi
 AUTHOR="Gary Worsham"
-MODIFIED="February 29, 2016"
+MODIFIED="April 4, 2016"
 DAEMON=weavedconnectd
 
 # ----------------------------------------
@@ -38,11 +38,11 @@ version=v22
 server=api
 loginURL=https://$server.weaved.com/$version/api/user/login
 loginAuthURL=https://$server.weaved.com/$version/api/user/login/authhash
-unregdevicelistURL=https://$server.weaved.com/$version/api/device/list/unregistered
+unregdeviceURL=https://$server.weaved.com/$version/api/device/list/unregistered
 preregdeviceURL=https://$server.weaved.com/$version/api/device/create
-deleteURL=http://$server.weaved.com/$version/api/device/delete
-connectURL=http://$server.weaved.com/$version/api/device/connect
-deviceListURL=https://$server.weaved.com/$version/api/device
+deleteURL=https://$server.weaved.com/$version/api/device/delete
+connectURL=https://$server.weaved.com/$version/api/device/connect
+deviceURL=https://$server.weaved.com/$version/api/device
 regAccountURL=https://$server.weaved.com/$version/api/user/create/verify
 regAccountURLVerified=https://$server.weaved.com/$version/api/user/create/verified
 
@@ -92,21 +92,22 @@ checkforWebIOPi()
     # see if WebIOPi conf file exists,installed by WebIOPi
     if [ -f /etc/webiopi/weavedconnectd.conf ]; then
 	WEBIOPI=1
-        # see whether we copied it already
-	if [ -f "$WEAVED_DIR"/Weaved_WebIOPi.conf ]; then
-	    echo "WebIOPI detected" 
-        else
-	    cp /etc/webiopi/weavedconnectd.conf "$WEAVED_DIR"/Weaved_WebIOPi.conf
-	fi
     fi
 }
 
-##### get MAC address #####
-getMAC()
+##### get SerialID address #####
+getSerialID()
 {
-    MAC=$(ifconfig eth0 | grep HWaddr | awk '{ print $5 }')
+    SerialID=$(ifconfig eth0 | grep HWaddr | awk '{ print $5 }')
 }
-##### end get MAC address #####
+##### end get SerialID address #####
+
+factoryReset()
+{
+    for f in $WEAVED_DIR/*.conf ; do
+	printf "$f\n"
+    done 
+}
 
 ##### Check for existing services #####
 checkforServices()
@@ -129,7 +130,7 @@ checkforServices()
 	echo "" > $TMP_DIR/.instances
     fi
     legacyInstances=$(cat $TMP_DIR/.instances)
-    
+    echo
     echo "===========  Installed Weaved Services  ================="
     printf "Protocol\tPort\tService\t\tWeaved Name\n"
     echo "========================================================="
@@ -137,67 +138,75 @@ checkforServices()
     confFiles=$(find $WEAVED_DIR -name "*.conf")
 #    echo $confFiles
     for file in $confFiles; do
-#	echo $file
+	debug $file
         uid="$(grep '^UID' $file | awk '{print $2}')"
-        port="$(grep '^port' $file | awk '{print $2}')"
-	yooareell=$(echo  "$deviceListURL/$uid")
+        if [ "$uid" != "" ]; then
+            port="$(grep '^port' $file | awk '{print $2}')"
+	    yooareell=$(echo  "$deviceURL/$uid")
 
-	resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR"  -H "token:$token" "$yooareell")
+	    resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR"  -H "token:$token" "$yooareell")
 
-	# this next test checks to see if device is registered.  
-	# If not, it was probably deleted at the web portal.
+	    debug $resp
 
-	unknownDevice=$(echo "$resp" | grep "unknown device")
-        if [ "$unknownDevice" == "" ]; then
+	    # this next test checks to see if device is registered.  
+	    # If not, it was probably deleted at the web portal.
 
-	    deviceName=$(jsonval "$resp" "name")
+	    unknownDevice=$(echo "$resp" | grep "unknown device")
+            if [ "$unknownDevice" == "" ]; then
+
+	        deviceName=$(jsonval "$resp" "name")
+
+		debug "deviceName: $deviceName"
             
-	    protocol=$(jsonval "$resp" "title")
+	        protocol=$(jsonval "$resp" "title")
 
-	    # infer standard port assignments from service type embedded into server response
+		debug "protocol: $protocol"
 
-            if [ "$protocol" = "Bulk Service" ]; then
-                port="---"
-		protocol="rmt3"
+	        # infer standard port assignments from service type embedded into server response
+
+                if [ "$protocol" == "Bulk Service" ]; then
+                    port="---"
+		    protocol="rmt3"
+                fi
+                if [ "$protocol" == "SSH" ]; then
+                    port=22
+                fi
+                if [ "$protocol" == "HTTP" ]; then
+                    port=80
+                fi
+                if [ "$protocol" == "VNC" ]; then
+                    port=5901
+                fi
+	        # trim this one's name so it fits on display
+                if [ "$protocol" == "Generic TCP" ]; then
+                    protocol="TCP"
+                fi
+
+	        #if conf file has port override, use that instead
+
+                port_override=$(grep proxy_dest_port $file | awk '{print $2}')
+
+                if [ "$port_override" != "" ]; then    
+                    port=$port_override
+                fi 
+
+	        # get service process name which is using that tcp port, if any
+
+                service=$(netstat -apn | grep -w tcp | grep -w "0.0.0.0:$port" | grep LISTEN | awk -F"/" '{print $2}')
+
+	        # if no service, show warning
+                if [ "$service" == "" ]; then
+		    if [ "$protocol" == "rmt3" ]; then
+		        service="----\t"
+		    else
+                        service="WARNING-NONE"
+		        WARNING="1"
+		    fi
+                fi
+                printf "$protocol\t\t$port\t$service\t$deviceName\n"
+            else
+               printf "Warning - $file is not registered to this account.\n"
             fi
-            if [ "$protocol" = "SSH" ]; then
-                port=22
-            fi
-            if [ "$protocol" = "HTTP" ]; then
-                port=80
-            fi
-            if [ "$protocol" = "VNC" ]; then
-                port=5901
-            fi
-	    # trim this one's name so it fits on display
-            if [ "$protocol" = "Generic TCP" ]; then
-                protocol="TCP"
-            fi
-
-	    #if conf file has port override, use that instead
-
-            port_override=$(grep proxy_dest_port $file | awk '{print $2}')
-
-            if [ "$port_override" != "" ]; then    
-                port=$port_override
-            fi 
-
-	    # get service process name which is using that tcp port, if any
-
-            service=$(netstat -apn | grep tcp | grep -w "0.0.0.0:$port" | grep LISTEN | awk -F"/" '{print $2}')
-
-	    # if no service, show warning
-            if [ "$service" = "" ]; then
-		if [ "$protocol" = "rmt3" ]; then
-		    service="----\t"
-		else
-                    service="WARNING-NONE"
-		    WARNING="1"
-		fi
-            fi
-            printf "$protocol\t\t$port\t$service\t$deviceName\n"
-        else
-            printf "Warning - $file is not registered to this account.\n"
         fi
     done
     if [ "$WARNING" == "1" ]; then
@@ -207,7 +216,7 @@ checkforServices()
         printf "Please check your settings.\n"
         echo "========================================================="
     fi
-    printf "\n\n"
+    printf "\n"
 }
 ##### End Check for existing services #####
 
@@ -231,15 +240,15 @@ menuLoop()
             read get_num
             ! [[ "${get_num}" -ge 1 && "${get_num}" -le 3 ]] && unset get_num
         done
-        if [ "$get_num" = 1 ]; then
+        if [ "$get_num" == 1 ]; then
             protocolSelection
-# in protocolSelection, get_num will be set to 5 to indicate "return to previous menu"
-            if [ "$get_num" != 5 ]; then
+# in protocolSelection, get_num will be set to MAXSEL to indicate "return to previous menu"
+            if [ "$get_num" != $MAXSEL ]; then
             	configureConnection
             fi
-        elif [ "$get_num" = 2 ]; then
+        elif [ "$get_num" == 2 ]; then
             deleteConnection
-        elif [ "$get_num" = 3 ]; then
+        elif [ "$get_num" == 3 ]; then
             exit
         fi
     done
@@ -252,18 +261,31 @@ platformDetection()
 {
     machineType="$(uname -m)"
     osName="$(uname -s)"
+    board="$(uname -a | awk {' print $2 '})"
+
     if [ -f "/etc/os-release" ]; then
-        distributionName=$(cat /etc/os-release | grep ID= | grep -v VERSION | awk -F "=" {'print $2'})
+        distributionName=$(cat /etc/os-release | grep ID_LIKE= | grep -v VERSION | awk -F "=" {'print $2'})
     fi
-    if [ "$machineType" = "armv6l" ]; then
+    if [ "$machineType" == "armv6l" ]; then
         PLATFORM=pi
         SYSLOG=/var/log/syslog
-    elif [ "$machineType" = "armv7l" ]; then
+    elif [ "$machineType" == "armv7l" ]; then
 	if [ "$distributionName" == "ubuntu" ]; then
         # ubuntu is put in there for Wandboard, but no reason to use anything other than Pi daemons etc.
 		PLATFORM=pi
 	else 
-        	PLATFORM=pi
+		if [ "$board" == "beaglebone" ]; then
+			PLATFORM=beagle
+		else
+        		PLATFORM=pi
+		fi
+	fi
+        SYSLOG=/var/log/syslog
+    elif [ "$machineType" = "x86_64" ]; then
+	if [ "$distributionName" == "debian" ]; then
+		PLATFORM=i686
+	else 
+        	PLATFORM=i686
 	fi
         SYSLOG=/var/log/syslog
     else
@@ -287,16 +309,16 @@ protocolSelection()
     WEAVED_PORT=""
     CUSTOM=0
     
-    if [ "$PLATFORM" = "pi" ]; then
+    if [[ "$PLATFORM" == "pi" || "$PLATFORM" == "i686" || "$PLATFORM" == "beagle" ]]; then
      #   clear
         checkforServices
         printf "\n\n"
         printf "*********** Protocol Selection Menu ***********\n"
         printf "*                                             *\n"
         printf "*    1) Remot3.it (Fleet management)          *\n"
-        printf "*    2) SSH on default port 22                *\n"
-        printf "*    3) Web (HTTP) on default port 80         *\n"
-        printf "*    4) VNC on default port 5901              *\n"
+        printf "*    2) SSH on port 22                        *\n"
+        printf "*    3) Web (HTTP) on port 80                 *\n"
+        printf "*    4) VNC on port 5901                      *\n"
         printf "*    5) Custom (TCP)                          *\n"
 	if [ "$WEBIOPI" == 1 ]; then
             printf "*    6) WebIOPi on port 8000                  *\n"
@@ -308,6 +330,8 @@ protocolSelection()
 	fi
         printf "*                                             *\n"
         printf "***********************************************\n\n"
+        printf " You can change the port value during install *\n\n"
+        printf "***********************************************\n\n"
         unset get_num
         unset get_port
         while [[ ! "${get_num}" =~ ^[0-9]+$ ]]; do
@@ -316,11 +340,12 @@ protocolSelection()
             ! [[ "${get_num}" -ge 1 && "${get_num}" -le $MAXSEL ]] && unset get_num
         done
         printf "You have selected: %s. \n\n" "${get_num}"
-        if [ "$get_num" = 1 ]; then
+	INSTALLWEBIOPI=0
+        if [ "$get_num" == 1 ]; then
             PROTOCOL=rmt3
             PORT=65535    
             WEAVED_PORT=Weaved"$PROTOCOL""$PORT"
-        elif [ "$get_num" = 2 ]; then
+        elif [ "$get_num" == 2 ]; then
             PROTOCOL=ssh
             printf "The default port for SSH is 22.\n"
             if ask "Would you like to continue with the default port assignment?"; then
@@ -328,14 +353,14 @@ protocolSelection()
             else
                 CUSTOM=2
                 while [[ ! "${get_port}" =~ ^[0-9]+$ ]]; do
-                    printf "Please enter your desired port number (1-65536):"
+                    printf "Please enter your desired port number (1-65535):"
                     read get_port
-                    ! [[ "${get_port}" -ge 1 && "${get_port}" -le 65536 ]] && unset get_port
+                    ! [[ "${get_port}" -ge 1 && "${get_port}" -le 65535 ]] && unset get_port
                 done
                 PORT="$get_port"    
             fi
             WEAVED_PORT=Weaved"$PROTOCOL""$PORT"
-        elif [ "$get_num" = 3 ]; then
+        elif [ "$get_num" == 3 ]; then
             PROTOCOL=web
             printf "The default port for Web (http) is 80.\n"
             if ask "Would you like to continue with the default port assignment?"; then
@@ -343,14 +368,14 @@ protocolSelection()
             else
                 CUSTOM=2
                 while [[ ! "${get_port}" =~ ^[0-9]+$ ]]; do
-                    printf "Please enter your desired port number (1-65536):"
+                    printf "Please enter your desired port number (1-65535):"
                     read get_port
-                    ! [[ "${get_port}" -ge 1 && "${get_port}" -le 65536 ]] && unset get_port
+                    ! [[ "${get_port}" -ge 1 && "${get_port}" -le 65535 ]] && unset get_port
                 done
                 PORT="$get_port"    
             fi
             WEAVED_PORT=Weaved"$PROTOCOL""$PORT"
-        elif [ "$get_num" = 4 ]; then
+        elif [ "$get_num" == 4 ]; then
             PROTOCOL=vnc
             printf "The default port for VNC (tightvncserver) is 5901.\n"
             if ask "Would you like to continue with the default port assignment?"; then
@@ -358,14 +383,14 @@ protocolSelection()
             else
                 CUSTOM=2
                 while [[ ! "${get_port}" =~ ^[0-9]+$ ]]; do
-                    printf "Please enter your desired port number (1-65536):"
+                    printf "Please enter your desired port number (1-65535):"
                     read get_port
-                    ! [[ "${get_port}" -ge 1 && "${get_port}" -le 65536 ]] && unset get_port
+                    ! [[ "${get_port}" -ge 1 && "${get_port}" -le 65535 ]] && unset get_port
                 done
                 PORT="$get_port"    
             fi    
             WEAVED_PORT=Weaved"$PROTOCOL""$PORT"
-        elif [ "$get_num" = 5 ]; then
+        elif [ "$get_num" == 5 ]; then
             CUSTOM=1
             if ask "Does this protocol use a web browser (e.g. HTTP on port 8080 vs. 80)"; then
                 PROTOCOL=web
@@ -376,24 +401,26 @@ protocolSelection()
             read port_name
             CUSTOM_PROTOCOL="$(echo "$port_name" | tr '[A-Z]' '[a-z]' | tr -d ' ')"
             while [[ ! "${get_port}" =~ ^[0-9]+$ ]]; do
-                printf "Please enter your desired port number (1-65536):"
+                printf "Please enter your desired port number (1-65535):"
                 read get_port
-                ! [[ "${get_port}" -ge 1 && "${get_port}" -le 65536 ]] && unset get_port
+                ! [[ "${get_port}" -ge 1 && "${get_port}" -le 65535 ]] && unset get_port
             done
             PORT="$get_port"
             WEAVED_PORT=Weaved"$CUSTOM_PROTOCOL""$PORT"
-        elif [ "$get_num" = 6 ]; then
+        elif [ "$get_num" == 6 ]; then
 	    if [ "$WEBIOPI" == "1" ]; then
                 PROTOCOL=web
+		INSTALLWEBIOPI=1
                 printf "The default port for WebIOPi (http) is 8000.\n"
                 if ask "Would you like to continue with the default port assignment?"; then
+		    CUSTOM=1
                     PORT=8000
                 else
                     CUSTOM=2
                     while [[ ! "${get_port}" =~ ^[0-9]+$ ]]; do
-                        printf "Please enter your desired port number (1-65536):"
+                        printf "Please enter your desired port number (1-65535):"
                         read get_port
-                        ! [[ "${get_port}" -ge 1 && "${get_port}" -le 65536 ]] && unset get_port
+                        ! [[ "${get_port}" -ge 1 && "${get_port}" -le 65535 ]] && unset get_port
                     done
                     PORT="$get_port"    
                 fi
@@ -402,7 +429,7 @@ protocolSelection()
             fi
         fi
 	# process the entry for all menu choices other than MAXSEL  
-        if [ "$get_num" != MAXSEL ]; then
+        if [ "$get_num" != $MAXSEL ]; then
           #  clear
             printf "We will attach a Weaved connection to the following service:\n\n"
             if [ "$CUSTOM" = 1 ]; then
@@ -458,20 +485,22 @@ deleteConnection()
 
     for file in $WEAVED_DIR/*.conf; do
         uid="$(grep '^UID' $file | awk '{print $2}')"
-	yooareell=$(echo  "$deviceListURL/$uid")
+	yooareell=$(echo  "$deviceURL/$uid")
 
 	resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR"  -H "token:$token" "$yooareell")
 
         deviceName=$(jsonval "$resp" "name")
 
-        if [ "$deviceName" = "$deviceToDelete" ]; then  
+        if [ "$deviceName" == "$deviceToDelete" ]; then  
 	    #      printf "\n$deviceInfo found...\n"
             deviceFound=1
 	    # get the protocol name
 	    deviceType=$(jsonval "$resp" "title")
 	    if ask "Are you sure you want to delete the Weaved $deviceType attachment $deviceName?"; then
 		printf "Deleting $deviceName...\n"
-		curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H “Content-Type:application/json” -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token" &> /dev/null
+		result=$(curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H “Content-Type:application/json” -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token" &> /dev/null)
+		deleteResult=$(jsonval "$result" "status")
+		debug $deleteResult
 
  		fileNameRoot=$(echo $file |xargs basename | awk -F "." {'print $1'})
 #		echo $fileNameRoot
@@ -521,10 +550,10 @@ bashCheck()
 ask()
 {
     while true; do
-	if [ "${2:-}" = "Y" ]; then
+	if [ "${2:-}" == "Y" ]; then
 	    prompt="Y/n"
 	    default=Y
-	elif [ "${2:-}" = "N" ]; then
+	elif [ "${2:-}" == "N" ]; then
 	    prompt="y/N"
 	    default=N
 	else
@@ -706,7 +735,7 @@ userLogin () #Portal login function
 	    read  -s password
         fi
    fi
-   echo $username $password $authhash
+#   echo $username $password $authhash
    signInAPI
 }
 ######### End Portal Login #########
@@ -714,8 +743,8 @@ userLogin () #Portal login function
 ####### SignInAPI ###################
 signInAPI()
 {
-    echo $username $password $authhash
-    if [ "$authhash" == "REPLACE_AUTHHASH" ]; then
+#    echo $username $password $authhash
+    if [ "$AUTHHASH" == "REPLACE_AUTHHASH" ]; then
         resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR" "$loginURL/$username/$password" 2> $TMP_DIR/.curlerr)
     else
         resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR" "$loginAuthURL/$username/$authhash" 2> $TMP_DIR/.curlerr)
@@ -770,13 +799,23 @@ testLogin()
 # before copying it to $WEAVED_DIR
 installEnablement()
 {
-        printf "."
+    printf "."
     if [ ! -d "WEAVED_DIR" ]; then
 	mkdir -p "$WEAVED_DIR"
     fi
-
-    cat $WEAVED_LIB_DIR/conf/"$PROTOCOL"."$PLATFORM" > $TMP_DIR/"$WEAVED_PORT".conf
-    
+    if [[ "$WEBIOPI" == "1" && "$INSTALLWEBIOPI" == "1" ]]; then
+        cp /etc/webiopi/weavedconnectd.conf $TMP_DIR/"$WEAVED_PORT".conf
+    else
+#
+# if REGISTERSERVICE==1, then we copy the template enablement file to /tmp where further things happen
+# before it is copied into place.  Otherwise we copy the template file directly to WEAVED_DIR
+#
+        if [ "$REGISTERSERVICE" == "1" ]; then
+            cat $WEAVED_LIB_DIR/conf/"$PROTOCOL"."$PLATFORM" > $TMP_DIR/"$WEAVED_PORT".conf
+	else
+            cat $WEAVED_LIB_DIR/conf/"$PROTOCOL"."$PLATFORM" > $WEAVED_DIR/"$WEAVED_PORT".conf
+	fi
+    fi
 }
 ######### End Install Enablement #########
 
@@ -803,6 +842,22 @@ installSendNotification()
 }
 ######### End Install Send Notification #########
 
+######### Enable Weaved services to start at reboot time ######
+enableStartup()
+{
+    crontab -l 2>/dev/null 1> "$TMP_DIR"/.crontab_old
+    echo "@reboot $BIN_DIR/$STARTEMUP" >> "$TMP_DIR"/.crontab_old
+    crontab "$TMP_DIR"/.crontab_old
+}
+######### End Enable Weaved services to start at reboot time ######
+
+######### Disable Weaved services to start at reboot time ######
+disableStartup()
+{
+    crontab -l | grep -v weavedstart.sh | cat > $TMP_DIR/.crontmp
+    crontab $TMP_DIR/.crontmp
+}
+
 ######### Install Start/Stop Scripts #########
 installStartStop()
 {
@@ -821,27 +876,28 @@ installStartStop()
 	    #      printf "$STARTEMUP copied to %s\n" "$BIN_DIR"
 	fi
 	checkCron=$(crontab -l 2> /dev/null | grep $STARTEMUP | wc -l)
-	#       printf "CheckCron: $checkCron\n"
-	if [ $checkCron = 0 ]; then
-            crontab -l 2>/dev/null 1> "$TMP_DIR"/.crontab_old
-            echo "@reboot /usr/bin/$STARTEMUP" >> "$TMP_DIR"/.crontab_old
-            crontab "$TMP_DIR"/.crontab_old
+	debug "CheckCron: $checkCron\n"
+	if [[ $checkCron == 0 && "$STARTDAEMONSONREBOOT" == "1" ]]; then
+	    enableStartup
+	fi
+	if [[ $checkCron > 0 && "$STARTDAEMONSONREBOOT" == "0" ]]; then
+	    disableStartup
 	fi
 	# see if there is an entry to start the chosen service daemon already
 	checkStartWeaved=$(cat "$BIN_DIR"/$STARTEMUP | grep "$WEAVED_PORT.sh" | wc -l)
 	# if not, add it
 	if [ $checkStartWeaved = 0 ]; then
 	    sed s/REPLACE_TEXT/"$WEAVED_PORT"/ < $WEAVED_LIB_DIR/scripts/weavedstart.add > $TMP_DIR/weavedstart.add
-	    sh -c "cat $TMP_DIR/weavedstart.add >> /usr/bin/$STARTEMUP"
+	    sh -c "cat $TMP_DIR/weavedstart.add >> $BIN_DIR/$STARTEMUP"
             rm $TMP_DIR/weavedstart.add
 	fi
 	# see if there is an entry to start the listener service daemon schannel.x already
-	checkStartSchannel=$(cat "$BIN_DIR"/$STARTEMUP | grep "schannel" | wc -l)
+	checkStartSchannel=$(cat "$BIN_DIR"/$STARTEMUP | grep "weavedschannel" | wc -l)
 	# if not, add it
 	if [ $checkStartSchannel = 0 ]; then
-	    sh -c "echo 'launchschannel start' >> /usr/bin/$STARTEMUP"
+	    sh -c "echo 'weavedschannel start' >> $BIN_DIR/$STARTEMUP"
 	fi
-	chmod +x /usr/bin/$STARTEMUP
+	chmod +x $BIN_DIR/$STARTEMUP
     fi
 }
 ######### End Start/Stop Scripts #########
@@ -875,7 +931,7 @@ checkUID()
 retryFetchUID()
 {
     printf "."
-    for run in {1..5}
+    for run in {1..15}
     do
 	fetchUID
 	checkforUID="$(tail "$TMP_DIR"/"$WEAVED_PORT".conf | grep UID | wc -l)"
@@ -932,8 +988,8 @@ preregisterUID()
 getSecret()
 {
     printf "."
-    secretCall="$(curl -s $regdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$MAC\"}" -H “Content-Type:application/json” -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token")"
-	 echo $secretCall
+    secretCall="$(curl -s $regdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$SerialID\"}" -H “Content-Type:application/json” -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token")"
+    debug $secretCall
 
     error=$(jsonval "$secretCall" "Error")
     debug $error
@@ -966,18 +1022,13 @@ getSecret()
 registerDevice()
 {
     printf "."
-    if [ "$PROTOCOL" != "rmt3" ]; then
-        while [ "$alias" = "" ]; do
-	    printf "\nEnter a name for this Service Attachment (e.g. SSH-Pi). \n"
-	    printf "This name will be shown in your Weaved Service List.\n"
-            printf "Only letters, numbers, underscore, space and dash are allowed.\n\n"
-            read alias
-        done
-        printf "Your Service Attachment will be called %s.\n\n" "$alias" > /dev/null
-    else
-    # for bulk (remot3.it) service, auto-assign name based on device Ethernet MAC address
-	alias="$MAC-rmt3"
-    fi
+    while [ "$alias" == "" ]; do
+	printf "\nEnter a name for this Service Attachment (e.g. SSH-Pi). \n"
+	printf "This name will be shown in your Weaved Service List.\n"
+        printf "Only letters, numbers, underscore, space and dash are allowed.\n\n"
+        read alias
+    done
+    printf "Your Service Attachment will be called %s.\n\n" "$alias" > /dev/null
 }
 ######### End Register Device #########
 
@@ -985,6 +1036,7 @@ registerDevice()
 startService()
 {
     printf "\n"
+    logger "Weaved Connection starting: $alias"
     echo -n "Registering Service Attachment $alias" ; sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -e "\n\n"
     $BIN_DIR/$WEAVED_PORT.sh restart > /dev/null
 }
@@ -1051,12 +1103,16 @@ makeConnection()
     alias=$3
     CUSTOM=2	# forces port to be written to conf file
     WEAVED_PORT=Weaved"$PROTOCOL""$PORT"
-    MAC=$(ifconfig eth0 | grep HWaddr | awk '{ print $5 }')
-
-    configureConnection
+    debug "$WEAVED_PORT"
+    if [ -f "$WEAVED_DIR/$WEAVED_PORT.conf" ]; then
+        echo "A $PROTOCOL service has already been configured on port $PORT."
+        echo "Skipping $alias..."
+    else
+        configureConnection
+    fi
 }
 
-#############################
+############################
 
 configureConnection()
 {
@@ -1077,7 +1133,7 @@ configureConnection()
     	    startService
 	    # there should only be one UDP listener startup regardless of the number of services
 	    # the startup script will only start one instance
-	    launchschannel start
+	    weavedschannel start > /dev/null
 	fi
     fi
 }
@@ -1092,7 +1148,6 @@ interactiveInstall()
     weavedCompatibility
     askRegisterLogin
     checkforWebIOPi
-    getMAC
     # main menu loop 
     menuLoop
 }

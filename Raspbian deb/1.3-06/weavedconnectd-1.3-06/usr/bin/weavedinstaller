@@ -11,20 +11,33 @@
 ##### Settings #####
 VERSION=v1.3-06_Pi
 AUTHOR="Gary Worsham"
-MODIFIED="February 29, 2016"
+MODIFIED="April 4, 2016"
 
 USERNAME="REPLACE_USERNAME"
 PASSWD="REPLACE_PASSWORD"
 AUTHHASH="REPLACE_AUTHHASH"
-REGISTERSERVICES=1
-DEBUG=0
+REGISTERSERVICE="1"
+DEBUG="0"
+MAXSEL=6
+
+#==================================================================================
+# If STARTDAEMONSONREBOOT is set to "1", then following the execution of the weavedinstaller_OEM script,
+# the next time the device is rebooted, the daemons will be started.
+# If it is preferred that the daemons not autostart on the next reboot, set STARTDAEMONSONREBOOT to "0".
+
+STARTDAEMONSONREBOOT="1"
 
 source weavedinstallerlib
 
 ######### Main Program #########
 main()
 {
+    getSerialID
+    # interactive installer defaults RMT3 service base name to MAC.
+    # OEM installer allows OEM to use a different function to set the auto-assigned
+    # service names.
+    SERVICEBASENAME=$MAC
     interactiveInstall $1
 }
 ######### End Main Program #########
-main
+main $1 $2

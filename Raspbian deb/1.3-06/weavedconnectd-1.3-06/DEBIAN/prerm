@@ -12,6 +12,11 @@ case "$1" in
     if [ "$weavedRunning" != "" ]; then
 	killall weavedconnectd.pi    
     fi
+    schannelRunning=$(ps ax | grep schannel.pi | grep -v grep) || true	
+#    echo "schannelRunning=$schannelRunning"
+    if [ "$schannelRunning" != "" ]; then
+	killall schannel.pi    
+    fi
   ;;
 
     upgrade)

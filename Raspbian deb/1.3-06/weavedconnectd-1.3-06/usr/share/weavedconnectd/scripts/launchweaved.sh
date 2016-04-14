@@ -3,12 +3,12 @@
 #  launchweaved.sh
 #  
 #
-#  Weaved, Inc. Copyright 2015. All rights reserved.
+#  Weaved, Inc. Copyright 2016. All rights reserved.
 #
 
-VERSION="v1.1"
+VERSION="v1.4"
 AUTHOR="Gary Worsham"
-MODIFIED="December 20, 2015"
+MODIFIED="April 4, 2016"
 WEAVED_PORT=
 DAEMON=weavedconnectd.pi
 WEAVED_DIR=/etc/weaved/services
@@ -23,7 +23,7 @@ LOG_DIR=/var/log
 displayVersion()
 {
     printf "Weaved daemon start/stop script Version: %s \n" "$VERSION"
-    # check for sudo user at this point
+    # check for root user at this point
     if [[ $EUID -ne 0 ]]; then
         echo "Running $WEAVED_PORT.sh requires root access." 1>&2
         echo "Please run sudo $WEAVED_PORT.sh" 1>&2
@@ -33,26 +33,40 @@ displayVersion()
 ##### End Version #####
 
 
-checkPID()
+isRunningCmd()
 {
 	if [ -f $PIDPATH ]; then
 		runningPID="$(cat $PIDPATH)"
 	fi
-}
-
-isRunning()
-{
-	isRunning="$(ps ax | grep weaved | grep $WEAVED_PORT | grep -v grep | wc -l)"
+	# see if there is ANY matching line with weaved and $WEAVED_PORT.conf
+	# isRunning will be 0 if NOTHING matches
+	isRunningLine="$(ps ax | grep weaved | grep -w "$WEAVED_PORT.conf" | grep -v grep)"
+	isRunningps=$(echo -n $isRunningLine | wc -w)
+	ps ax | grep weaved | grep -w "$WEAVED_PORT.conf" | grep -v grep > /tmp/weavedps.txt
+	#-------------	
+	# this next part is to ensure, when Weaved services are installed on
+	# a VM and containers within that VM, that we can correctly identify 
+	# the PID corresponding the the service running on the VM. This is the
+	# one which has a matching PID in /var/run/$WEAVED_PORT.pid
+	#-------------	
+	isRunning=0
+	while read p; do
+  	    psPID=$(echo $p | awk '{ print $1 }')
+	    if [[ "$psPID" == "$runningPID" && "$isRunningps" != "0" ]]; then
+#		echo "Matching PID! $psPID"
+		isRunning=1
+		return
+	    fi
+	done < /tmp/weavedps.txt
 }
 
 stopWeaved()
 {
-	isRunning
-	checkPID
-	if [ $isRunning != 0 ]; then
+	isRunningCmd
+	if [[ $isRunning != 0 && $psPID == $runningPID ]]; then
 		echo "Stopping $WEAVED_PORT..."
-		sudo kill $runningPID 2> /dev/null
-		sudo rm $PIDPATH 2> /dev/null
+		kill $runningPID 2> /dev/null
+		rm $PIDPATH 2> /dev/null
 	else
 		echo "$WEAVED_PORT is not currently active. Nothing to stop."
 	fi
@@ -60,10 +74,10 @@ stopWeaved()
 
 startWeaved()
 {
-	isRunning
-	if [ $isRunning = 0 ]; then
+	isRunningCmd
+	if [ $isRunning == 0 ]; then
 		echo "Starting $WEAVED_PORT..."
-		sudo $BIN_DIR/$DAEMON -f $WEAVED_DIR/$WEAVED_PORT.conf -d $PID_DIR/$WEAVED_PORT.pid > $LOG_DIR/$WEAVED_PORT.log
+		$BIN_DIR/$DAEMON -f $WEAVED_DIR/$WEAVED_PORT.conf -d $PID_DIR/$WEAVED_PORT.pid > $LOG_DIR/$WEAVED_PORT.log
 		tail $LOG_DIR/$WEAVED_PORT.log
 	else
 		echo "$WEAVED_PORT is already started"
