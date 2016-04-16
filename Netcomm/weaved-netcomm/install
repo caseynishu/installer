@@ -1,15 +1,40 @@
-# copy binaries
-cp weavedConnectd.arm-gnueabi-shared /usr/bin/weavedConnectd
-chmod +x /usr/bin/weavedConnectd
-cp schannel.arm-gnueabi /usr/bin/schannel.arm-gnueabi
-chmod +x /usr/bin/schannel.arm-gnueabi
-# copy enablements & schannel config file
-mkdir /etc/weaved
+#!/bin/sh
+# Weaved services installer for Netcomm
+# needs to be run as root
 #
-cp enablements/ssh.netcomm /etc/weaved
-cp enablements/rmt3.netcomm /etc/weaved
-cp enablements/web.netcomm /etc/weaved
-cp enablements/schannel.conf /etc/weaved
+#config
+WEAVED_DIR="/etc/weaved"
+PROVISION_DEFAULT="$WEAVED_DIR/pfiles"
+DEVICES_ACTIVE="$WEAVED_DIR/active"
+DEVICES_AVAILABLE="$WEAVED_DIR/available"
+#
+# create and directories needed
+#
+mkdir $WEAVED_DIR                             
+mkdir $PROVISION_DEFAULT
+mkdir $DEVICES_ACTIVE
+mkdir $DEVICES_AVAILABLE
+
+#
+# install bins
+#
+cp weavedConnectd.arm-gnueabi-shared /usr/bin/weavedconnectd
+chmod +x /usr/bin/weavedconnectd
+cp schannel.arm-gnueabi /usr/bin/schannel
+chmod +x /usr/bin/schannel
+cp task_notify.sh /usr/bin/task_notify.sh
+chmod +x /usr/bin/task_notify.sh
+cp weavedregister_net /usr/bin/weavedregister_net
+chmod +x /usr/bin/weavedregister_net
+cp weavedsimplelib /usr/bin/weavedsimplelib
+
+#
+# Check for existing files, dont overwrite
+#
+cp enablements/ssh.netcomm $PROVISION_DEFAULT
+cp enablements/rmt3.netcomm $PROVISION_DEFAULT 
+cp enablements/web.netcomm $PROVISION_DEFAULT 
+cp enablements/schannel.conf $WEAVED_DIR 
 
 # copy startup scripts
 cp weavedSSH /etc/init.d/rc.d
@@ -26,8 +51,14 @@ ln -s /etc/init.d/rc.d/weavedSSH /etc/init.d/rc3.d/S700weavedSSH
 ln -s /etc/init.d/rc.d/weavedRMT3 /etc/init.d/rc3.d/S700weavedRMT3
 ln -s /etc/init.d/rc.d/weavedWEB /etc/init.d/rc3.d/S700weavedWEB
 ln -s /etc/init.d/rc.d/weavedSCH /etc/init.d/rc3.d/S700weavedSCH
-# now start them all up
-/etc/init.d/rc.d/weavedSSH start
-/etc/init.d/rc.d/weavedRMT3 start
-/etc/init.d/rc.d/weavedWEB start
-/etc/init.d/rc.d/weavedSCH start
+
+# now start them all up (we let registration do this)
+#/etc/init.d/rc.d/weavedSSH start
+#/etc/init.d/rc.d/weavedRMT3 start
+#/etc/init.d/rc.d/weavedWEB start
+#/etc/init.d/rc.d/weavedSCH start
+
+
+
+
+

@@ -1,28 +1,23 @@
-#================================================================================
-# update
-# March 9, 2016
-#================================================================================
-# run this on a Netcomm modem that had previously installed SSH and Web daemons.
-# will leave those in place
-# then add RMT3 device and SCHANNEL daemon in order to enable bulk operations.
-#================================================================================
+#!/bin/sh
+# Weaved services installer for Netcomm
+# needs to be run as root
 # copy binaries
 cp weavedConnectd.arm-gnueabi-shared /usr/bin/weavedConnectd
 chmod +x /usr/bin/weavedConnectd
 cp schannel.arm-gnueabi /usr/bin/schannel.arm-gnueabi
 chmod +x /usr/bin/schannel.arm-gnueabi
 # copy enablements & schannel config file
-# mkdir /etc/weaved
+mkdir /etc/weaved
 #
-# cp enablements/ssh.netcomm /etc/weaved
-# cp enablements/web.netcomm /etc/weaved
+cp enablements/ssh.netcomm /etc/weaved
 cp enablements/rmt3.netcomm /etc/weaved
+cp enablements/web.netcomm /etc/weaved
 cp enablements/schannel.conf /etc/weaved
 
 # copy startup scripts
-# cp weavedSSH /etc/init.d/rc.d
-# cp weavedWEB /etc/init.d/rc.d
+cp weavedSSH /etc/init.d/rc.d
 cp weavedRMT3 /etc/init.d/rc.d
+cp weavedWEB /etc/init.d/rc.d
 cp weavedSCH /etc/init.d/rc.d
 #
 chmod +x /etc/init.d/rc.d/weavedSSH
@@ -35,7 +30,7 @@ ln -s /etc/init.d/rc.d/weavedRMT3 /etc/init.d/rc3.d/S700weavedRMT3
 ln -s /etc/init.d/rc.d/weavedWEB /etc/init.d/rc3.d/S700weavedWEB
 ln -s /etc/init.d/rc.d/weavedSCH /etc/init.d/rc3.d/S700weavedSCH
 # now start them all up
-/etc/init.d/rc.d/weavedSSH restart
+/etc/init.d/rc.d/weavedSSH start
 /etc/init.d/rc.d/weavedRMT3 start
-/etc/init.d/rc.d/weavedWEB restart
+/etc/init.d/rc.d/weavedWEB start
 /etc/init.d/rc.d/weavedSCH start

@@ -10,9 +10,10 @@
 # you should only have to edit the next line                       
 # put your service name here, should be a provisioning file in /etc/weaved                   
 service_name=schannel.conf
+parent_service_name=rmt3.netcomm    
 
 # You should not have to edit anything else, but the defaults are below
-exe=schannel.arm-gnueabi
+exe=schannel
 # change the next line if you move the weaved daemon
 exe_path=/usr/bin/$exe
 # change the next line if your pid files are stored somewhere else
@@ -41,6 +42,12 @@ pidrunning()
 start() {                                                                
     logger "[Weaved] Start Weaved service ${service_name}"                        
     echo "Start Weaved service ${service_name}"      
+
+    if [ ! -f $config_path/active/$parent_service_name ]; then   
+    	logger "[Weaved] Parent Not Configured, not attempting to start. ${service_name} requires ${parent_service_name}"
+    	echo -e "[FAIL]: ${service_name} requires ${parent_service_name} to be configured."
+    	return 1;
+    fi
                                                           
     if [ -f $config_path/$service_name ]; then         
         if [ -f $pidfile ]; then                                         
@@ -131,10 +138,10 @@ stop() {
 
 restart() {
     stop
-    if [ "1" -ne "$?" ]; then     
-        sleep 4
+#    if [ "1" -ne "$?" ]; then     
+        sleep 2
         start
-    fi
+#    fi
     return $?
 }
 

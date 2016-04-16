@@ -12,13 +12,13 @@
 service_name=web.netcomm
 
 # You should not have to edit anything else, but the defaults are below
-exe=weavedConnectd
+exe=weavedconnectd
 # change the next line if you move the weaved daemon
 exe_path=/usr/bin/$exe
 # change the next line if your pid files are stored somewhere else
 pidfile=/var/run/$service_name.pid
 # default config file location for weaved provisioning files
-config_path=/etc/weaved
+config_path=/etc/weaved/active
 # if you want to see the output of the daemon on startup, put a file here
 log_file=/dev/null    
                       
@@ -131,10 +131,10 @@ stop() {
 
 restart() {
     stop
-    if [ "1" -ne "$?" ]; then     
-        sleep 4
+#    if [ "1" -ne "$?" ]; then     
+        sleep 2
         start
-    fi
+#    fi
     return $?
 }
 

@@ -1,0 +1,146 @@
+#!/bin/sh
+
+#  weavedinstaller_OEM
+#  for mfg line configuration of services.
+#
+#  Run 'sudo weavedinstaller_OEM username authash password' to install Weaved
+#  if using password authash must be 0
+#
+#  Installs these Weaved services:
+#
+#  ssh on port 22
+#  http on port 80 (commented out)
+#  tcp on port 3389 (commented out)
+#
+#  Weaved, Inc. Copyright 2016. All rights reserved.
+#
+
+##### Settings #####
+VERSION=v0.2_Netcomm
+AUTHOR="Gary Worsham"
+MODIFIED="April 13, 2016"
+DEBUG="0"
+PLATFORM="arm-gnueabi"
+
+#
+#config
+WEAVED_DIR="/etc/weaved"
+PROVISION_DEFAULT="$WEAVED_DIR/pfiles"
+DEVICES_ACTIVE="$WEAVED_DIR/active"
+DEVICES_AVAILABLE="$WEAVED_DIR/available"
+INIT_DIR="/etc/init.d/rc.d"
+
+. /usr/bin/weavedsimplelib
+
+# you should really only call this script with paramters, not in a file
+#=======================================================================
+#
+USERNAME="REPLACE_USERNAME"
+PASSWD="REPLACE_PASSWORD"
+AUTHHASH="REPLACE_AUTHHASH"
+
+#==================================================================================
+# If REGISTERSERVICE is set to 1, then account credentials need to be supplied, either above,
+# or if those are left at default values, then the script asks for username and password.
+# If REGISTERSERVICE is 0, then the enablement files, binaries, installation and startup scripts
+# are installed, but the services are not registered.  In this state they are "ready to register"
+# by the end user.
+
+REGISTERSERVICE="1"
+
+#==========================================================================
+
+### Custom Helpers for this product (netcomm)
+#############################
+# cusotmMakeConnection(type="ssh,web,rmt3", alias)
+customMakeConnection()
+{                       
+    SERVICE_TYPE="$1.netcomm"     
+    alias=$2          
+    if [ -f "$DEVICES_AVAILABLE/$SERVICE_TYPE" ]; then
+        echo "The $1 service has already been configured."
+        echo "Skipping $alias..."
+   else
+        configureConnection               
+        retval=$?
+        if [ $retval == "1" ]; then
+            echo "[OK] service $1 has been registered as $alias"
+            #enable
+            ln -s $DEVICES_AVAILABLE/$SERVICE_TYPE $DEVICES_ACTIVE/$SERVICE_TYPE
+        else
+            echo "[FAIL] service $1 is trying to use $alias which is already registered on service"
+        fi
+
+   fi        
+}
+
+
+
+######### Main Program #########
+main()
+{
+    #displayVersion
+    echo "Platform = " $PLATFORM 
+    if [ ! -z "$1" ]; then
+        USERNAME=$1
+    fi
+    if [ "$2" = "0" ]; then
+        if [ ! -z $3 ]; then
+             PASSWD=$3
+        fi	
+    else 
+        if [ ! -z "$2" ]; then
+             AUTHHASH=$2
+	fi
+    fi
+    userLogin
+    testLogin
+
+# =============================================    
+# $SERVICEBASENAME is the base name of all installed services installed
+# with weavedinstaller_OEM
+# $SerialID equates inline to the Ethernet MAC address in getSerialID
+# By default, we are setting SERVICEBASENAME to $SerialID
+# OEM can supply some other expression for getSerialID or SERVICEBASENAME here
+# 
+    getSerialID
+    echo "Serial =" $SerialID
+    SERVICEBASENAME=$SerialID
+    echo "SERVICEBASENAME =" $SERVICEBASENAME
+
+# =============================================    
+#
+# ----- Edit the lines below to specify which services you want to have installed
+#
+# line syntax is:
+# custommakeConnection <protocol> <serviceName>
+# <protocol> should be one of: ssh, web, rmt3
+# rmt3 is used to enable Remote3.it fleet management services
+#
+# <protocol> for each entry, i.e. 
+#
+# <name> is a quote-enclosed expression which should be unique for every device
+# 
+# =============================================    
+
+    customMakeConnection rmt3 "$SERVICEBASENAME-rmt3"
+    customMakeConnection ssh "$SERVICEBASENAME-ssh"
+    customMakeConnection web "$SERVICEBASENAME-web"
+# =============================================    
+
+    #restart all services
+    for file in $INIT_DIR/weav*
+    do 
+        eval "$file restart"
+    done
+
+#for file in /etc/init.d/rc.d/weav* ; do echo $file; done
+
+}
+######### End Main Program #########
+# you can optionally call this script with username and authhash/password as cmd line parameters
+# main username auth pw, use "" for blank field
+main $1 $2 $3
+
+
+

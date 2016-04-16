@@ -1,0 +1,331 @@
+#!/bin/sh
+
+#  weavedsimpleib
+#
+#  Provides library functions to install, configure or remove Weaved
+#  this is the simple version that requires no assumptions
+#
+#  Weaved, Inc. Copyright 2016. All rights reserved.
+#
+
+##### Settings #####
+LIBVERSION=lib_v1.3-06_simple
+AUTHOR="Gary Worsham"
+MODIFIED="April 13, 2016"
+DAEMON=weavedconnectd
+
+#CURL Config
+# Don't veryify SSL (-k) Silent (-s)                                                                                                
+CURL_OPS=" -k -s"
+
+# ----------------------------------------
+# folders and files
+#
+#WEAVED_DIR="/etc/weaved"
+#PROVISION_DEFAULT="$WEAVED_DIR/pfiles"
+#DEVICES_ACTIVE="$WEAVED_DIR/active"
+#DEVICES_AVAILABLE="$WEAVED_DIR/available"
+
+BIN_DIR=/usr/bin
+TMP_DIR=/tmp
+PID_DIR=/var/run
+
+# ----------------------------------------
+# web API URLs
+version=v22
+server=api
+loginURL=https://$server.weaved.com/$version/api/user/login
+loginAuthURL=https://$server.weaved.com/$version/api/user/login/authhash
+unregdeviceURL=https://$server.weaved.com/$version/api/device/list/unregistered
+preregdeviceURL=https://$server.weaved.com/$version/api/device/create
+deleteURL=https://$server.weaved.com/$version/api/device/delete
+connectURL=https://$server.weaved.com/$version/api/device/connect
+# debug, URL below is temporary                     
+regdeviceURL=https://wlb01.weaved.com/v24/api/device/register
+
+# ----------------------------------------
+##### End Settings #####      
+                     
+##### Version #####      
+displayVersion()     
+{
+    printf "Weaved connection installer Version: %s %s \n" "$VERSION" "$LIBVERSION"
+    # check for sudo user at this point
+    if [[ $EUID -ne 0 ]]; then 
+        echo "Running weavedinstaller requires root access." 1>&2
+        echo "Please run sudo weavedinstaller instead of weavedinstaller." 1>&2
+        exit 1
+    fi                  
+}                   
+##### End Version #####
+
+##### get SerialID address #####                                                                               
+getSerialID()                                                                                                  
+{                                                                                                              
+    #SerialID=$(ifconfig eth0 | grep HWaddr | awk '{ print $5 }')                                               
+    SerialID=$(rdb get wwan.0.imei)
+}                                                                              
+##### end get SerialID address #####   
+
+
+
+######### Begin Portal Login #########                                                                                              
+userLogin () #Portal login function                                                                                                 
+{     
+    if [ "$USERNAME" != "REPLACE_USERNAME" ]; then 
+	username="$USERNAME"
+    else        
+	printf "Please enter your Weaved Username (email address): \n"
+	read username
+    fi
+    if [ "$AUTHHASH" != "REPLACE_AUTHHASH" ]; then
+	authhash="$AUTHHASH"
+    else
+        if [ "$PASSWD" != "REPLACE_PASSWORD" ]; then
+	    password="$PASSWD"
+        else
+	    printf "\nPlease enter your password: \n"
+	    password=""
+	    read  -s password
+        fi
+   fi
+#   echo $username $password $authhash
+   signInAPI
+}
+######### End Portal Login #########
+######### Test Login #########                                                 
+testLogin()                  
+{                               
+    while [ "$loginFailed" != "" ] || [ "$slimError" != "" ]; do
+        printf "[Fail] You have entered either an incorrect username or password\n"
+        exit 1 
+    done                                
+}                                                              
+######### End Test Login #########  
+
+
+
+####### SignInAPI ###################
+signInAPI()
+{
+#    echo $username $password $authhash
+    if [ "$AUTHHASH" == "REPLACE_AUTHHASH" ]; then
+        resp=$(curl $CURL_OPS -S -X GET -H "content-type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR" "$loginURL/$username/$password" 2> $TMP_DIR/.curlerr)
+    else
+        resp=$(curl $CURL_OPS -S -X GET -H "content-type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR" "$loginAuthURL/$username/$authhash" 2> $TMP_DIR/.curlerr)
+    fi
+
+    debug $resp
+
+    status=$(jsonval "$resp" "status")
+    debug $status
+
+    if [ "$status" == "true" ]; then
+	token=$(jsonval "$resp" "token")
+    else
+    	loginFailed=$(echo "$resp" | grep "The username or password are invalid" | sed 's/"//g')
+    	slimError=$(echo "$resp" | grep "Slim Application Error" | sed 's/"//g')
+    	login404=$(echo "$resp" | grep 404 | sed 's/"//g')
+	echo "[FAIL] Error" $loginFailed $slimError $login404
+    	exit 1
+    fi
+
+    # invalid cert can happen if system date is set to before current date
+    invalidCert=$(cat $TMP_DIR/.curlerr  | grep "SSL certificate problem")
+    date +"%s" > $TMP_DIR/.lastlogin
+}
+####### End SignInAPI ###################
+
+######### Install Enablement #########
+# we install .conf file temporarily in $TMP_DIR and add UID and secret
+# before copying it to $WEAVED_DIR
+installEnablement()
+{
+    printf "."
+    if [ ! -d "WEAVED_DIR" ]; then
+	    mkdir -p "$WEAVED_DIR"
+    fi
+#
+# if REGISTERSERVICE==1, then we copy the template enablement file to /tmp where further things happen
+# before it is copied into place.  Otherwise we copy the template file directly to WEAVED_DIR
+#
+    cat $PROVISION_DEFAULT/"$SERVICE_TYPE" > $TMP_DIR/"$SERVICE_TYPE"
+}
+
+######### End Install Enablement #########
+
+
+######### Fetch UID #########
+fetchUID()
+{
+    printf "."
+    "$BIN_DIR"/"$DAEMON" -life -1 -f "$TMP_DIR"/"$SERVICE_TYPE" > "$TMP_DIR"/.DeviceTypeString
+    DEVICETYPE="$(cat "$TMP_DIR"/.DeviceTypeString | grep DeviceType | awk -F "=" '{print $2}')"
+    rm "$TMP_DIR"/.DeviceTypeString
+}
+######### End Fetch UID #########
+
+######### Check for UID #########
+checkUID()
+{
+    printf "."
+    checkforUID="$(tail "$TMP_DIR"/"$SERVICE_TYPE" | grep UID | wc -l)"
+    if [ $checkforUID = 2 ]; then
+	    uid=$(tail "$TMP_DIR"/"$SERVICE_TYPE" | grep UID | awk -F "UID" '{print $2}' | xargs echo -n)
+	#   printf "\n\nYour device UID has been successfully provisioned as: %s. \n\n" "$uid"
+    else
+	retryFetchUID
+    fi
+}
+######### Check for UID #########
+
+######### Retry Fetch UID ##########
+retryFetchUID()
+{
+    printf "."
+    for run in {1..6}
+    do
+	fetchUID
+	checkforUID="$(tail "$TMP_DIR"/"$SERVICE_TYPE" | grep UID | wc -l)"
+	if [ "$checkforUID" = 2 ]; then
+	    uid="$(tail "$TMP_DIR"/"$SERVICE_TYPE" | grep UID | awk -F "UID" '{print $2}' | xargs echo -n)"
+	    #       printf "\n\nYour device UID has been successfully provisioned as: %s. \n\n" "$uid"
+	    break
+	fi
+    done
+    checkforUID="$(tail "$TMP_DIR"/"$SERVICE_TYPE" | grep UID | wc -l)"
+    if [ "$checkforUID" != 2 ]; then
+	printf "[FAIL] We have unsuccessfully tried to obtain a UID.\n"
+    	exit 1
+    fi
+}
+######### Retry Fetch UID ##########
+
+######### Pre-register Device #########
+
+preregisterUID()
+{
+    printf "."
+    preregUID="$(curl $CURL_OPS $preregdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicetype\":\"$DEVICETYPE\"}" -H "Content-Type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token")"
+    test1="$(echo $preregUID | grep "true" | wc -l)"
+    debug $preregUID
+    test2="$(echo $preregUID | grep -E "missing api token|api token missing" | wc -l)"
+    test3="$(echo $preregUID | grep "false" | wc -l)"
+    if [ "$test1" = 1 ]; then
+	printf "Pre-registration of UID: %s successful. \n\n" "$uid" > /dev/null
+    elif [ "$test2" = 1 ]; then
+	printf "[FAIL] You are not currently logged in. \n"
+	exit 1
+    elif [ "$test3" = 1 ]; then
+	printf "[FAIL] Pre registration failed. \n"
+	exit 1
+    fi
+}
+######### End Pre-register Device #########
+
+######### Pre-register Device #########
+getSecret()
+{
+    printf "."
+    secretCall="$(curl $CURL_OPS $regdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$SerialID\"}" -H "Content-Type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token")"
+    debug $secretCall
+
+    error=$(jsonval "$secretCall" "Error")
+    debug $error
+    if [ "$error" == "DuplicateName:" ]; then
+        echo
+	echo "[FAIL] There is already a Service registered to your account as $alias."
+    	exit 1
+    else
+    	test1="$(echo $secretCall | grep "true" | wc -l)"
+    	test2="$(echo $secretCall | grep -E "missing api token|api token missing" | wc -l)"
+    	test3="$(echo $secretCall | grep "false" | wc -l)"
+    	if [ $test1 = 1 ]; then
+		secret="$(echo $secretCall | awk -F "," '{print $2}' | awk -F "\"" '{print $4}' | sed s/://g)"
+		echo "# password - erase this line to unregister the device" >> "$TMP_DIR"/"$SERVICE_TYPE"
+		echo "password $secret" >> "$TMP_DIR"/"$SERVICE_TYPE"
+
+	#       finally copy valid assembled enablement file to $WEAVED_DIR
+		mv "$TMP_DIR"/"$SERVICE_TYPE" "$DEVICES_AVAILABLE"/"$SERVICE_TYPE"
+    	elif [ $test2 = 1 ]; then
+		printf "[FAIL] Authentication Error\n"
+    		exit 1
+    	fi
+    fi
+}
+######### End Pre-register Device #########
+
+######### Register Device #########
+registerDevice()
+{
+    printf "."
+    while [ "$alias" == "" ]; do
+	printf "\nEnter a name for this Service Attachment (e.g. SSH-Pi). \n"
+	printf "This name will be shown in your Weaved Service List.\n"
+        printf "Only letters, numbers, underscore, space and dash are allowed.\n\n"
+        read alias
+    done
+    printf "Your Service Attachment will be called %s.\n\n" "$alias" > /dev/null
+}
+######### End Register Device #########
+
+######### Delete device #########
+deleteDevice()
+{
+    uid=$(tail $WEAVED_DIR/$WEAVED_PORT.conf | grep UID | awk -F "UID" '{print $2}' | xargs echo -n)
+    curl $CURL_OPS $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token"
+    #    printf "\n\n"
+}
+######### End Delete device #########
+
+# JSON parse (very simplistic):  get value frome key $2 in buffer $1,  values or keys must not have the characters {}[", 
+#   and the key must not have : in it
+#
+#  Example:
+#   value=$(jsonval "$json_buffer" "$key") 
+#                                                   
+jsonval()                                              
+{
+#    echo "jsonval $1 $2"
+    temp=`echo "$1" | sed -e 's/[{}\"]//g' | sed -e 's/,/\'$'\n''/g' | grep -w $2 | cut -d"[" -f2- | cut -d":" -f2-`
+    #echo ${temp##*|}         
+    echo ${temp}                                                
+}                                                   
+
+jsonvalx()
+{
+    temp=`echo $1 | sed -e 's/[{}"]//g' -e "s/,/\\$liblf/g" | grep -w $2 | cut -d":" -f2-`
+    #echo ${temp##*|}
+    echo ${temp}    
+}
+
+#############################
+debug()
+{
+    if [ "$DEBUG" == "1" ]; then
+	echo $1
+    fi
+}
+
+############################
+
+configureConnection()
+{
+    installEnablement
+    # REGISTERSERVICE controls (in OEM installer) whether or not services are registered at the time of installation
+    if [ "$REGISTERSERVICE" == "1" ]; then
+    	fetchUID
+    	checkUID
+    	preregisterUID
+    	registerDevice
+    	getSecret
+
+    	if [ "$error" != "DuplicateName:" ]; then
+	       #ok
+	       return 1
+	    else
+           return 0
+	    fi
+    fi
+}
+

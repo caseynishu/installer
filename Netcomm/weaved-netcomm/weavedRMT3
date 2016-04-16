@@ -11,14 +11,20 @@
 # put your service name here, should be a provisioning file in /etc/weaved                   
 service_name=rmt3.netcomm
 
+#
+WEAVED_DIR="/etc/weaved"
+PROVISION_DEFAULT="$WEAVED_DIR/pfiles"
+DEVICES_ACTIVE="$WEAVED_DIR/active"
+DEVICES_AVAILABLE="$WEAVED_DIR/available"
+
 # You should not have to edit anything else, but the defaults are below
-exe=weavedConnectd
+exe=weavedconnectd
 # change the next line if you move the weaved daemon
 exe_path=/usr/bin/$exe
 # change the next line if your pid files are stored somewhere else
 pidfile=/var/run/$service_name.pid
 # default config file location for weaved provisioning files
-config_path=/etc/weaved
+config_path=/etc/weaved/active
 # if you want to see the output of the daemon on startup, put a file here
 log_file=/dev/null    
                       
@@ -68,7 +74,7 @@ start() {
             return 1
         fi
     else
-        echo -e "[FAIL]: Provisioning File not Found (${config_path}/${service_name})";
+        echo -e "[FAIL]: Provisioning File not configured (${config_path}/${service_name})";
         return 1;
     fi
                                                      
@@ -77,12 +83,20 @@ start() {
 stop() {
     logger "[Weaved] Start Weaved service ${service_name}"                        
     echo "Stop Weaved service ${service_name}"   
+
+    #must be provisioned
+    if [ ! -f $config_path/$service_name ]; then 
+    	logger "[Weaved] $service_name Not Provisioned"   
+    	echo -e " [FAIL]: $service_name Not Provisioned"  
+    	return 1
+    fi
+
     #if we don't have a PID file, just exit
             
     if [ ! -e $pidfile ]                                       
     then    
         logger "[Weaved] Shutdown no pid file, exiting"
-        echo -e " [FAIL]: No pid file found"                                                        
+        echo -e " [FAIL]: No pid file found, service not active"                                                        
         return 1 
     fi 
     #
@@ -131,10 +145,10 @@ stop() {
 
 restart() {
     stop
-    if [ "1" -ne "$?" ]; then     
-        sleep 4
+#    if [ "1" -ne "$?" ]; then     
+        sleep  2
         start
-    fi
+#    fi
     return $?
 }
 
