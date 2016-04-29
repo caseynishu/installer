@@ -1,0 +1,34 @@
+#!/bin/bash
+
+#  weaveddisablestartup
+#
+#  Run 'sudo weaveddisablestartup' to disable startup of 
+#  installed Weaved attachment services for tcp listeners.
+#  The startup scripts are still in place but not being called
+#  at reboot time (which is managed by cron).
+#
+#  Weaved, Inc. Copyright 2016. All rights reserved.
+#
+
+##### Settings #####
+VERSION=v1.3-06_Disable_Startup
+AUTHOR="Gary Worsham"
+MODIFIED="March 31, 2016"
+DEBUG="1"
+
+#==========================================================================
+
+source weavedinstallerlib
+
+######### Main Program #########
+main()
+{
+    displayVersion
+# =============================================    
+    disableStartup
+# =============================================  
+    echo "Remot3.it services disabled at startup."   
+}
+######### End Main Program #########
+# 
+main 
