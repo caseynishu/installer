@@ -60,6 +60,13 @@ STARTDAEMONSONREBOOT="1"
 
 source weavedinstallerlib
 
+##### get SerialID address #####
+getSerialID()
+{
+    SerialID=$(ifconfig eth0 | grep HWaddr | awk '{ print $5 }')
+}
+##### end get SerialID address #####
+
 ######### Main Program #########
 main()
 {
@@ -102,12 +109,6 @@ main()
         echo "SERVICEBASENAME =" $SERVICEBASENAME
     fi
 
-##### get SerialID address #####
-getSerialID()
-{
-    SerialID=$(ifconfig eth0 | grep HWaddr | awk '{ print $5 }')
-}
-##### end get SerialID address #####
 
 # =============================================    
 #

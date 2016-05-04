@@ -3,11 +3,14 @@
 set -e
 case "$1" in
 
-    purge|configure|remove|failed-upgrade|abort-install|abort-upgrade|disappear)
+    purge|remove|failed-upgrade|abort-install|abort-upgrade|disappear)
+    logger "Weaved Deb installer $1"
     ;;
 
-    upgrade)
+    upgrade | configure)
+    logger "Weaved Deb installer $1"
     if [ -f /usr/bin/weavedstart.sh ]; then
+        logger "Restarting Weaved daemons"
 	weavedstart.sh    
     fi
   ;;
