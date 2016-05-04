@@ -8,7 +8,7 @@ case "$1" in
 
     upgrade)
     if [ -f /usr/bin/weavedstart.sh ]; then
-	/usr/bin/weavedstart.sh    
+	weavedstart.sh    
     fi
   ;;
 

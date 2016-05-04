@@ -1,13 +1,17 @@
 #!/bin/bash
 
 #  weavedinstaller_OEM
-#  for mfg line configuration of services.
+#  for mfg line configuration of services, or preparation of a master image for cloning.
 #
 #  Run 'sudo weavedinstaller_OEM' to install Weaved
 #  attachment services for tcp listeners.
+#  Edit the makeConnection lines towards the bottom of this file to specify
+#  which Weaved services you wish to install.
+#
 #  Installs these Weaved services:
 #
-#  ssh on port 22
+#  rmt3
+#  ssh on port 22 (commented out)
 #  http on port 80 (commented out)
 #  tcp on port 3389 (commented out)
 #
@@ -17,7 +21,7 @@
 ##### Settings #####
 VERSION=v1.3-06_x86_OEM
 AUTHOR="Gary Worsham"
-MODIFIED="April 4, 2016"
+MODIFIED="May 3, 2016"
 DEBUG="0"
 #=======================================================================
 # Weaved recommends running this script (with real username/password) from /tmp folder.
@@ -29,6 +33,7 @@ DEBUG="0"
 USERNAME="REPLACE_USERNAME"
 PASSWD="REPLACE_PASSWORD"
 AUTHHASH="REPLACE_AUTHHASH"
+APIKEY="WeavedDeveloperToolsWy98ayxR"
 
 #==================================================================================
 # If REGISTERSERVICE is set to 1, then account credentials need to be supplied, either above,
@@ -63,8 +68,16 @@ main()
     bashCheck
     platformDetection
     echo "Platform = " $PLATFORM 
-# weavedCompatibility can be commented out on known good network
-#    weavedCompatibility
+#-----------------------------------------------------------------------
+#   each OEM should obtain an APIKEY from Weaved applications engineering
+#
+    if [ "$APIKEY" == "" ]; then
+        echo "APIKEY is blank.  Please contact Weaved applications engineering for an API key."
+	exit
+    fi
+#-----------------------------------------------------------------------
+#   weavedCompatibility can be commented out on known good network
+#   weavedCompatibility
 
     if [ "$REGISTERSERVICE" == "1" ]; then
     	if [ "$1" != "" ]; then
@@ -75,6 +88,7 @@ main()
         fi
         userLogin
         testLogin
+
 # =============================================    
 # $SERVICEBASENAME is the base name of all installed services installed
 # with weavedinstaller_OEM
@@ -88,6 +102,12 @@ main()
         echo "SERVICEBASENAME =" $SERVICEBASENAME
     fi
 
+##### get SerialID address #####
+getSerialID()
+{
+    SerialID=$(ifconfig eth0 | grep HWaddr | awk '{ print $5 }')
+}
+##### end get SerialID address #####
 
 # =============================================    
 #
