@@ -1,6 +1,6 @@
 To install Weaved to your x86 Debian system:
 1) Copy the deb file to your system.
-2) Run "sudo dpkg -i weavedconnectd-1.3-06_x86.deb"
+2) Run "sudo dpkg -i weavedconnectd-1.3-06_x86_0.92.deb"
 3) Now run "sudo weavedinstaller"
 =============================================================
 The weavedconnectd-1.3-06_x86 folder contains the source files for the Debian package creation process.
