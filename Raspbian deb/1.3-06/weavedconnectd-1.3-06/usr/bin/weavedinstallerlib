@@ -12,7 +12,7 @@
 ##### Settings #####
 LIBVERSION=lib_v1.3-06_Pi
 AUTHOR="Gary Worsham"
-MODIFIED="April 4, 2016"
+LIBMODIFIED="May 11, 2016"
 DAEMON=weavedconnectd
 
 # ----------------------------------------
@@ -56,6 +56,7 @@ regdeviceURL=https://wlb01.weaved.com/v24/api/device/register
 displayVersion()
 {
     printf "Weaved connection installer Version: %s %s \n" "$VERSION" "$LIBVERSION"
+    printf "Modified: %s (library) %s \n" "$MODIFIED" "$LIBMODIFIED"
     # check for sudo user at this point
     if [[ $EUID -ne 0 ]]; then
         echo "Running weavedinstaller requires root access." 1>&2
@@ -96,6 +97,7 @@ checkforWebIOPi()
 }
 
 ##### get SerialID address #####
+# Pi serial is a UUID concatenated with eth0 MAC address
 getSerialID()
 {
     SerialID=$(ifconfig eth0 | grep HWaddr | awk '{ print $5 }')
@@ -108,6 +110,7 @@ factoryReset()
 	printf "$f\n"
     done 
 }
+##### end of factory reset
 
 ##### Check for existing services #####
 checkforServices()
@@ -144,7 +147,7 @@ checkforServices()
             port="$(grep '^port' $file | awk '{print $2}')"
 	    yooareell=$(echo  "$deviceURL/$uid")
 
-	    resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR"  -H "token:$token" "$yooareell")
+	    resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:$APIKEY"  -H "token:$token" "$yooareell")
 
 	    debug $resp
 
@@ -487,7 +490,7 @@ deleteConnection()
         uid="$(grep '^UID' $file | awk '{print $2}')"
 	yooareell=$(echo  "$deviceURL/$uid")
 
-	resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR"  -H "token:$token" "$yooareell")
+	resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:$APIKEY"  -H "token:$token" "$yooareell")
 
         deviceName=$(jsonval "$resp" "name")
 
@@ -498,7 +501,7 @@ deleteConnection()
 	    deviceType=$(jsonval "$resp" "title")
 	    if ask "Are you sure you want to delete the Weaved $deviceType attachment $deviceName?"; then
 		printf "Deleting $deviceName...\n"
-		result=$(curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token" &> /dev/null)
+		result=$(curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H “Content-Type:application/json” -H "apikey:$APIKEY" -H "token:$token" &> /dev/null)
 		deleteResult=$(jsonval "$result" "status")
 		debug $deleteResult
 
@@ -638,7 +641,7 @@ getEmail()
 registerUser()
 {
     getEmail
-     resp=$(curl -s $regAccountURL -X POST -d "{\"email\":\"$username\"}" -H "content-type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR" 2> $TMP_DIR/.curlerr)
+     resp=$(curl -s $regAccountURL -X POST -d "{\"email\":\"$username\"}" -H "content-type:application/json" -H "apikey:$APIKEY" 2> $TMP_DIR/.curlerr)
 
     debug $resp
     value=$(jsonval "$resp" "status") 
@@ -668,7 +671,7 @@ enterVerificationCode()
     	getNewPassword
     done
 
-     resp=$(curl -s $regAccountURLVerified -X POST -d "{\"email\":\"$username\", \"password\":\"$password\", \"shortcode\":\"$registrationCode\"}" -H "content-type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR" 2> $TMP_DIR/.curlerr)
+     resp=$(curl -s $regAccountURLVerified -X POST -d "{\"email\":\"$username\", \"password\":\"$password\", \"shortcode\":\"$registrationCode\"}" -H "content-type:application/json" -H "apikey:$APIKEY" 2> $TMP_DIR/.curlerr)
 
     debug $resp
     value=$(jsonval "$resp" "status") 
@@ -745,9 +748,9 @@ signInAPI()
 {
 #    echo $username $password $authhash
     if [ "$AUTHHASH" == "REPLACE_AUTHHASH" ]; then
-        resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR" "$loginURL/$username/$password" 2> $TMP_DIR/.curlerr)
+        resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:$APIKEY" "$loginURL/$username/$password" 2> $TMP_DIR/.curlerr)
     else
-        resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR" "$loginAuthURL/$username/$authhash" 2> $TMP_DIR/.curlerr)
+        resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:$APIKEY" "$loginAuthURL/$username/$authhash" 2> $TMP_DIR/.curlerr)
     fi
 
     debug $resp
@@ -895,7 +898,7 @@ installStartStop()
 	checkStartSchannel=$(cat "$BIN_DIR"/$STARTEMUP | grep "weavedschannel" | wc -l)
 	# if not, add it
 	if [ $checkStartSchannel = 0 ]; then
-	    sh -c "echo 'weavedschannel start' >> $BIN_DIR/$STARTEMUP"
+	    sh -c "echo '"/usr/bin/weavedschannel" start' >> $BIN_DIR/$STARTEMUP"
 	fi
 	chmod +x $BIN_DIR/$STARTEMUP
     fi
@@ -955,7 +958,7 @@ retryFetchUID()
 preregisterUID()
 {
     printf "."
-    preregUID="$(curl -s $preregdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicetype\":\"$DEVICETYPE\"}" -H "Content-Type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token")"
+    preregUID="$(curl -s $preregdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicetype\":\"$DEVICETYPE\"}" -H “Content-Type:application/json” -H "apikey:$APIKEY" -H "token:$token")"
     test1="$(echo $preregUID | grep "true" | wc -l)"
     debug $preregUID
     test2="$(echo $preregUID | grep -E "missing api token|api token missing" | wc -l)"
@@ -988,7 +991,7 @@ preregisterUID()
 getSecret()
 {
     printf "."
-    secretCall="$(curl -s $regdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$SerialID\"}" -H "Content-Type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token")"
+    secretCall="$(curl -s $regdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$SerialID\"}" -H “Content-Type:application/json” -H "apikey:$APIKEY" -H "token:$token")"
     debug $secretCall
 
     error=$(jsonval "$secretCall" "Error")
@@ -1061,7 +1064,7 @@ overridePort()
 deleteDevice()
 {
     uid=$(tail $WEAVED_DIR/$WEAVED_PORT.conf | grep UID | awk -F "UID" '{print $2}' | xargs echo -n)
-    curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR" -H "token:$token"
+    curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H “Content-Type:application/json” -H "apikey:$APIKEY" -H "token:$token"
     #    printf "\n\n"
 }
 ######### End Delete device #########
