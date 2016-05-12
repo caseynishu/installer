@@ -5,7 +5,7 @@
 
 DIR=/DEBIAN
 
-packageName=weavedconnectd-1.3-06_x86
+packageName=weavedconnectd-1.3-06
 sudo gedit "$packageName"$DIR/control "$packageName"$DIR/prerm "$packageName"$DIR/postrm "$packageName"$DIR/postinst "$packageName"$DIR/conffiles
 sudo rm "$packageName"$DIR/*~
 

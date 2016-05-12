@@ -5,6 +5,7 @@
 TMP_DIR=/tmp
 
 set -e
+logger "postm $1"
 
 case "$1" in
   purge)

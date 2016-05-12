@@ -3,20 +3,11 @@
 #
 
 set -e
+logger "prerm $1"
 
 case "$1" in
 
     remove|upgrade|failed-upgrade|deconfigure)
-    weavedRunning=$(ps ax | grep weavedconnectd.pi | grep -v grep) || true	
-#    echo "weavedRunning=$weavedRunning"
-    if [ "$weavedRunning" != "" ]; then
-	killall weavedconnectd.pi    
-    fi
-    schannelRunning=$(ps ax | grep schannel.pi | grep -v grep) || true	
-#    echo "schannelRunning=$schannelRunning"
-    if [ "$schannelRunning" != "" ]; then
-	killall schannel.pi    
-    fi
   ;;
 
     upgrade)
