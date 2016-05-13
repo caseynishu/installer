@@ -5,8 +5,7 @@
 TMP_DIR=/tmp
 
 set -e
-logger "postm $1"
-
+logger "Weaved installer postrm state $1"
 case "$1" in
   purge)
 # remove global startup file

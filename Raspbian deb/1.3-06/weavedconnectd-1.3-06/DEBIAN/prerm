@@ -3,11 +3,18 @@
 #
 
 set -e
-logger "prerm $1"
+logger "Weaved installer prerm $1"
 
 case "$1" in
 
-    remove|upgrade|failed-upgrade|deconfigure)
+    remove|purge|deconfigure)
+# remove serial number (HWID) file
+    if [ -e /etc/weaved/serial.txt ]; then
+      rm /etc/weaved/serial.txt
+    fi
+  ;;
+
+    upgrade|failed-upgrade)
   ;;
 
     upgrade)

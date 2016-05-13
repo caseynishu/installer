@@ -19,6 +19,7 @@ DAEMON=weavedconnectd
 # folders and files
 WEAVED_DIR=/etc/weaved/services
 WEAVED_LIB_DIR=/usr/share/weavedconnectd
+SERIALNUMBERFILE=/etc/weaved/serial.txt
 BIN_DIR=/usr/bin
 TMP_DIR=/tmp
 NOTIFIER=weavednotify.sh
@@ -98,10 +99,28 @@ checkforWebIOPi()
 
 ##### get SerialID address #####
 # Pi serial is a UUID concatenated with eth0 MAC address
+# if the file /etc/weaved/serial.txt does not exist, create the
+# value and write it there.  Otherwise read the value from then
+# file.
+# mac is also determined here as it is used for the SERVICEBASENAME
+# in weavedinstaller_OEM
+
 getSerialID()
 {
-    SerialID=$(ifconfig eth0 | grep HWaddr | awk '{ print $5 }')
+    mac=$(ifconfig eth0 | grep HWaddr | awk '{ print $5 }')
+    if [ -f "$SERIALNUMBERFILE" ]; then
+	SerialID=$(cat $SERIALNUMBERFILE)
+    else
+    	num=20
+    	random=$(tr -dc A-Za-z0-9 < /dev/urandom | dd bs=$num count=1 2> /dev/null)
+	SerialID="$random:$mac"
+
+	echo "$SerialID" > "$SERIALNUMBERFILE"
+	chmod -w "$SERIALNUMBERFILE"
+    fi
+    logger "Weaved SerialID is $SerialID"
 }
+
 ##### end get SerialID address #####
 
 factoryReset()
@@ -552,6 +571,7 @@ bashCheck()
 ######### Ask Function #########
 ask()
 {
+    echo
     while true; do
 	if [ "${2:-}" == "Y" ]; then
 	    prompt="Y/n"
