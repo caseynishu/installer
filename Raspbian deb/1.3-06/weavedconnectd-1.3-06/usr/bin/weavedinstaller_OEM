@@ -21,7 +21,7 @@
 ##### Settings #####
 VERSION=v1.3-06_OEM
 AUTHOR="Gary Worsham"
-MODIFIED="May 12, 2016"
+MODIFIED="May 18, 2016"
 DEBUG="0"
 #=======================================================================
 # Weaved recommends running this script (with real username/password) from /tmp folder.
@@ -94,6 +94,7 @@ main()
 # $SerialID equates to a random number concatenated with 
 # the Ethernet MAC address
 # this is the HWID for all services registered from a given device.
+# This function is defined in /usr/bin/weavedinstallerlib.
 #
 # By default, we are setting SERVICEBASENAME to $mac
 # This forms the first part of the displayed service name.

@@ -12,7 +12,7 @@
 ##### Settings #####
 LIBVERSION=lib_v1.3-06_Pi
 AUTHOR="Gary Worsham"
-LIBMODIFIED="May 11, 2016"
+LIBMODIFIED="May 18, 2016"
 DAEMON=weavedconnectd
 
 # ----------------------------------------
@@ -113,7 +113,7 @@ getSerialID()
     else
     	num=20
     	random=$(tr -dc A-Za-z0-9 < /dev/urandom | dd bs=$num count=1 2> /dev/null)
-	SerialID="$random:$mac"
+	SerialID="$mac-$random"
 
 	echo "$SerialID" > "$SERIALNUMBERFILE"
 	chmod -w "$SERIALNUMBERFILE"
@@ -687,7 +687,7 @@ enterVerificationCode()
     printf "\nEnter the verification code which you received by e-mail.\n"
     read registrationCode
     while [ "$passwordOK" != 1 ]; do
-        clear
+        echo
     	getNewPassword
     done
 
@@ -740,7 +740,7 @@ getNewPassword() {
 ######### Begin Portal Login #########
 userLogin () #Portal login function
 {
-    clear
+    echo
     if [ "$USERNAME" != "REPLACE_USERNAME" ]; then 
 	username="$USERNAME"
     else        
@@ -1164,7 +1164,7 @@ configureConnection()
 ######### Interactive Install #########
 interactiveInstall()
 {
-    clear
+    echo
     displayVersion $1
     bashCheck
     platformDetection
