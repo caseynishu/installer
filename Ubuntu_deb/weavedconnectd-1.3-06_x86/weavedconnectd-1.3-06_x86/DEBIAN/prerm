@@ -2,22 +2,12 @@
 # postrm script for weavedconnectd
 #
 
-platform=i686
 set -e
+logger "prerm $1"
 
 case "$1" in
 
     remove|upgrade|failed-upgrade|deconfigure)
-    weavedRunning=$(ps ax | grep weavedconnectd | grep -v grep) || true	
-#    echo "weavedRunning=$weavedRunning"
-    if [ "$weavedRunning" != "" ]; then
-	killall weavedconnectd.$platform   
-    fi
-    schannelRunning=$(ps ax | grep schannel | grep -v grep) || true	
-#    echo "schannelRunning=$schannelRunning"
-    if [ "$schannelRunning" != "" ]; then
-	killall schannel.$platform   
-    fi
   ;;
 
     upgrade)

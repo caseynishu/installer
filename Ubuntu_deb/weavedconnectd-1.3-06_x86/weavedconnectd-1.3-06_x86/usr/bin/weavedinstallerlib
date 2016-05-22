@@ -12,7 +12,7 @@
 ##### Settings #####
 LIBVERSION=lib_v1.3-06_x86
 AUTHOR="Gary Worsham"
-LIBMODIFIED="April 29, 2016"
+LIBMODIFIED="May 22, 2016"
 DAEMON=weavedconnectd
 
 # ----------------------------------------
@@ -96,7 +96,13 @@ checkforWebIOPi()
     fi
 }
 
-##### Factory reset
+##### get SerialID address #####
+getSerialID()
+{
+    SerialID=$(ifconfig eth0 | grep HWaddr | awk '{ print $5 }'  | sed s/://g)
+}
+##### end get SerialID address #####
+
 factoryReset()
 {
     for f in $WEAVED_DIR/*.conf ; do
@@ -545,6 +551,7 @@ bashCheck()
 ######### Ask Function #########
 ask()
 {
+    echo
     while true; do
 	if [ "${2:-}" == "Y" ]; then
 	    prompt="Y/n"
@@ -660,7 +667,7 @@ enterVerificationCode()
     printf "\nEnter the verification code which you received by e-mail.\n"
     read registrationCode
     while [ "$passwordOK" != 1 ]; do
-        clear
+        echo
     	getNewPassword
     done
 
@@ -713,7 +720,7 @@ getNewPassword() {
 ######### Begin Portal Login #########
 userLogin () #Portal login function
 {
-    clear
+    echo
     if [ "$USERNAME" != "REPLACE_USERNAME" ]; then 
 	username="$USERNAME"
     else        
@@ -1137,7 +1144,7 @@ configureConnection()
 ######### Interactive Install #########
 interactiveInstall()
 {
-    clear
+    echo
     displayVersion $1
     bashCheck
     platformDetection
