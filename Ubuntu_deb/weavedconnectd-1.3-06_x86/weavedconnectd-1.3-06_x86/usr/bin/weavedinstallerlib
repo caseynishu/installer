@@ -17,7 +17,9 @@ DAEMON=weavedconnectd
 
 # ----------------------------------------
 # folders and files
-WEAVED_DIR=/etc/weaved/services
+WEAVED_DIR=/etc/weaved/pfiles
+WEAVED_DIR_AVAILABLE=/etc/weaved/available
+WEAVED_DIR_ACTIVE=/etc/weaved/active
 WEAVED_LIB_DIR=/usr/share/weavedconnectd
 BIN_DIR=/usr/bin
 TMP_DIR=/tmp
@@ -28,13 +30,13 @@ filename=`basename $0`
 
 # ----------------------------------------
 # startupScripts = 0, ask; 1, init.d; 2, systemd; 3, crontab
-# only crontab currently supported.
-startupScripts=3
+# 
+startupScripts=1
 STARTEMUP=weavedstart.sh
 
 # ----------------------------------------
 # web API URLs
-version=v22
+version=v26
 server=api
 loginURL=https://$server.weaved.com/$version/api/user/login
 loginAuthURL=https://$server.weaved.com/$version/api/user/login/authhash
@@ -47,7 +49,7 @@ regAccountURL=https://$server.weaved.com/$version/api/user/create/verify
 regAccountURLVerified=https://$server.weaved.com/$version/api/user/create/verified
 
 # debug, URL below is temporary
-regdeviceURL=https://wlb01.weaved.com/v24/api/device/register
+regdeviceURL=https://$server.weaved.com/$version/api/device/register
 
 # ----------------------------------------
 ##### End Settings #####
@@ -103,6 +105,7 @@ getSerialID()
 }
 ##### end get SerialID address #####
 
+##### start of factory reset
 factoryReset()
 {
     for f in $WEAVED_DIR/*.conf ; do
@@ -803,9 +806,16 @@ testLogin()
 installEnablement()
 {
     printf "."
-    if [ ! -d "WEAVED_DIR" ]; then
-	mkdir -p "$WEAVED_DIR"
-    fi
+#    if [ ! -d "WEAVED_DIR" ]; then
+#	mkdir -p "$WEAVED_DIR"
+#    fi
+#    if [ ! -d "WEAVED_DIR_ACTIVE" ]; then#
+#	mkdir -p "$WEAVED_DIR_ACTIVE"
+#    fi
+#    if [ ! -d "WEAVED_DIR_AVAILABLE" ]; then
+#	mkdir -p "$WEAVED_DIR_AVAILABLE"
+#    fi
+
     if [[ "$WEBIOPI" == "1" && "$INSTALLWEBIOPI" == "1" ]]; then
         cp /etc/webiopi/weavedconnectd.conf $TMP_DIR/"$WEAVED_PORT".conf
     else
@@ -864,7 +874,7 @@ disableStartup()
 ######### Install Start/Stop Scripts #########
 installStartStop()
 {
-        printf "."
+    printf "."
     # crontab approach
     if [ $startupScripts = 3 ]; then
 	sed s/WEAVED_PORT=/WEAVED_PORT="$WEAVED_PORT"/ < "$WEAVED_LIB_DIR"/scripts/launchweaved.sh > "$TMP_DIR"/"$WEAVED_PORT".sh
