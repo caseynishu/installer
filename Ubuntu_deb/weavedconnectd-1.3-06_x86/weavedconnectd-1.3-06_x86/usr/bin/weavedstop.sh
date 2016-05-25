@@ -1,8 +1,7 @@
 #!/bin/bash
+# weavedstop.sh - stop all weaved/remot3.it services
+# May 24, 2016
 
-# weavedStop.sh, stops all running Weaved services
+/etc/init.d/weaved stop
+/etc/init.d/weaved.schannel stop
 
-for f in /usr/bin/Weaved*.sh; do
-	$f stop
-done
-weavedschannel stop

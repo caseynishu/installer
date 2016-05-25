@@ -26,7 +26,7 @@ main()
 {
     displayVersion
 # =============================================    
-    factoryReset
+    remot3_control.sh reset
 # =============================================    
 }
 ######### End Main Program #########

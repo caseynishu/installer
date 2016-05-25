@@ -22,7 +22,8 @@ main()
 {
     displayVersion
 # =============================================    
-    enableStartup
+    update-rc.d -f weaved enable
+    update-rc.d -f weaved.schannel enable
 # =============================================   
     echo "Remot3.it services enabled at startup." 
 }

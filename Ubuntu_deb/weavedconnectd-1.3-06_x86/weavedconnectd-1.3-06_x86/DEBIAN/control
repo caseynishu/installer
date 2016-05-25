@@ -1,10 +1,10 @@
 Package: weavedconnectd
-Version: 1.3-06f-x86
+Version: 1.3-06n-x86
 Section: non-free/net
 Priority: optional
 Homepage: http://www.weaved.com
 Architecture: amd64 
-Depends: libc6 (>= 2.1), mawk (>= 1.0), net-tools (>= 1.60-24), grep (>= 2.1.6), curl (>= 7.22.0), psmisc (>= 22.15-1)
+Depends: libc6 (>= 2.1), mawk (>= 1.0), net-tools (>= 1.60-24), grep (>= 2.1.6), curl (>= 7.22.0), psmisc (>= 22.15-1), cron (>= 3.0pl1-124)
 Maintainer: Gary Worsham <gary@weaved.com>
 Description: Simplifies remote connections to computers behind NAT firewalls
  weavedconnectd allows you to connect remotely to any tcp-based service running

@@ -12,14 +12,14 @@
 ##### Settings #####
 LIBVERSION=lib_v1.3-06_x86
 AUTHOR="Gary Worsham"
-LIBMODIFIED="May 22, 2016"
+LIBMODIFIED="May 24, 2016"
 DAEMON=weavedconnectd
 
 # ----------------------------------------
 # folders and files
-WEAVED_DIR=/etc/weaved/pfiles
-WEAVED_DIR_AVAILABLE=/etc/weaved/available
-WEAVED_DIR_ACTIVE=/etc/weaved/active
+WEAVED_DIR=/etc/weaved/available
+# WEAVED_DIR_AVAILABLE=/etc/weaved/available
+# WEAVED_DIR_ACTIVE=/etc/weaved/active
 WEAVED_LIB_DIR=/usr/share/weavedconnectd
 BIN_DIR=/usr/bin
 TMP_DIR=/tmp
@@ -31,7 +31,7 @@ filename=`basename $0`
 # ----------------------------------------
 # startupScripts = 0, ask; 1, init.d; 2, systemd; 3, crontab
 # 
-startupScripts=1
+startupScripts=3
 STARTEMUP=weavedstart.sh
 
 # ----------------------------------------

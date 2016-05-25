@@ -14,18 +14,18 @@
 #
 
 # include shell script lib, must be in path or specify path here
-source /usr/bin/wlib.sh
+source /usr/bin/remot3_wlib.sh
 
 #set -x
 
 #### Settings #####
-VERSION=0.0.2
-MODIFIED="May 23, 2016"
+VERSION=0.0.3
+MODIFIED="May 24, 2016"
 #
 # Config Dir
 #
 WEAVED_DIR="/etc/weaved"
-#Installed Provisioing files go here (unprovisioned only)
+#Installed Provisioning files go here (unprovisioned only)
 PROVISION_DEFAULT="$WEAVED_DIR/pfiles"
 #created devices are in availabe
 DEVICES_AVAILABLE="$WEAVED_DIR/available"
@@ -111,11 +111,51 @@ printf "\n%s\n\n\n" "$man_text"
 usage()
 {
     echo "Usage: $0 command " >&2
-    echo "  commands : types typesl status enable disable start stop restart bprovision update updatedeb" >&2
+    echo "  commands : types typesl status enable disable start stop restart bprovision update updatedeb reset" >&2
     echo "Version $VERSION Build $MODIFIED" >&2
     exit 1 
 }
 
+#
+# isDirEmpty dir
+# returns 1 for empty
+#
+isDirEmpty()
+{
+    ret=0
+    err="$(ls -A $1 2>&1)"
+    if [ "$?" -ne 0 ]; then
+        ret=1
+    fi
+    return $ret
+}
+
+
+#
+# factory reset
+#
+reset()
+{
+    # delete files
+    null=$(rm -f $WEAVED_DIR/*.ver 2>&1)
+    null=$(rm -f $DEVICES_AVAILABLE/* 2>&1)
+    null=$(rm -f $DEVICES_ACTIVE/* 2>&1)
+
+    # check for success
+    isDirEmpty "$WEAVED_DIR/*ver"
+    if [ "$?" -eq 1 ]; then
+        isDirEmpty "$DEVICES_AVAILABLE/*"
+        if [ "$?" -eq 1 ]; then
+            isDirEmpty "$DEVICES_ACTIVE/*"
+            if [ "$?" -eq 1 ]; then
+                echo "OK: factory reset"
+                return 0
+            fi
+        fi
+    fi
+    echo "FAIL: failed to reset files"
+    return 1
+}
 
 #
 # Customize this for your product
@@ -126,8 +166,8 @@ get_registration_data()
         hardware_id="00:ab:cd:ef:00:FF"
         registration_key="MYSECRET"
     else
-        hardware_id=$(cat /sys/class/net/$REG_ID_ADAPTER/address)
-        registration_key=$(cat /sys/class/net/$REG_KEY_ADAPTER/address) 
+        hardware_id=$(cat /sys/class/net/$REG_ID_ADAPTER/address | sed s/://g)
+        registration_key=$(cat /sys/class/net/$REG_KEY_ADAPTER/address | sed s/://g) 
     fi
     if [ $VERBOSE -gt 0 ]; then
         printf "Hardware ID is %s registration key is %s\n" $hardware_id $registration_key
@@ -409,28 +449,6 @@ check_auth_cache()
     return 0
 }
 
-
-#
-#parse devices
-#
-# fills device_array on return
-#
-parse_device()
-{
-    #parse devices data into lines, this old code is not MacOS mach compatible
-    #lines=$(echo "$1" | sed  's/},{/}\n{/g' )
-    #lines=$(echo "$in" | sed  's/},{/}\'$'\n''{/g' )
-    #lines=$(echo "$1" | sed  's/},{/}|{/g' )
-    #parse lines into array 
-    #readarray -t device_array < <( echo "$lines" )
-    # mac friendly replacement
-    #device_array=( $(echo $lines | cut -d $'\n' -f1) )
-
-    # New optimized code that works with MacOS
-    lines=$(echo "$1" | sed  's/},{/}|{/g' )
-    IFS='|'
-    device_array=(  $lines )
-}
 
 #
 # match_device 
@@ -1065,6 +1083,10 @@ case "$command" in
     "updatedeb")
         shift
         updatedeb $@
+        ;;
+    "reset")
+        shift
+        reset $@
         ;;
     *)
         usage

@@ -25,7 +25,8 @@ main()
 {
     displayVersion
 # =============================================    
-    disableStartup
+    update-rc.d -f weaved disable
+    update-rc.d -f weaved.schannel disable
 # =============================================  
     echo "Remot3.it services disabled at startup."   
 }
