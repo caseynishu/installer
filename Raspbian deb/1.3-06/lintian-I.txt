@@ -1,8 +1,0 @@
-I: weavedconnectd: binary-has-unneeded-section usr/bin/schannel.beagle .comment
-I: weavedconnectd: binary-has-unneeded-section usr/bin/schannel.pi .comment
-I: weavedconnectd: hardening-no-fortify-functions usr/bin/schannel.pi
-I: weavedconnectd: binary-has-unneeded-section usr/bin/weavedconnectd.beagle .comment
-I: weavedconnectd: hardening-no-fortify-functions usr/bin/weavedconnectd.beagle
-I: weavedconnectd: binary-has-unneeded-section usr/bin/weavedconnectd.pi .comment
-I: weavedconnectd: hardening-no-fortify-functions usr/bin/weavedconnectd.pi
-I: weavedconnectd: no-md5sums-control-file
