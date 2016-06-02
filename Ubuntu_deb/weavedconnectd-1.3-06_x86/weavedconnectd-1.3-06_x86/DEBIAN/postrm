@@ -44,7 +44,7 @@ case "$1" in
     echo "'Settings' link in the web portal Service List to delete these."
   ;;
 
-  remove|failed-upgrade|abort-install|abort-upgrade|disappear)
+  remove|failed-upgrade|abort-install|abort-upgrade|disappear|abort-remove)
     if [ -d /usr/share/weavedconnectd ]; then
       rm -r /usr/share/weavedconnectd
     fi

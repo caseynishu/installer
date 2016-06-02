@@ -43,19 +43,19 @@ SCRIPTNAME=/etc/init.d/$NAME
 #
 do_start()
 {
-	# do bulk provisioning
-	info=$(remot3_control.sh bprovision all)
-	logger [Weaved] $info
-    sleep 2
+	# startup monitor
+	nohup /usr/bin/remot3_start.sh > /tmp/remot3_start.log 2>&1 &
+	#info=$(remot3_control.sh bprovision all)
+	#logger [Weaved] $info
+    #sleep 2
     # Update Version Numbers if needed
     # first check package and see if we need to update weaved software version info
-    info=$(remot3_control.sh updatedeb weavedconnectd)
-    logger [Weaved] $info
+    #info=$(remot3_control.sh updatedeb weavedconnectd)
+    #logger [Weaved] $info
     # update firmware version info
-    fwver=$(mpd-get-fwversion | awk -F ":" '{ print $2 }')
-    info=$(remot3_control.sh update system_firmware "$fwver")
-    logger [Weaved] $info
-
+    #fwver=$(mpd-get-fwversion | awk -F ":" '{ print $2 }')
+    #info=$(remot3_control.sh update system_firmware "$fwver")
+    #logger [Weaved] $info
 
 	# start things up
 	remot3_control.sh start all

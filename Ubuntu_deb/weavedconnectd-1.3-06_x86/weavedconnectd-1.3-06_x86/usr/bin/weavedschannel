@@ -6,9 +6,9 @@
 #  Weaved, Inc. Copyright 2016. All rights reserved.
 #
 
-VERSION="v1.33"
+VERSION="v1.34"
 AUTHOR="Gary Worsham"
-MODIFIED="March 24, 2016"
+MODIFIED="June 2, 2016"
 DAEMON=schannel.i686
 BIN_DIR=/usr/bin
 PID_DIR=/var/run

@@ -20,8 +20,8 @@
 #
 
 #### Settings #####
-VERSION=0.2
-MODIFIED="March 28, 2016"
+VERSION=0.3
+MODIFIED="June 02, 2016"
 #
 # Log to system log if set to 1
 LOGGING=1

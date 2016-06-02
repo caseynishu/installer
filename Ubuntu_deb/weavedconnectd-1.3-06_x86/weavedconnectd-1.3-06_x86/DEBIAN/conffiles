@@ -1,4 +1,3 @@
-/etc/weaved/README.TXT
 /etc/weaved/sample_bulk_reg_file.csv
 /etc/weaved/firmware.ver
 /etc/weaved/weavedconnectd.ver
@@ -6,7 +5,6 @@
 /etc/weaved/pfiles/ssh.i686
 /etc/weaved/pfiles/web.i686
 /etc/weaved/pfiles/web8080.i686
-/etc/init/weaved.conf
-/etc/init/weaved.schannel.conf
+/etc/weaved/schannel.conf
 /etc/init.d/weaved
 /etc/init.d/weaved.schannel

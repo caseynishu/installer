@@ -20,7 +20,7 @@ PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC="Description of the service"
 NAME=schannel.i686
 DAEMON=/usr/bin/$NAME
-CONF_FILE=/etc/init/weaved.schannel.conf
+CONF_FILE=/etc/weaved/schannel.conf
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
 #

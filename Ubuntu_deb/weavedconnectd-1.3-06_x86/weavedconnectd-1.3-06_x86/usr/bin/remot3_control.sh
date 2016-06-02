@@ -19,13 +19,13 @@ source /usr/bin/remot3_wlib.sh
 #set -x
 
 #### Settings #####
-VERSION=0.0.3
-MODIFIED="May 24, 2016"
+VERSION=0.0.4
+MODIFIED="June 2, 2016"
 #
 # Config Dir
 #
 WEAVED_DIR="/etc/weaved"
-#Installed Provisioning files go here (unprovisioned only)
+#Installed Provisioing files go here (unprovisioned only)
 PROVISION_DEFAULT="$WEAVED_DIR/pfiles"
 #created devices are in availabe
 DEVICES_AVAILABLE="$WEAVED_DIR/available"
@@ -222,7 +222,7 @@ update_version()
             fi
         else
             echo "FAIL: Bulk service not enabled, no update to service possible"
-            return 1
+            return 2
         fi
     else
         if [ -n "$1" ]; then
@@ -230,7 +230,7 @@ update_version()
         else
             echo "FAIL: no name or version number specified"
         fi
-        return 2
+        return 1
     fi
 }
 
@@ -689,14 +689,14 @@ bprovisionit()
                 printf "Curl Call failed with error. output= %s\n" $status
             fi
             echo "FAIL: error talking to server"
-            return 2
+            return 1
         ;;
         esac 
 
 
     else
         if [ $VERBOSE -gt 0 ]; then
-            printf "Could not get IE from provisioning file for %s\n" $1
+            printf "Provisioning file corrupt for %s\n" $1
         fi
         return 2
     fi
@@ -706,8 +706,10 @@ bprovisionit()
 # bulk provision
 bprovision()
 {
-    ret=0
+    ret=1
+    rc=1
     if [ -z "${@}" ]; then
+        ret=3
         echo "ERROR: enable requires one parameter, either specific device name or all for all devices"
     else
         if [ "$1" == "all" ] || [ -z "${@}" ]; then
@@ -716,17 +718,22 @@ bprovision()
             do
                 base=$(basename $f)
                 if [ "$base" != "*" ]; then
-                    ret=0
                     #see if this is also in available, if not try to provision
                     if [ ! -f "$DEVICES_AVAILABLE/$base" ]; then
+                        ret=0
                         # Try to bulk provision
                         bprovisionit $base
-			sleep 1
+                        if [ "$?" -eq 0 ]; then
+                            # set that we have done something
+                            rc=0
+                        fi
+			            sleep 1
                     fi
                 fi
             done
             if [ $ret -ne 0 ]; then
                 echo "FAIL: nothing to provision"
+                ret=1
             fi
         else
             if [ -e "$PROVISION_DEFAULT/$1" ]; then   
@@ -735,12 +742,13 @@ bprovision()
                     bprovisionit $1
                 fi
             else
-                echo "FAIL: $1 not found"    
+                echo "FAIL: $1 not found"
+                ret=1
             fi 
         fi
     fi
 
-    return 0
+    return $rc
 }
 
 
@@ -1006,10 +1014,6 @@ create_config
 ################################################
 while getopts lvhmcr OPT; do
     case "$OPT" in
-      c)
-        cleanup_files
-        exit 0
-        ;;
       p)
         echo "Installed Provisioning Types"
         get_provisioning_types 1
@@ -1019,8 +1023,6 @@ while getopts lvhmcr OPT; do
         manpage
         exit 0
         ;;
-      l)
-        LIST_ONLY=1 ;;
       v)
         VERBOSE=$((VERBOSE+1)) ;;
       h | [?])
@@ -1094,7 +1096,7 @@ case "$command" in
         ;;
 esac
 
-exit 0
+exit $?
 
 
 

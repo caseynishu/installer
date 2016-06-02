@@ -3,7 +3,8 @@
 # Weaved Shell Script Lib - Just a simple library of handy shell script functions
 #
 # mike@weaved
-#
+# version 0.99
+# June 2, 2016
 #
 # Notes
 #

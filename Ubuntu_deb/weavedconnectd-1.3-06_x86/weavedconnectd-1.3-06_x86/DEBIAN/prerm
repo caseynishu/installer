@@ -7,7 +7,7 @@ logger "prerm $1"
 
 case "$1" in
 
-    remove|upgrade|failed-upgrade|deconfigure)
+    remove|upgrade|failed-upgrade|deconfigure|abort-remove)
   ;;
 
     upgrade)

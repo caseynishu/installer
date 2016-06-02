@@ -13,7 +13,7 @@
 ##### Settings #####
 VERSION=v1.3-06_Disable_Startup
 AUTHOR="Gary Worsham"
-MODIFIED="March 31, 2016"
+MODIFIED="June 2, 2016"
 DEBUG="1"
 
 #==========================================================================
