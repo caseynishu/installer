@@ -5,6 +5,6 @@
 BINDIR=/usr/bin
 
 packageName=weavedconnectd-1.3-06
-sudo gedit "$packageName"$BINDIR/weavedinstaller "$packageName"$BINDIR/weavedinstaller_OEM "$packageName"$BINDIR/weavedinstallerlib "$packageName"$BINDIR/weavedfactoryreset
+sudo gedit "$packageName"$BINDIR/weavedinstaller "$packageName"$BINDIR/remot3it_register "$packageName"$BINDIR/weavedinstallerlib "$packageName"$BINDIR/weavedfactoryreset "$packageName"$BINDIR/remot3it_migrate_from_weaved
 sudo rm "$packageName"$BINDIR/*~
 

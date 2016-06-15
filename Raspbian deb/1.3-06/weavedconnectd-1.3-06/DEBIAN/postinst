@@ -25,15 +25,15 @@ case "$1" in
 esac
 echo
 echo "================================================================================"
-echo "================================================================================"
 echo
-echo "Run sudo weavedinstaller to interactively add Weaved remote connection services."
+echo "Run sudo weavedinstaller to interactively add remot3.it connection services."
 echo
 echo "================================================================================"
 echo "If you are adding Weaved services with minimal interaction:"
-echo "Copy and edit /usr/bin/weavedinstaller_OEM to add account credentials"
+echo "Copy and edit /usr/bin/remot3it_register to add account credentials"
 echo "and definitions of services you wish to install."
 echo
-echo "Run sudo weavedinstaller_OEM to add Weaved remote connection services."
-echo "See additional information in the weavedinstaller_OEM script."
+echo "Finally, run sudo remot3it_register to add remot3.it remote connection services."
+echo
+echo "See additional information in the remot3it_register script."
 echo
