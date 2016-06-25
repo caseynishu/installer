@@ -1,1 +1,0 @@
-E: weavedconnectd: unstripped-binary-or-object usr/bin/udpsend

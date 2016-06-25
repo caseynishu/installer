@@ -1,5 +1,0 @@
-I: weavedconnectd: binary-has-unneeded-section usr/bin/schannel.i686 .comment
-I: weavedconnectd: binary-has-unneeded-section usr/bin/schannel.x86 .comment
-I: weavedconnectd: binary-has-unneeded-section usr/bin/weavedconnectd.i686 .comment
-I: weavedconnectd: binary-has-unneeded-section usr/bin/weavedconnectd.linux .comment
-I: weavedconnectd: no-md5sums-control-file
