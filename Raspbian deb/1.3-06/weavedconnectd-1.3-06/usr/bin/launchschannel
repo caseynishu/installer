@@ -6,14 +6,14 @@
 #  Weaved, Inc. Copyright 2016. All rights reserved.
 #
 
-VERSION="v1.32"
+VERSION="v1.33"
 AUTHOR="Gary Worsham"
-MODIFIED="February 25, 2016"
+MODIFIED="June 25, 2016"
 DAEMON=schannel.pi
 BIN_DIR=/usr/bin
 PID_DIR=/var/run
 BIN_PATH=$BIN_DIR/$DAEMON
-CONF_FILE=/etc/weaved/$DAEMON.conf
+CONF_FILE=/etc/weaved/schannel.conf
 PIDPATH=$PID_DIR/$DAEMON.pid
 LOG_FILE=/dev/null
 LOG_DIR=/var/log
