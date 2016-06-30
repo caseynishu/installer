@@ -21,7 +21,7 @@
 ##### Settings #####
 VERSION=v1.3-06_OEM
 AUTHOR="Gary Worsham"
-MODIFIED="May 18, 2016"
+MODIFIED="June 30, 2016"
 DEBUG="0"
 #=======================================================================
 # Weaved recommends running this script (with real username/password) from /tmp folder.
@@ -30,8 +30,8 @@ DEBUG="0"
 #
 # As supplied for demo, script will prompt you for your username and password.
 #
-USERNAME="REPLACE_USERNAME"
-PASSWD="REPLACE_PASSWORD"
+USERNAME=""
+PASSWORD=""
 AUTHHASH="REPLACE_AUTHHASH"
 APIKEY="WeavedDeveloperToolsWy98ayxR"
 

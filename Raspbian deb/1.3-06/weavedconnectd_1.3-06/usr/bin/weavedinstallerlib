@@ -12,7 +12,7 @@
 ##### Settings #####
 LIBVERSION=lib_v1.3-06_Pi
 AUTHOR="Gary Worsham"
-LIBMODIFIED="June 08, 2016"
+LIBMODIFIED="June 30, 2016"
 DAEMON=weavedconnectd
 
 # ----------------------------------------
@@ -743,7 +743,7 @@ getNewPassword() {
 ######### Begin Portal Login #########
 userLogin () #Portal login function
 {
-    echo "weavedinstallerlib Username = $USERNAME Password = $PASSWORD"
+#    echo "weavedinstallerlib Username = $USERNAME Password = $PASSWORD"
 
     if [ "$USERNAME" != "" ]; then 
 	username="$USERNAME"
