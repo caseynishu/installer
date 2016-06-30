@@ -1,0 +1,32 @@
+#!/bin/sh
+# postinst script for weavedconnectd
+#
+
+set -e
+
+logger "Weaved Deb installer postinst $1"
+ 
+case "$1" in
+    purge|remove|failed-upgrade|abort-install|abort-upgrade|disappear|abort-remove)
+    ;;
+
+    configure|upgrade)
+    if [ -f /usr/bin/weavedstart.sh ]; then
+        logger "Restarting Weaved daemons"
+	weavedstart.sh    
+    fi
+  ;;
+
+  *)
+    echo "postinst called with unknown argument \`$1'" >&2
+    exit 1
+  ;;
+
+esac
+
+echo "================================================================================"
+echo
+echo "Run sudo weavedinstaller to interactively add Weaved remote connection services."
+echo
+echo "================================================================================"
+
