@@ -1,14 +1,14 @@
 #!/bin/bash
 
-#  launchschannel.sh
+#  weavedschannel.sh
 #  startup script for the server channel listener
 #  one instance of this can serve all installed Weaved daemons
 #  Weaved, Inc. Copyright 2016. All rights reserved.
 #
 
-VERSION="v1.32"
+VERSION="v1.34"
 AUTHOR="Gary Worsham"
-MODIFIED="March 2, 2016"
+MODIFIED="June 30, 2016"
 DAEMON=schannel.pi
 BIN_DIR=/usr/bin
 PID_DIR=/var/run

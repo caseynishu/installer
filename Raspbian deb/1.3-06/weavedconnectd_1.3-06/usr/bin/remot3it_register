@@ -1,10 +1,11 @@
 #!/bin/bash
 
-#  weavedinstaller_OEM
+#  remot3it_register
 #  for mfg line configuration of services, or preparation of a master image for cloning.
 #
-#  Run 'sudo weavedinstaller_OEM' to install Weaved
+#  Run 'sudo remot3it_register' to install Weaved
 #  attachment services for tcp listeners.
+#
 #  Edit the makeConnection lines towards the bottom of this file to specify
 #  which Weaved services you wish to install.
 #
@@ -19,9 +20,9 @@
 #
 
 ##### Settings #####
-VERSION=v1.3-06_OEM
+VERSION=v1.3-06
 AUTHOR="Gary Worsham"
-MODIFIED="May 18, 2016"
+MODIFIED="June 30, 2016"
 DEBUG="0"
 #=======================================================================
 # Weaved recommends running this script (with real username/password) from /tmp folder.
