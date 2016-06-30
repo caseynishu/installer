@@ -10,7 +10,7 @@
 target=192.168.2.63
 
 pkg=weavedconnectd
-pkgFolder=weavedconnectd-1.3-06
+pkgFolder=weavedconnectd_1.3-06
 gzip -9 "$pkgFolder"/usr/share/doc/$pkg/*.man
 sudo chown root:root "$pkgFolder"/usr/share/doc/$pkg/*.gz
 dpkg-deb --build "$pkgFolder"
