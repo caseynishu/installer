@@ -6,8 +6,8 @@
 #
 # 
 #----------------------------------------------------------
-VERSION="0.0.3"
-MODIFIED="June 28, 2016"
+VERSION="0.0.4"
+MODIFIED="June 30, 2016"
 VERBOSE=1
 
 ########################################
@@ -199,4 +199,30 @@ translate()
 }
 
 ##############################################################################
+prepare_and_reboot()
+{
+    if [ ! -d "/root/.remot3.it" ]; then
+        mkdir "/root/.remot3.it"
+    fi
+
+# save command and parameters for pass of uncompleted command through reboots
+# cron reboot job needs to be in place to scan and execute commands left in the file above
+REBOOTFILE=/root/.remot3.it/reboot.sh
+    echo "#!/bin/bash" > "$REBOOTFILE"
+    echo "# REBOOT DEVICE" >> "$REBOOTFILE"
+    echo "source /usr/bin/remot3_script_lib" >> "$REBOOTFILE"
+    echo "source /usr/bin/weavedinstallerlib" >> "$REBOOTFILE"
+    echo "wait_for_internet" >> "$REBOOTFILE"
+    echo "sleep 5" >> "$REBOOTFILE"
+    echo "${TOOL_DIR}/task_notify.sh a $1 $2 'Rebooted.'" >> $REBOOTFILE
+    echo "${TOOL_DIR}/task_notify.sh 1 $1 $2 'Job Complete'" >> $REBOOTFILE
+    echo "cronRemoveLine '@reboot bash -x $REBOOTFILE >> /tmp/rebootlog'" >> $REBOOTFILE
+    echo "rm $REBOOTFILE" >> $REBOOTFILE
+    chmod +x $REBOOTFILE
+    cronAddLine "@reboot bash -x $REBOOTFILE >> /tmp/rebootlog"
+    sync
+    sleep 2
+    /sbin/reboot
+}
+
 
