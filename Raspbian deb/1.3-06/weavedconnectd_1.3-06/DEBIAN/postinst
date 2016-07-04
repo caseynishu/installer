@@ -12,6 +12,10 @@ case "$1" in
 
     configure|upgrade)
     if [ -f /usr/bin/weavedstart.sh ]; then
+# need to handle rename of launchschannel in previous versions to weavedschannel
+	sed s/launchschannel/weavedschannel/ < /usr/bin/weavedstart.sh > /tmp/weavedstart.sh
+	mv /tmp/weavedstart.sh /usr/bin
+	chmod +x /usr/bin/weavedstart.sh
         logger "Restarting Weaved daemons"
 	weavedstart.sh    
     fi
