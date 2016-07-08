@@ -22,7 +22,7 @@
 ##### Settings #####
 VERSION=v1.3-06
 AUTHOR="Gary Worsham"
-MODIFIED="June 30, 2016"
+MODIFIED="July 08, 2016"
 DEBUG="0"
 #=======================================================================
 # Weaved recommends running this script (with real username/password) from /tmp folder.
@@ -59,7 +59,7 @@ STARTDAEMONSONREBOOT="1"
 
 #==========================================================================
 
-source weavedinstallerlib
+source /usr/bin/weavedlibrary
 
 ######### Main Program #########
 main()

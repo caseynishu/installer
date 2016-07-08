@@ -28,7 +28,7 @@ APIKEY="WeavedDeveloperToolsWy98ayxR"
 
 #==========================================================================
 
-source weavedinstallerlib
+source /usr/bin/weavedlibrary
 
 ######### Main Program #########
 main()

@@ -11,7 +11,7 @@
 ##### Settings #####
 VERSION=v1.3-06_Pi
 AUTHOR="Gary Worsham"
-MODIFIED="June 30, 2016"
+MODIFIED="July 08, 2016"
 
 USERNAME=""
 PASSWORD=""
@@ -28,7 +28,7 @@ MAXSEL=6
 
 STARTDAEMONSONREBOOT="1"
 
-source weavedinstallerlib
+source /usr/bin/weavedlibrary
 
 ######### Main Program #########
 main()

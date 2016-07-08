@@ -20,8 +20,8 @@
 #
 
 #### Settings #####
-VERSION=0.2
-MODIFIED="March 28, 2016"
+VERSION=0.3
+MODIFIED="June 02, 2016"
 #
 # Log to system log if set to 1
 LOGGING=1
@@ -221,13 +221,15 @@ case $cmd in
 
         resp=$($CURL $CURL_OPS -w "%{http_code}\\n" -X POST -o "$OUTPUT" $URL -d "$data")
 
-        if [ "$resp" -eq 200 ]; then
-            # echo URL "return USERID"
-            ret=$(jsonval "$(cat $OUTPUT)" "status") 
-            echo "$resp $ret"
-        else
-            return_code $resp
-        fi
+	if [ "$resp" -eq 200 ]; then
+           # echo URL "return USERID"
+           ret=$(jsonval "$(cat $OUTPUT)" "status")
+           echo "$resp $ret"
+       else
+           ret=$(jsonval "$(cat $OUTPUT)" "reason")
+           logger "[task_notify.sh failed with $resp, $ret]"
+           return_code $resp
+       fi
     ;;
 
     "1")
