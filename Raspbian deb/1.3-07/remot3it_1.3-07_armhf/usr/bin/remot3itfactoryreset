@@ -1,0 +1,33 @@
+#!/bin/bash
+
+#  remot3itfactoryreset
+#  Restores any installed services to a fresh condition.
+#  This has the effect of unregistering the service from
+#  the Weaved account, as the UID is abandoned.
+#
+#  Run 'sudo remot3itfactoryreset' to factory reset any
+#  installed Weaved attachment services for tcp listeners.
+#  Weaved, Inc. Copyright 2016. All rights reserved.
+#
+
+##### Settings #####
+VERSION=v1.3-07_Factory_Reset
+AUTHOR="Gary Worsham"
+MODIFIED="July 29, 2016"
+DEBUG="1"
+
+#==========================================================================
+
+source /usr/bin/remot3itlibrary
+
+######### Main Program #########
+main()
+{
+    displayVersion
+# =============================================    
+    factoryReset
+# =============================================    
+}
+######### End Main Program #########
+# you can optionally call this script with username and authhash as cmd line parameters
+main $1 $2

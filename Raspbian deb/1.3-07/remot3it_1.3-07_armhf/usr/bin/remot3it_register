@@ -1,0 +1,144 @@
+#!/bin/bash
+
+#  remot3it_register
+#  for mfg line configuration of services, or preparation of a master image for cloning.
+#
+#  Run 'sudo remot3it_register' to install remot3it
+#  attachment services for tcp listeners.
+#
+#  Edit the makeConnection lines towards the bottom of this file to specify
+#  which remot3it services you wish to install.
+#
+#  Installs these remot3it services:
+#
+#  rmt3
+#  ssh on port 22 (commented out)
+#  http on port 80 (commented out)
+#  tcp on port 3389 (commented out)
+#
+#  remot3it, Inc. Copyright 2016. All rights reserved.
+#
+
+##### Settings #####
+VERSION=v1.3-07
+AUTHOR="Gary Worsham"
+MODIFIED="July 29, 2016"
+DEBUG="0"
+#=======================================================================
+# remot3it recommends running this script (with real username/password) from /tmp folder.
+# e.g. use wget to copy master script to /tmp from a local web server, then run it.
+# on next boot, /tmp folder is wiped
+#
+# As supplied for demo, script will prompt you for your username and password.
+#
+USERNAME=""
+PASSWORD=""
+AUTHHASH="REPLACE_AUTHHASH"
+APIKEY="remot3itDeveloperToolsWy98ayxR"
+
+#==================================================================================
+# If REGISTERSERVICE is set to 1, then account credentials need to be supplied, either above,
+# or if those are left at default values, then the script asks for username and password.
+# If REGISTERSERVICE is 0, then the enablement files, binaries, installation and startup scripts
+# are installed, but the services are not registered.  In this state they are "ready to register"
+# by the end user.
+
+# if REGISTERSERVICE is 1, then it means that we need the account credentials to register the
+# services at the time of running this script.
+# if REGISTERSERVICE is 0, then all we do is to install the daemon, scripts and initialized enablement files
+# in anticipation of either bulk registration or registering via developer.weaved.com.
+
+REGISTERSERVICE="1"
+
+#==================================================================================
+# If STARTDAEMONSONREBOOT is set to "1", then following the execution of the weavedinstaller_OEM script,
+# the next time the device is rebooted, the daemons will be started.
+# If it is preferred that the daemons not autostart on the next reboot, set STARTDAEMONSONREBOOT to "0".
+
+STARTDAEMONSONREBOOT="1"
+
+#==========================================================================
+
+source /usr/bin/weavedlibrary
+
+######### Main Program #########
+main()
+{
+    displayVersion
+# bashCheck can be commented out on known good platform
+    bashCheck
+    platformDetection
+    echo "Platform = " $PLATFORM 
+#-----------------------------------------------------------------------
+#   each OEM should obtain an APIKEY from remot3it applications engineering
+#
+    if [ "$APIKEY" == "" ]; then
+        echo "APIKEY is blank.  Please contact remot3it applications engineering for an API key."
+	exit
+    fi
+#-----------------------------------------------------------------------
+#   weavedCompatibility can be commented out on known good network
+#   weavedCompatibility
+
+    if [ "$REGISTERSERVICE" == "1" ]; then
+    	if [ "$1" != "" ]; then
+            USERNAME=$1
+        fi
+        if [ "$2" != "" ]; then
+            PASSWORD=$2
+        fi
+        userLogin
+        testLogin
+# =============================================    
+# $SERVICEBASENAME is the base name of all installed services installed
+# with weavedinstaller_OEM
+# $SerialID equates to a random number concatenated with 
+# the Ethernet MAC address
+# this is the HWID for all services registered from a given device.
+# This function is defined in /usr/bin/weavedinstallerlib.
+#
+# By default, we are setting SERVICEBASENAME to $mac
+# This forms the first part of the displayed service name.
+# OEM can supply some other expression for getSerialID or SERVICEBASENAME here
+# 
+        getSerialID
+        echo "Serial =" $SerialID
+        SERVICEBASENAME="$mac"
+        echo "SERVICEBASENAME = $SERVICEBASENAME"
+	echo
+    fi
+# =============================================    
+#
+# ----- Edit the lines below to specify which services you want to have installed
+#
+# line syntax is:
+# makeConnection <protocol> <port> <serviceName>
+# <protocol> should be one of: ssh, web, vnc, tcp, rmt3
+# rmt3 is used to enable Remote3.it fleet management services
+#
+# <port> is the port number of the service you wish to connect to
+# except for rmt3, set <port> to 65535
+#
+# <protocol> and <port> should be unique for each entry, i.e. you cannot have multiple
+# entries which are "ssh 22" but you could have "ssh 22", "ssh 23", "tcp 22".
+#
+# <name> is a quote-enclosed expression which should be unique for every device
+# 
+# =============================================    
+    makeConnection rmt3 65535 "$SERVICEBASENAME-rmt3"
+
+#    makeConnection ssh 22 "$SERVICEBASENAME-ssh-22"
+#    makeConnection web 80 "$SERVICEBASENAME-web-80"
+#    makeConnection tcp 3389 "$SERVICEBASENAME-tcp-3389"
+# =============================================  
+
+    echo
+    if [ "$REGISTERSERVICE" == "0" ]; then
+	echo "Installed the following service enablement files:"
+	ls -l $WEAVED_DIR
+    fi
+    echo
+}
+######### End Main Program #########
+# you can optionally call this script with username and authhash as cmd line parameters
+main $1 $2

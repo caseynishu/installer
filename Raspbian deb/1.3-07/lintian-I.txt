@@ -1,0 +1,4 @@
+I: remot3it: binary-has-unneeded-section usr/bin/schannel.pi .comment
+I: remot3it: hardening-no-fortify-functions usr/bin/schannel.pi
+I: remot3it: binary-has-unneeded-section usr/bin/weavedconnectd.pi .comment
+I: remot3it: hardening-no-fortify-functions usr/bin/weavedconnectd.pi

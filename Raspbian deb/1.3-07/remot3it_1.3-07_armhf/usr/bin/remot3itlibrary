@@ -1,0 +1,1483 @@
+#!/bin/bash
+
+#  remot3itlibrary
+#
+#  Provides library functions to install, configure or remove remot3it
+#  attachment services for tcp listeners.
+#  Interactive and preconfigured modes supported.
+#
+#  remot3it, Inc. Copyright 2016. All rights reserved.
+#
+
+##### Settings #####
+LIBVERSION=lib_v1.3-07_Pi
+AUTHOR="Gary Worsham"
+LIBMODIFIED="August 01, 2016"
+DAEMON=weavedconnectd
+
+# ----------------------------------------
+# folders and files
+REMOT3IT_DIR=/etc/remot3it/available
+# REMOT3IT_DIR_AVAILABLE=/etc/remot3it/available
+# REMOT3IT_DIR_ACTIVE=/etc/remot3it/active
+REMOT3IT_LIB_DIR=/usr/share/remot3it
+SERIALNUMBERFILE=/etc/remot3it/serial.txt
+BIN_DIR=/usr/bin
+TMP_DIR=/tmp
+NOTIFIER=remot3itnotify.sh
+INIT_DIR=/etc/init.d
+PID_DIR=/var/run
+filename=`basename $0`
+
+# ----------------------------------------
+# startupScripts = 0, ask; 1, init.d; 2, systemd; 3, crontab
+# only crontab currently supported.
+startupScripts=1
+STARTEMUP=remot3itstart.sh
+
+# ----------------------------------------
+# web API URLs
+version=v24
+server=api
+loginURL=https://$server.remot3it.com/$version/api/user/login
+loginAuthURL=https://$server.remot3it.com/$version/api/user/login/authhash
+unregdeviceURL=https://$server.remot3it.com/$version/api/device/list/unregistered
+preregdeviceURL=https://$server.remot3it.com/$version/api/device/create
+deleteURL=https://$server.remot3it.com/$version/api/device/delete
+connectURL=https://$server.remot3it.com/$version/api/device/connect
+deviceURL=https://$server.remot3it.com/$version/api/device
+regAccountURL=https://$server.remot3it.com/$version/api/user/create/verify
+regAccountURLVerified=https://$server.remot3it.com/$version/api/user/create/verified
+regdeviceURL=https://$server.remot3it.com/$version/api/device/register
+
+# ----------------------------------------
+##### End Settings #####
+
+##### Version #####
+displayVersion()
+{
+    printf "remot3it connection installer Version: %s %s \n" "$VERSION" "$LIBVERSION"
+    printf "Modified: %s (library) %s \n" "$MODIFIED" "$LIBMODIFIED"
+    # check for sudo user at this point
+    if [[ $EUID -ne 0 ]]; then
+        echo "Running remot3itinstaller requires root access." 1>&2
+        echo "Please run sudo remot3itinstaller instead of remot3itinstaller." 1>&2
+	exit 1
+    fi
+}
+##### End Version #####
+
+##### Compatibility checker #####
+remot3itCompatibility()
+{
+    printf "\nChecking your network for compatibility... \n\n"
+    $BIN_DIR/"$DAEMON"."$PLATFORM" -n > $TMP_DIR/.testdaemon
+    grep OK $TMP_DIR/.testdaemon > $TMP_DIR/.networkDump
+    number=$(cat $TMP_DIR/.networkDump | wc -l)
+
+    if [ "$number" -ge 3 ]; then
+        printf "Your network is compatible with remot3it services.\n\n"
+        sleep 2
+    elif [ "$(cat $TMP_DIR/.networkDump | grep "Send to" | grep "OK" | wc -l)" -lt 1 ]; then
+        printf "Unfortunately, it appears your network may not currently be compatible with remot3it services.\n"
+        printf "Please visit https://forum.remot3it.com for help.\n\n"
+        exit
+    fi
+}
+##### End Compatibility checker #####
+
+##### get SerialID address #####
+# Pi serial is a UUID concatenated with eth0 MAC address
+# if the file /etc/remot3it/serial.txt does not exist, create the
+# value and write it there.  Otherwise read the value from then
+# file.
+# mac is also determined here as it is used for the SERVICEBASENAME
+# in remot3itinstaller_OEM
+
+getSerialID()
+{
+    mac=$(ifconfig eth0 | grep HWaddr | awk '{ print $5 }')
+    if [ -f "$SERIALNUMBERFILE" ]; then
+	SerialID=$(cat $SERIALNUMBERFILE)
+    else
+    	num=20
+    	random=$(tr -dc A-Za-z0-9 < /dev/urandom | dd bs=$num count=1 2> /dev/null)
+	SerialID="$mac-$random"
+
+	echo "$SerialID" > "$SERIALNUMBERFILE"
+	chmod -w "$SERIALNUMBERFILE"
+    fi
+    logger "remot3it SerialID is $SerialID"
+}
+
+##### end get SerialID address #####
+
+##### start of factory reset
+factoryReset()
+{
+    for f in $REMOT3IT_DIR/*.conf ; do
+	printf "$f\n"
+    done 
+}
+##### end of factory reset
+
+##### Check for existing services #####
+checkforServices()
+{
+    services="$REMOT3IT_DIR/remot3it*.conf"
+    firstFile=$(echo $services | awk {'print $1'})
+	echo "" > $TMP_DIR/.uidlist.txt
+    if [ -e $firstFile ]; then
+	ls "$REMOT3IT_DIR"/remot3it*.conf > $TMP_DIR/.legacy_instances
+	instanceNumber=$(cat $TMP_DIR/.legacy_instances | wc -l)
+	if [ -f $TMP_DIR/.instances ]; then
+	    rm $TMP_DIR/.instances
+	fi
+	echo -n "" > $TMP_DIR/.instances
+	for i in $(seq 1 $instanceNumber); do
+	    instanceName=$(awk "NR==$i" $TMP_DIR/.legacy_instances | xargs basename | awk -F "." {'print $1'})
+	    echo $instanceName >> $TMP_DIR/.instances
+	done 
+    else
+	echo "" > $TMP_DIR/.legacy_instances
+	echo "" > $TMP_DIR/.instances
+    fi
+    legacyInstances=$(cat $TMP_DIR/.instances)
+    echo
+    echo "===========  Installed remot3it Services  ================="
+    printf "Protocol\tPort\tService\t\tremot3it Name\n"
+    echo "========================================================="
+    WARNING="0"
+    confFiles=$(find $REMOT3IT_DIR -name "*.conf")
+#    echo $confFiles
+    for file in $confFiles; do
+	debug $file
+        uid="$(grep '^UID' $file | awk '{print $2}')"
+	echo "$uid" >> "$TMP_DIR"/.uidlist.txt
+
+        if [ "$uid" != "" ]; then
+            port="$(grep '^port' $file | awk '{print $2}')"
+	    yooareell=$(echo  "$deviceURL/$uid")
+
+	    resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:$APIKEY"  -H "token:$token" "$yooareell")
+
+	    debug $resp
+
+	    # this next test checks to see if device is registered.  
+	    # If not, it was probably deleted at the web portal.
+
+	    unknownDevice=$(echo "$resp" | grep "unknown device")
+            if [ "$unknownDevice" == "" ]; then
+
+	        deviceName=$(jsonval "$resp" "name")
+
+		debug "deviceName: $deviceName"
+            
+	        protocol=$(jsonval "$resp" "title")
+
+		debug "protocol: $protocol"
+
+	        # infer standard port assignments from service type embedded into server response
+
+                if [ "$protocol" == "Bulk Service" ]; then
+                    port="---"
+		    protocol="rmt3"
+                fi
+                if [ "$protocol" == "SSH" ]; then
+                    port=22
+                fi
+                if [ "$protocol" == "HTTP" ]; then
+                    port=80
+                fi
+                if [ "$protocol" == "VNC" ]; then
+                    port=5901
+                fi
+	        # trim this one's name so it fits on display
+                if [ "$protocol" == "Generic TCP" ]; then
+                    protocol="TCP"
+                fi
+
+	        #if conf file has port override, use that instead
+
+                port_override=$(grep proxy_dest_port $file | awk '{print $2}')
+
+                if [ "$port_override" != "" ]; then    
+                    port=$port_override
+                fi 
+
+	        # get service process name which is using that tcp port, if any
+
+                service=$(netstat -apn | grep -w tcp | grep -w "0.0.0.0:$port" | grep LISTEN | awk -F"/" '{print $2}')
+
+	        # if no service, show warning
+                if [ "$service" == "" ]; then
+		    if [ "$protocol" == "rmt3" ]; then
+		        service="----\t"
+		    else
+                        service="WARNING-NONE"
+		        WARNING="1"
+		    fi
+                fi
+                printf "$protocol\t\t$port\t$service\t$deviceName\n"
+            else
+               printf "Warning - $file is not registered to this account.\n"
+            fi
+        fi
+    done
+    if [ "$WARNING" == "1" ]; then
+	echo
+        echo "========================================================="
+        printf "WARNING-NONE indicates that there is no TCP listener detected at that port.\n"
+        printf "Please check your settings.\n"
+        echo "========================================================="
+    fi
+    printf "\n"
+}
+##### End Check for existing services #####
+
+########## Begin menuLoop #################
+menuLoop()
+{
+    while [ true ]; do
+   #     clear
+        checkforServices
+	alias=""	# reset alias,so you will be asked
+        printf "********************** Main Menu ************************\n"
+        printf "*                                                       *\n"
+        printf "*   1) Attach/reinstall remot3it to a Service           *\n"
+        printf "*   2) Remove remot3it attachment from a Service        *\n"
+        printf "*   3) Remove all remot3it attachments on this device   *\n"
+        printf "*   4) Exit                                             *\n"
+        printf "*                                                       *\n"
+        printf "*********************************************************\n\n"
+        unset get_num
+        while [[ ! "${get_num}" =~ ^[0-9]+$ ]]; do
+            echo "Please select from the above options (1-4):"
+            read get_num
+            ! [[ "${get_num}" -ge 1 && "${get_num}" -le 4 ]] && unset get_num
+        done
+        if [ "$get_num" == 1 ]; then
+            protocolSelection
+# in protocolSelection, get_num will be set to MAXSEL to indicate "return to previous menu"
+            if [ "$get_num" != $MAXSEL ]; then
+            	configureConnection
+            fi
+        elif [ "$get_num" == 2 ]; then
+            deleteConnection
+        elif [ "$get_num" == 3 ]; then
+            deleteAllConnections
+        elif [ "$get_num" == 4 ]; then
+            exit
+        fi
+    done
+}
+
+############# End menuLoop #######################
+
+#### Platform detection #####
+platformDetection()
+{
+    machineType="$(uname -m)"
+    osName="$(uname -s)"
+    board="$(uname -a | awk {' print $2 '})"
+
+    if [ -f "/etc/os-release" ]; then
+        distributionName=$(cat /etc/os-release | grep ID_LIKE= | grep -v VERSION | awk -F "=" {'print $2'})
+    fi
+    if [ "$machineType" == "armv6l" ]; then
+        PLATFORM=pi
+        SYSLOG=/var/log/syslog
+    elif [ "$machineType" == "armv7l" ]; then
+	if [ "$distributionName" == "ubuntu" ]; then
+        # ubuntu is put in there for Wandboard, but no reason to use anything other than Pi daemons etc.
+		PLATFORM=pi
+	else 
+		if [ "$board" == "beaglebone" ]; then
+			PLATFORM=beagle
+		else
+        		PLATFORM=pi
+		fi
+	fi
+        SYSLOG=/var/log/syslog
+    elif [ "$machineType" = "x86_64" ]; then
+	if [ "$distributionName" == "debian" ]; then
+		PLATFORM=i686
+	else 
+        	PLATFORM=i686
+	fi
+        SYSLOG=/var/log/syslog
+    else
+        printf "Sorry, you are running this installer on an unsupported device. But if you go to \n"
+        printf "http://forum.remot3it.com we'll be happy to help you get your device up and running. \n\n"
+        printf "Please supply the following information: \n\n"
+        uname -a
+        cat /proc/cpuinfo
+        printf "Thanks! \n"
+        exit
+    fi
+
+    #   printf "Detected platform type: %s \n" "$PLATFORM"
+    #   printf "Using %s for your log file \n\n" "$SYSLOG"
+}
+##### End Platform detection #####
+
+##### Protocol selection #####
+protocolSelection()
+{
+    REMOT3IT_PORT=""
+    CUSTOM=0
+    
+    if [[ "$PLATFORM" == "pi" || "$PLATFORM" == "i686" || "$PLATFORM" == "beagle" ]]; then
+     #   clear
+        checkforServices
+        printf "\n\n"
+        printf "*********** Protocol Selection Menu ***********\n"
+        printf "*                                             *\n"
+        printf "*    1) Remot3.it (Fleet management)          *\n"
+        printf "*    2) SSH on port 22                        *\n"
+        printf "*    3) Web (HTTP) on port 80                 *\n"
+        printf "*    4) VNC on port 5901                      *\n"
+        printf "*    5) Custom (TCP)                          *\n"
+        printf "*    6) Return to previous menu               *\n"
+        printf "*                                             *\n"
+        printf "***********************************************\n\n"
+        printf " You can change the port value during install *\n\n"
+        printf "***********************************************\n\n"
+        unset get_num
+        unset get_port
+        while [[ ! "${get_num}" =~ ^[0-9]+$ ]]; do
+            echo "Please select from the above options (1-$MAXSEL):"
+            read get_num
+            ! [[ "${get_num}" -ge 1 && "${get_num}" -le $MAXSEL ]] && unset get_num
+        done
+        printf "You have selected: %s. \n\n" "${get_num}"
+        if [ "$get_num" == 1 ]; then
+            PROTOCOL=rmt3
+            PORT=65535    
+            REMOT3IT_PORT=remot3it"$PROTOCOL""$PORT"
+        elif [ "$get_num" == 2 ]; then
+            PROTOCOL=ssh
+            printf "The default port for SSH is 22.\n"
+            if ask "Would you like to continue with the default port assignment?"; then
+                PORT=22
+            else
+                CUSTOM=2
+                while [[ ! "${get_port}" =~ ^[0-9]+$ ]]; do
+                    printf "Please enter your desired port number (1-65535):"
+                    read get_port
+                    ! [[ "${get_port}" -ge 1 && "${get_port}" -le 65535 ]] && unset get_port
+                done
+                PORT="$get_port"    
+            fi
+            REMOT3IT_PORT=remot3it"$PROTOCOL""$PORT"
+        elif [ "$get_num" == 3 ]; then
+            PROTOCOL=web
+            printf "The default port for Web (http) is 80.\n"
+            if ask "Would you like to continue with the default port assignment?"; then
+                PORT=80
+            else
+                CUSTOM=2
+                while [[ ! "${get_port}" =~ ^[0-9]+$ ]]; do
+                    printf "Please enter your desired port number (1-65535):"
+                    read get_port
+                    ! [[ "${get_port}" -ge 1 && "${get_port}" -le 65535 ]] && unset get_port
+                done
+                PORT="$get_port"    
+            fi
+            REMOT3IT_PORT=remot3it"$PROTOCOL""$PORT"
+        elif [ "$get_num" == 4 ]; then
+            PROTOCOL=vnc
+            printf "The default port for VNC (tightvncserver) is 5901.\n"
+            if ask "Would you like to continue with the default port assignment?"; then
+                PORT=5901
+            else
+                CUSTOM=2
+                while [[ ! "${get_port}" =~ ^[0-9]+$ ]]; do
+                    printf "Please enter your desired port number (1-65535):"
+                    read get_port
+                    ! [[ "${get_port}" -ge 1 && "${get_port}" -le 65535 ]] && unset get_port
+                done
+                PORT="$get_port"    
+            fi    
+            REMOT3IT_PORT=remot3it"$PROTOCOL""$PORT"
+        elif [ "$get_num" == 5 ]; then
+            CUSTOM=1
+            if ask "Does this protocol use a web browser (e.g. HTTP on port 8080 vs. 80)"; then
+                PROTOCOL=web
+            else
+                PROTOCOL=tcp
+            fi
+            printf "Please enter the protocol name (e.g., ssh, http, nfs): \n"
+            read port_name
+            CUSTOM_PROTOCOL="$(echo "$port_name" | tr '[A-Z]' '[a-z]' | tr -d ' ')"
+            while [[ ! "${get_port}" =~ ^[0-9]+$ ]]; do
+                printf "Please enter your desired port number (1-65535):"
+                read get_port
+                ! [[ "${get_port}" -ge 1 && "${get_port}" -le 65535 ]] && unset get_port
+            done
+            PORT="$get_port"
+            REMOT3IT_PORT=remot3it"$CUSTOM_PROTOCOL""$PORT"
+        fi
+	# process the entry for all menu choices other than MAXSEL  
+        if [ "$get_num" != $MAXSEL ]; then
+          #  clear
+            printf "We will attach a remot3it connection to the following service:\n\n"
+            if [ "$CUSTOM" = 1 ]; then
+                printf "Protocol: %s " "$CUSTOM_PROTOCOL"
+            else
+                printf "Protocol: %s " "$PROTOCOL"
+            fi
+	    if [ "$PROTOCOL" != "rmt3" ]; then
+            	printf "\nPort #: %s\n" "$PORT"
+	    fi
+            
+	    alreadyThere=$(cat $TMP_DIR/.legacy_instances | grep -w $REMOT3IT_PORT)
+            if [ "$alreadyThere"  != "" ]; then
+                printf "remot3it is already attached to this Service.\n" 
+                if ask "Do you wish to overwrite your previous settings?"; then
+                    testLogin
+                    deleteDevice
+                    if [ -f $PID_DIR/$REMOT3IT_PORT.pid ]; then
+                        if [ -f $BIN_DIR/$REMOT3IT_PORT.sh ]; then
+                            $BIN_DIR/$REMOT3IT_PORT.sh stop -q > /dev/null
+                        else
+                            if ask "May we stop all remot3it services to continue?"; then
+                                killall remot3itConnectd
+                                echo "Run $STARTEMUP to restart all installed remot3it Services."
+                            fi
+                            if [ -f $PID_DIR/$REMOT3IT_PORT.pid ]; then
+                                rm $PID_DIR/$REMOT3IT_PORT.pid
+                            fi
+                        fi
+                    fi
+                else 
+                    printf "We will allow you to re-select your desired service to install... \n\n"
+                    protocolSelection
+                fi
+            else
+		#     userLogin
+                testLogin
+            fi
+        fi
+    fi
+}
+##### End Protocol selection #####
+
+##### Delete Connection
+deleteConnection()
+{
+    printf "\nEnter the remot3it Name of the Service you wish to detach.\n"
+    printf "This will not affect the installed service.\n"
+    read deviceToDelete
+    deviceFound=0
+
+    # now iterate through known connections to find it
+
+    for file in $REMOT3IT_DIR/*.conf; do
+        uid="$(grep '^UID' $file | awk '{print $2}')"
+	yooareell=$(echo  "$deviceURL/$uid")
+
+	resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:$APIKEY"  -H "token:$token" "$yooareell")
+
+        deviceName=$(jsonval "$resp" "name")
+
+        if [ "$deviceName" == "$deviceToDelete" ]; then  
+	    #      printf "\n$deviceInfo found...\n"
+            deviceFound=1
+	    # get the protocol name
+	    deviceType=$(jsonval "$resp" "title")
+	    if ask "Are you sure you want to delete the remot3it $deviceType attachment $deviceName?"; then
+		printf "Deleting $deviceName...\n"
+		result=$(curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H “Content-Type:application/json” -H "apikey:$APIKEY" -H "token:$token" &> /dev/null)
+		deleteResult=$(jsonval "$result" "status")
+		debug $deleteResult
+
+ 		fileNameRoot=$(echo $file |xargs basename | awk -F "." {'print $1'})
+#		echo $fileNameRoot
+ 		# if daemon pid exists, stop daemon and remove start/stop script
+ 		if [ -f $PID_DIR/$fileNameRoot.pid ]; then
+ 		    if [ -f $BIN_DIR/$fileNameRoot.sh ]; then
+ 			$BIN_DIR/$fileNameRoot.sh stop -q
+ 			rm $BIN_DIR/$fileNameRoot.sh
+		    fi
+		fi
+		if [ -f $file ]; then
+		    rm $file
+		fi
+		if [ -f $BIN_DIR/notify_$fileNameRoot.sh ]; then
+		    rm $BIN_DIR/notify_$fileNameRoot.sh
+		fi
+            fi
+        fi
+    done
+    if [ $deviceFound -eq 0 ]; then
+        echo "Sorry, could not find $deviceToDelete."
+        echo "Please check your spelling and try again."
+        echo "Press the 'Enter' key to return to the menu."
+        read
+    fi
+}
+
+##### End of Delete Connection
+
+##### Delete All Connections
+deleteAllConnections()
+{
+    if ask "Are you sure you want to delete ALL remot3it attachments?"; then
+
+    # now iterate through all enablement files to find it
+    # stop all daemons.  
+
+	remot3itstop.sh
+
+    	for file in $REMOT3IT_DIR/*.conf; do
+	# get service name from UID
+            uid="$(grep '^UID' $file | awk '{print $2}')"
+	    resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:$APIKEY"  -H "token:$token" "$deviceURL/$uid")
+            deviceName=$(jsonval "$resp" "name")
+
+	    printf "\nDeleting $deviceName...\n"
+	
+	    result=$(curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H “Content-Type:application/json” -H "apikey:$APIKEY" -H "token:$token" &> /dev/null)
+	    deleteResult=$(jsonval "$result" "status")
+	    debug $deleteResult
+
+	    fileNameRoot=$(echo $file |xargs basename | awk -F "." {'print $1'})
+#		    echo $fileNameRoot
+ 	    # if daemon pid exists, stop daemon and remove start/stop script
+ 	    if [ -f $PID_DIR/$fileNameRoot.pid ]; then
+ 	        if [ -f $BIN_DIR/$fileNameRoot.sh ]; then
+ 		    $BIN_DIR/$fileNameRoot.sh stop -q
+ 		    rm $BIN_DIR/$fileNameRoot.sh
+		fi
+	    fi
+	    if [ -f $file ]; then
+		rm $file
+	    fi
+	    if [ -f $BIN_DIR/notify_$fileNameRoot.sh ]; then
+		rm $BIN_DIR/notify_$fileNameRoot.sh
+   	    fi
+        done
+        if [ -f $BIN_DIR/$STARTEMUP ]; then
+	    rm $BIN_DIR/$STARTEMUP
+   	fi
+# also should clear out crontab at this point
+	disableStartup
+# remove serial.txt
+        if [ -f $SERIALNUMBERFILE ]; then
+	    rm $SERIALNUMBERFILE
+   	fi
+    fi
+}
+
+##### End of Delete All Connections
+
+##### Check for Bash #####
+bashCheck()
+{
+    if [ "$BASH_VERSION" = '' ]; then
+	clear
+	printf "You executed this script with dash vs bash! \n\n"
+	printf "Please execute \"chmod +x "$filename"\" and then \n"
+	printf "execute \"./"$filename"\".  \n\n"
+	printf "Thank you! \n"
+	exit
+    else
+	echo "Now launching the remot3it connectd daemon installer..." > /dev/null
+    fi
+}
+##### End Bash Check #####
+
+######### Ask Function #########
+ask()
+{
+    echo
+    while true; do
+	if [ "${2:-}" == "Y" ]; then
+	    prompt="Y/n"
+	    default=Y
+	elif [ "${2:-}" == "N" ]; then
+	    prompt="y/N"
+	    default=N
+	else
+	    prompt="y/n"
+	    default=
+	fi
+	# Ask the question
+	read -p "$1 [$prompt] " REPLY
+	# Default?
+	if [ -z "$REPLY" ]; then
+	    REPLY=$default
+	fi
+	# Check if the reply is valid
+	case "$REPLY" in
+	    Y*|y*) return 0 ;;
+	    N*|n*) return 1 ;;
+	esac
+    done
+}
+######### End Ask Function #########
+
+
+######### Begin askRegisterLogin #########
+askRegisterLogin()
+{
+	value="false"
+	while [ $value == "false" ]; do
+   #     clear
+#        printf "\n\n"
+        printf "********************* Sign In Menu *********************\n"
+        printf "*                                                      *\n"
+        printf "*   1) Sign in to your existing remot3it account       *\n"
+        printf "*   2) Request a code for a new remot3it account       *\n"
+        printf "*   3) Enter a verification code received in e-mail    *\n"
+        printf "*   4) Exit                                            *\n"
+        printf "*                                                      *\n"
+        printf "********************************************************\n\n"
+        unset get_num
+        while [[ ! "${get_num}" =~ ^[0-9]+$ ]]; do
+            echo "Please select from the above options (1-4):"
+            read get_num
+            ! [[ "${get_num}" -ge 1 && "${get_num}" -le 4 ]] && unset get_num
+        done
+#        printf "You have selected: %s. \n\n" "${get_num}"
+        if [ "$get_num" = 2 ]; then
+		registerUser
+#		askVerificationCode
+		value="false"
+        elif [ "$get_num" = 1 ]; then
+		userLogin
+		testLogin
+		value="true"
+        elif [ "$get_num" = 3 ]; then
+		if [ "$username" == "" ]; then
+		    getEmail
+		fi
+                enterVerificationCode
+#		value="true"
+        elif [ "$get_num" = 4 ]; then
+	    if ask "Are you sure?"; then
+		exit
+	    fi
+	fi
+	done
+}
+
+######### End askRegisterLogin #########
+
+######### Begin getEmail #########
+getEmail() 
+{
+    printf "Enter your e-mail address to create a new remot3it account.\n"
+    if [ "$USERNAME" != "" ]; then 
+	username="$USERNAME"
+    else        
+	read username
+    fi
+}
+######### End getEmail #########
+
+######### Begin registerUser #########
+registerUser()
+{
+    getEmail
+     resp=$(curl -s $regAccountURL -X POST -d "{\"email\":\"$username\"}" -H "content-type:application/json" -H "apikey:$APIKEY" 2> $TMP_DIR/.curlerr)
+
+    debug $resp
+    value=$(jsonval "$resp" "status") 
+    reason=$(jsonval "$resp" "reason") 
+    if [ "$value" != "true" ]; then
+    	echo "E-mail registration error: " $reason
+    else
+    	printf "\nA verification code has been sent to $username.\n"
+    	printf "If you do not receive this e-mail with your code\n"
+    	printf "within a few minutes, select option 2 to try again.\n"
+    	printf "Once you receive the code, select option 3 to enter it.\n\n"
+   fi
+   printf "Press any key to continue."
+   read anyKey
+ }
+
+######### End registerUser #########
+
+######### Begin enterVerificationCode #########
+enterVerificationCode()
+{
+    passwordOK=0
+    printf "\nEnter the verification code which you received by e-mail.\n"
+    read registrationCode
+    while [ "$passwordOK" != 1 ]; do
+        echo
+    	getNewPassword
+    done
+
+     resp=$(curl -s $regAccountURLVerified -X POST -d "{\"email\":\"$username\", \"password\":\"$password\", \"shortcode\":\"$registrationCode\"}" -H "content-type:application/json" -H "apikey:$APIKEY" 2> $TMP_DIR/.curlerr)
+
+    debug $resp
+    value=$(jsonval "$resp" "status") 
+    if [ "$value" != "true" ]; then
+	reason=$(jsonval "$resp" "reason")
+    	echo "Account registration error:" $reason
+        echo "Hit any key to continue."
+	value="false"
+	read anyKey
+    else
+# now log in
+	signInAPI
+	testLogin
+    fi
+}
+
+######### End enterVerificationCode #########
+
+######### Begin getNewPassword #########
+getNewPassword() {
+    if [ "$PASSWORD" != "" ]; then
+	password="$PASSWORD"
+    else
+	printf "\nPlease choose a password to use with your new account.\n"
+	printf "It should be between 7 and 15 characters in length.\n"
+	printf "Valid special characters are limited to .!-_@$^.\n"
+	printf "Please enter it now:\n"
+	password=""
+	read  -s password
+        printf "\nPlease confirm your password: \n"
+        read  -s passwordConfirm
+
+        if [ "$password" != "$passwordConfirm" ]; then
+	    echo
+	    printf "Passwords don't match!"
+	    echo
+	    passwordOK=-1
+        else
+	    passwordOK=1
+	fi
+    fi
+}
+
+######### End getNewPassword #########
+
+######### Begin Portal Login #########
+userLogin () #Portal login function
+{
+#    echo "remot3itinstallerlib Username = $USERNAME Password = $PASSWORD"
+
+    if [ "$USERNAME" != "" ]; then 
+	username="$USERNAME"
+    else        
+	printf "Please enter your remot3it Username (email address): \n"
+	read username
+    fi
+    if [ "$AUTHHASH" != "REPLACE_AUTHHASH" ]; then
+	authhash="$AUTHHASH"
+    else
+        if [ "$PASSWORD" != "" ]; then
+	    password="$PASSWORD"
+        else
+	    printf "\nPlease enter your password: \n"
+	    password=""
+	    read  -s password
+        fi
+   fi
+#   echo $username $password $authhash
+   signInAPI
+}
+######### End Portal Login #########
+
+####### SignInAPI ###################
+signInAPI()
+{
+#    echo $username $password $authhash
+    if [ "$AUTHHASH" == "REPLACE_AUTHHASH" ]; then
+        resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:$APIKEY" "$loginURL/$username/$password" 2> $TMP_DIR/.curlerr)
+    else
+        resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:$APIKEY" "$loginAuthURL/$username/$authhash" 2> $TMP_DIR/.curlerr)
+    fi
+
+    debug $resp
+
+    status=$(jsonval "$resp" "status")
+    debug $status
+
+    if [ "$status" == "true" ]; then
+	token=$(jsonval "$resp" "token")
+    else
+    	loginFailed=$(echo "$resp" | grep "The username or password are invalid" | sed 's/"//g')
+    	slimError=$(echo "$resp" | grep "Slim Application Error" | sed 's/"//g')
+    	login404=$(echo "$resp" | grep 404 | sed 's/"//g')
+#	echo "Error" $loginFailed $slimError $login404
+    fi
+
+    # invalid cert can happen if system date is set to before current date
+    invalidCert=$(cat $TMP_DIR/.curlerr  | grep "SSL certificate problem")
+    date +"%s" > $TMP_DIR/.lastlogin
+}
+####### End SignInAPI ###################
+
+######### Test Login #########
+testLogin()
+{
+    while [ "$loginFailed" != "" ] || [ "$slimError" != "" ]; do
+#	clear
+	printf "You have entered either an incorrect username or password. Please try again.\n"
+	printf "Press the 'Enter' key to continue.\n"
+        read
+	loginFailed=""
+	userLogin
+    done
+    if [ "$invalidCert" != "" ]; then
+ #       clear
+        printf "The login security certificate is not valid.  This can be caused\n"
+        printf "by your system date being incorrect.  Your system date is:\n\n $(date)\n\n"
+        printf "Please correct the system date if needed and run the installer again.\n"
+        printf "Run the command 'man date' for help resetting the date.\n\n"
+        printf "If you are receiving this message and your system date is correct,\n"
+        printf "please contact remot3it support at forum.remot3it.com.\n"
+        exit
+    fi
+}
+######### End Test Login #########
+
+######### Install Enablement #########
+# we install .conf file temporarily in $TMP_DIR and add UID and secret
+# before copying it to $REMOT3IT_DIR
+installEnablement()
+{
+    printf "."
+#    if [ ! -d "REMOT3IT_DIR" ]; then
+#	mkdir -p "$REMOT3IT_DIR"
+#    fi
+#    if [ ! -d "REMOT3IT_DIR_ACTIVE" ]; then#
+#	mkdir -p "$REMOT3IT_DIR_ACTIVE"
+#    fi
+#    if [ ! -d "REMOT3IT_DIR_AVAILABLE" ]; then
+#	mkdir -p "$REMOT3IT_DIR_AVAILABLE"
+#    fi
+
+#
+# if REGISTERSERVICE==1, then we copy the template enablement file to /tmp where further things happen
+# before it is copied into place.  Otherwise we copy the template file directly to REMOT3IT_DIR
+#
+    if [ "$REGISTERSERVICE" == "1" ]; then
+        cat $REMOT3IT_LIB_DIR/conf/"$PROTOCOL"."$PLATFORM" > $TMP_DIR/"$REMOT3IT_PORT".conf
+    else
+        cat $REMOT3IT_LIB_DIR/conf/"$PROTOCOL"."$PLATFORM" > $REMOT3IT_DIR/"$REMOT3IT_PORT".conf
+    fi
+}
+######### End Install Enablement #########
+
+######### Install Notifier #########
+installNotifier()
+{
+        printf "."
+    chmod +x $REMOT3IT_LIB_DIR/scripts/"$NOTIFIER"
+    if [ ! -f "$BIN_DIR"/"$NOTIFIER" ]; then
+	cp $REMOT3IT_LIB_DIR/scripts/"$NOTIFIER" "$BIN_DIR"
+	#   printf "Copied %s to %s \n" "$NOTIFIER" "$BIN_DIR"
+    fi
+}
+######### End Install Notifier #########
+
+######### Install Send Notification #########
+installSendNotification()
+{
+        printf "."
+    sed s/REPLACE/"$REMOT3IT_PORT"/ < $REMOT3IT_LIB_DIR/scripts/send_notification.sh > $TMP_DIR/send_notification.sh
+    chmod +x $TMP_DIR/send_notification.sh
+    mv $TMP_DIR/send_notification.sh $BIN_DIR/notify_$REMOT3IT_PORT.sh
+    #    printf "Copied notify_%s.sh to %s \n" "$REMOT3IT_PORT" "$BIN_DIR"
+}
+######### End Install Send Notification #########
+
+######### Add line to cron ######
+cronAddLine()
+{
+    crontab -l 2>/dev/null 1> "$TMP_DIR"/.crontab_old
+    echo "$1" >> "$TMP_DIR"/.crontab_old
+    logger "cronAddline $1"
+    crontab "$TMP_DIR"/.crontab_old
+}
+######### End add line to cron ######
+
+######### Disable remot3it services to start at reboot time ######
+cronRemoveLine()
+{
+    crontab -l | grep -v "$1" | cat > $TMP_DIR/.crontmp
+    crontab $TMP_DIR/.crontmp
+}
+
+######### Enable remot3it services to start at reboot time ######
+enableStartup()
+{
+    # crontab approach
+    if [ $startupScripts = 3 ]; then
+        cronAddLine "@reboot $BIN_DIR/$STARTEMUP"
+    fi
+}
+######### End Enable remot3it services to start at reboot time ######
+
+######### Disable remot3it services to start at reboot time ######
+disableStartup()
+{
+    # crontab approach
+    if [ $startupScripts = 3 ]; then
+        cronRemoveLine "@reboot $BIN_DIR/$STARTEMUP"
+    fi
+}
+
+######### Install Start/Stop Scripts #########
+installStartStop()
+{
+    printf "."
+    # crontab approach
+    if [ $startupScripts = 3 ]; then
+	sed s/REMOT3IT_PORT=/REMOT3IT_PORT="$REMOT3IT_PORT"/ < "$REMOT3IT_LIB_DIR"/scripts/launchremot3it.sh > "$TMP_DIR"/"$REMOT3IT_PORT".sh
+	mv "$TMP_DIR"/"$REMOT3IT_PORT".sh "$BIN_DIR"/"$REMOT3IT_PORT".sh
+	chmod +x "$BIN_DIR"/"$REMOT3IT_PORT".sh
+	# backwards compatibility - move startremot3it.sh to remot3itstart.sh
+	if [ -f "$BIN_DIR"/startremot3it.sh ]; then
+            mv "$BIN_DIR"/startremot3it.sh "$BIN_DIR/$STARTEMUP"
+	fi
+	if [ ! -f "$BIN_DIR"/$STARTEMUP ]; then
+            cp "$REMOT3IT_LIB_DIR"/scripts/$STARTEMUP "$BIN_DIR"
+	    #      printf "$STARTEMUP copied to %s\n" "$BIN_DIR"
+	fi
+	checkCron=$(crontab -l 2> /dev/null | grep $STARTEMUP | wc -l)
+	debug "CheckCron: $checkCron\n"
+	if [[ $checkCron == 0 && "$STARTDAEMONSONREBOOT" == "1" ]]; then
+	    enableStartup
+	fi
+	if [[ $checkCron > 0 && "$STARTDAEMONSONREBOOT" == "0" ]]; then
+	    disableStartup
+	fi
+	# see if there is an entry to start the chosen service daemon already
+	checkStartremot3it=$(cat "$BIN_DIR"/$STARTEMUP | grep "$REMOT3IT_PORT.sh" | wc -l)
+	# if not, add it
+	if [ $checkStartremot3it = 0 ]; then
+	    sed s/REPLACE_TEXT/"$REMOT3IT_PORT"/ < $REMOT3IT_LIB_DIR/scripts/remot3itstart.add > $TMP_DIR/remot3itstart.add
+	    sh -c "cat $TMP_DIR/remot3itstart.add >> $BIN_DIR/$STARTEMUP"
+            rm $TMP_DIR/remot3itstart.add
+	fi
+	# see if there is an entry to start the listener service daemon schannel.x already
+	checkStartSchannel=$(cat "$BIN_DIR"/$STARTEMUP | grep "remot3itschannel" | wc -l)
+	# if not, add it
+	if [ $checkStartSchannel = 0 ]; then
+	    sh -c "echo '"/usr/bin/remot3itschannel" start' >> $BIN_DIR/$STARTEMUP"
+	fi
+	chmod +x $BIN_DIR/$STARTEMUP
+    fi
+}
+######### End Start/Stop Scripts #########
+
+######### Fetch UID #########
+fetchUID()
+{
+    printf "."
+    "$BIN_DIR"/"$DAEMON"."$PLATFORM" -life -1 -f "$TMP_DIR"/"$REMOT3IT_PORT".conf > "$TMP_DIR"/.DeviceTypeString
+    DEVICETYPE="$(cat "$TMP_DIR"/.DeviceTypeString | grep DeviceType | awk -F "=" '{print $2}')"
+    rm "$TMP_DIR"/.DeviceTypeString
+}
+######### End Fetch UID #########
+
+######### Check for UID #########
+checkUID()
+{
+    printf "."
+    checkforUID="$(tail "$TMP_DIR"/"$REMOT3IT_PORT".conf | grep UID | wc -l)"
+    if [ $checkforUID = 2 ]; then
+	#    cp "$REMOT3IT_LIB_DIR"/"$REMOT3IT_PORT".conf /"$REMOT3IT_DIR"/
+	uid=$(tail "$TMP_DIR"/"$REMOT3IT_PORT".conf | grep UID | awk -F "UID" '{print $2}' | xargs echo -n)
+	#   printf "\n\nYour device UID has been successfully provisioned as: %s. \n\n" "$uid"
+    else
+	retryFetchUID
+    fi
+}
+######### Check for UID #########
+
+######### Retry Fetch UID ##########
+retryFetchUID()
+{
+    printf "."
+    for run in {1..15}
+    do
+	fetchUID
+	checkforUID="$(tail "$TMP_DIR"/"$REMOT3IT_PORT".conf | grep UID | wc -l)"
+	if [ "$checkforUID" = 2 ]; then
+	    #        cp "$REMOT3IT_LIB_DIR"/"$REMOT3IT_PORT".conf /"$REMOT3IT_DIR"/
+	    uid="$(tail "$TMP_DIR"/"$REMOT3IT_PORT".conf | grep UID | awk -F "UID" '{print $2}' | xargs echo -n)"
+	    #       printf "\n\nYour device UID has been successfully provisioned as: %s. \n\n" "$uid"
+	    break
+	fi
+    done
+    checkforUID="$(tail "$TMP_DIR"/"$REMOT3IT_PORT".conf | grep UID | wc -l)"
+    if [ "$checkforUID" != 2 ]; then
+	printf "We have unsuccessfully retried to obtain a UID.\n"
+        printf "Please contact remot3it Support at http://forum.remot3it.com for help.\n\n"
+    fi
+}
+######### Retry Fetch UID ##########
+
+######### Pre-register Device #########
+
+preregisterUID()
+{
+    printf "."
+    preregUID="$(curl -s $preregdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicetype\":\"$DEVICETYPE\"}" -H “Content-Type:application/json” -H "apikey:$APIKEY" -H "token:$token")"
+    test1="$(echo $preregUID | grep "true" | wc -l)"
+    debug $preregUID
+    test2="$(echo $preregUID | grep -E "missing api token|api token missing" | wc -l)"
+    test3="$(echo $preregUID | grep "false" | wc -l)"
+    if [ "$test1" = 1 ]; then
+	printf "Pre-registration of UID: %s successful. \n\n" "$uid" > /dev/null
+    elif [ "$test2" = 1 ]; then
+	printf "You are not currently logged in. \n"
+	userLogin
+	preregisterUID
+    elif [ "$test3" = 1 ]; then
+	printf "Sorry, the pre-registration of UID: %s is failing. You can finish registration\n" "$uid"
+	printf "manually using the following steps: \n\n"
+	printf "1) From the same network as your device, please log into https://remot3it.com \n"
+	printf "2) Once logged in, please visit the following URL:\n"
+        printf "https://developer.remot3it.com/portal/members/registerDevice.php \n"
+	printf "3) Enter a name for your Service.\n"
+	printf "4) Please contact us at http://forum.remot3it.com and let us know about this issue,\n" 
+        printf "including the version of installer, and whether manual registration\n"
+	printf "worked for you. Sorry for the inconvenience. \n\n"
+	overridePort
+	startService
+	installNotifyAll
+	exit
+    fi
+}
+######### End Pre-register Device #########
+
+######### Pre-register Device #########
+getSecret()
+{
+    printf "."
+    secretCall="$(curl -s $regdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$SerialID\"}" -H “Content-Type:application/json” -H "apikey:$APIKEY" -H "token:$token")"
+    debug $secretCall
+
+    error=$(jsonval "$secretCall" "Error")
+    debug $error
+    if [ "$error" == "DuplicateName:" ]; then
+        echo
+	echo "There is already a Service registered to your account as $alias."
+	echo "Hit any key to continue."
+	read AnyKey
+    else
+    	test1="$(echo $secretCall | grep "true" | wc -l)"
+    	test2="$(echo $secretCall | grep -E "missing api token|api token missing" | wc -l)"
+    	test3="$(echo $secretCall | grep "false" | wc -l)"
+    	if [ $test1 = 1 ]; then
+		secret="$(echo $secretCall | awk -F "," '{print $2}' | awk -F "\"" '{print $4}' | sed s/://g)"
+		echo "# password - erase this line to unregister the device" >> "$TMP_DIR"/"$REMOT3IT_PORT".conf
+		echo "password $secret" >> "$TMP_DIR"/"$REMOT3IT_PORT".conf
+
+	#       finally copy valid assembled enablement file to $REMOT3IT_DIR
+		mv "$TMP_DIR"/"$REMOT3IT_PORT".conf "$REMOT3IT_DIR"/"$REMOT3IT_PORT".conf
+    	elif [ $test2 = 1 ]; then
+		printf "For some reason, you were logged out and must log back in. \n"
+		userLogin
+		getSecret
+    	fi
+    fi
+}
+######### End Pre-register Device #########
+
+######### Register Device #########
+registerDevice()
+{
+    printf "."
+    while [ "$alias" == "" ]; do
+	printf "\nEnter a name for this Service Attachment (e.g. SSH-Pi). \n"
+	printf "This name will be shown in your remot3it Service List.\n"
+        printf "Only letters, numbers, underscore, space and dash are allowed.\n\n"
+        read alias
+    done
+    printf "Your Service Attachment will be called %s.\n\n" "$alias" > /dev/null
+}
+######### End Register Device #########
+
+######### Start Service #########
+startService()
+{
+    printf "\n"
+    logger "remot3it Connection starting: $alias"
+    echo -n "Registering Service Attachment $alias" ; sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -e "\n\n"
+    $BIN_DIR/$REMOT3IT_PORT.sh restart > /dev/null
+}
+######### End Start Service #########
+
+######### Port Override #########
+overridePort()
+{
+    if [ "$CUSTOM" = 1 ]; then
+	cp "$REMOT3IT_DIR"/"$REMOT3IT_PORT".conf $TMP_DIR/
+	echo "proxy_dest_port $PORT" >> $TMP_DIR/"$REMOT3IT_PORT".conf
+	mv $TMP_DIR/"$REMOT3IT_PORT".conf "$REMOT3IT_DIR"/
+    elif [[ "$CUSTOM" = 2 ]]; then
+	cp "$REMOT3IT_DIR"/"$REMOT3IT_PORT".conf $TMP_DIR/
+	echo "proxy_dest_port $PORT" >> $TMP_DIR/"$REMOT3IT_PORT".conf
+	mv $TMP_DIR/"$REMOT3IT_PORT".conf "$REMOT3IT_DIR"/
+    fi
+}
+######### End Port Override #########
+
+######### Delete device #########
+deleteDevice()
+{
+    uid=$(tail $REMOT3IT_DIR/$REMOT3IT_PORT.conf | grep UID | awk -F "UID" '{print $2}' | xargs echo -n)
+    curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H “Content-Type:application/json” -H "apikey:$APIKEY" -H "token:$token"
+    #    printf "\n\n"
+}
+######### End Delete device #########
+
+######### Delete device by UID #########
+deleteDeviceByUid()
+{
+    uid="$1"
+    resp=$(url -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H “Content-Type:application/json” -H "apikey:$APIKEY" -H "token:$token")
+    echo "$resp"
+}
+######### End Delete device by UID #########
+
+#############################
+debug()
+{
+    if [ "$DEBUG" == "1" ]; then
+	echo $1
+    fi
+}
+
+#############################
+makeConnection()
+{
+    PROTOCOL=$1
+    PORT=$2
+    alias=$3
+    CUSTOM=2	# forces port to be written to conf file
+    REMOT3IT_PORT=remot3it"$PROTOCOL""$PORT"
+    debug "$REMOT3IT_PORT"
+    if [ -f "$REMOT3IT_DIR/$REMOT3IT_PORT.conf" ]; then
+        echo "A $PROTOCOL service has already been configured on port $PORT."
+        echo "Skipping $alias..."
+    else
+        configureConnection
+    fi
+}
+
+############################
+
+configureConnection()
+{
+    installEnablement
+    installNotifier
+    installSendNotification
+    installStartStop
+    # REGISTERSERVICE controls (in OEM installer) whether or not services are registered at the time of installation
+    if [ "$REGISTERSERVICE" == "1" ]; then
+    	fetchUID
+    	checkUID
+    	preregisterUID
+    	registerDevice
+    	getSecret
+
+    	if [ "$error" != "DuplicateName:" ]; then
+    	    overridePort
+    	    startService
+	    # there should only be one UDP listener startup regardless of the number of services
+	    # the startup script will only start one instance
+	    remot3itschannel start > /dev/null
+	fi
+    fi
+}
+
+######### Interactive Install #########
+interactiveInstall()
+{
+    echo
+    displayVersion $1
+    bashCheck
+    platformDetection
+    remot3itCompatibility
+    askRegisterLogin
+    # main menu loop 
+    menuLoop
+}
+######### End Interactive Install #########
+
+#======== utility functions used in installers and scripts
+
+#----------------------------------------------------------
+# JSON parse (very simplistic):  get value frome key $2 in buffer $1,  values or keys must not have the characters {}[", 
+#   and the key must not have : in it
+#
+#  Example:
+#   value=$(jsonval "$json_buffer" "$key") 
+#                                                   
+jsonval()                                              
+{
+#    echo "jsonval $1 $2"
+    temp=`echo "$1" | sed -e 's/[{}\"]//g' | sed -e 's/,/\'$'\n''/g' | grep -w $2 | cut -d"[" -f2- | cut -d":" -f2-`
+    #echo ${temp##*|}         
+    echo ${temp}                                                
+}                                                   
+
+#----------------------------------------------------------
+jsonvalx()
+{
+    temp=`echo $1 | sed -e 's/[{}"]//g' -e "s/,/\\$liblf/g" | grep -w $2 | cut -d":" -f2-`
+    #echo ${temp##*|}
+    echo ${temp}    
+}
+
+#======== end of utility functions used in installers and scripts
+
+
+#================ Functions below are for use in remot3it bash scripts
+
+########################################
+# Support Functions                    #
+########################################
+
+#----------------------------------------------------------
+# internet_available - check to see if API is available
+internet_available()
+{
+    ret=0
+    nc -z api.remot3it.com 80  >/dev/null 2>&1
+    online=$?
+    if [ $online -eq 0 ]; then
+        if [ $VERBOSE -gt 0 ]; then
+            logger "$0 Internet Available"
+        fi
+        ret=1
+    else
+        if [ $VERBOSE -gt 0 ]; then
+            logger "$0 Internet Not Available"
+        fi
+    fi
+    return $ret
+}
+# end of internet_available
+
+#----------------------------------------------------------
+# wait_for_internet - waits until API is available
+wait_for_internet()
+{
+while [ 1 ]
+do
+    internet_available
+    if [ $? -eq 1 ]; then
+        # internet is available, return
+        sleep 2
+        #
+        break
+    fi 
+    sleep 15
+    logger "$0 Looping while internet not available"
+done
+}
+# end of wait_for_internet
+
+#----------------------------------------------------------
+#
+# Print Usage
+#
+usage()
+{
+    echo "Usage: $0 <jobid> <api server> <shortcode>" >&2
+    echo "Version $VERSION Build $MODIFIED" >&2
+    return 0
+}
+
+#----------------------------------------------------------
+#
+# log if DEBUG_ON is set to /tmp
+#
+log()
+{
+    if [ $DEBUG_ON -gt 0 ]; then
+        ts=$(date)
+        echo "$ts $1" >> ${DEBUG_DIR}/$(basename $0).log
+    fi
+}
+
+#----------------------------------------------------------
+#
+# Job Complete
+#
+Job_Complete()
+{
+    ret=$(${TOOL_DIR}/task_notify.sh 1 $jobid $api_server "Job Complete $1")
+}
+
+#----------------------------------------------------------
+#
+# Job Failed
+#
+Job_Failed()
+{
+    ret=$(${TOOL_DIR}/task_notify.sh 2 $jobid $api_server "Job Failed $1")
+}
+#----------------------------------------------------------
+#
+# Status column A
+#
+Status_A()
+{
+    ret=$(${TOOL_DIR}/task_notify.sh a $jobid $api_server "$1")
+}
+
+#----------------------------------------------------------
+#
+# Status column B
+#
+Status_B()
+{
+    ret=$(${TOOL_DIR}/task_notify.sh b $jobid $api_server "$1")
+}
+
+#----------------------------------------------------------
+#
+# Status column C
+#
+Status_C()
+{
+    ret=$(${TOOL_DIR}/task_notify.sh c $jobid $api_server "$1")
+}
+
+#----------------------------------------------------------
+#
+# Status column D
+#
+Status_D()
+{
+    ret=$(${TOOL_DIR}/task_notify.sh d $jobid $api_server "$1")
+}
+
+#----------------------------------------------------------
+#
+# Status column E
+#
+Status_E()
+{
+    ret=$(${TOOL_DIR}/task_notify.sh e $jobid $api_server "$1")
+}
+
+
+
+#----------------------------------------------------------
+#
+# translate short code
+#
+translate()
+{
+    ret=0
+    # make api call
+    translate_url=${apiMethod}${api_server}${apiURI}${short_code}
+
+    log "Translate URL call using URL $translate_url"
+
+    resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:remot3itDeveloperToolsWy98ayxR" "$translate_url")
+    
+    status=$(jsonval "$resp" "status")
+
+    log "return status $status"
+
+    if [ "$status" == "true" ]; then
+        #jsonvalx()
+        item=$(jsonval "$resp" "item")
+        #
+        # Convert from base64
+        decode=$(echo "$item" | base64 --decode)
+       
+        log "item $item -> $decode"
+   
+        echo -n "$decode"
+    else
+        printf "Fail"
+        ret=1
+    fi
+
+    return $ret
+}
+
+##############################################################################
+prepare_and_reboot()
+{
+    if [ ! -d "/root/.remot3.it" ]; then
+        mkdir "/root/.remot3.it"
+    fi
+
+# save command and parameters for pass of uncompleted command through reboots
+# cron reboot job needs to be in place to scan and execute commands left in the file above
+REBOOTFILE=/root/.remot3.it/reboot.sh
+    echo "#!/bin/bash" > "$REBOOTFILE"
+    echo "# REBOOT DEVICE" >> "$REBOOTFILE"
+    echo "source /usr/bin/remot3_script_lib" >> "$REBOOTFILE"
+    echo "source /usr/bin/remot3itinstallerlib" >> "$REBOOTFILE"
+    echo "wait_for_internet" >> "$REBOOTFILE"
+    echo "sleep 5" >> "$REBOOTFILE"
+    echo "${TOOL_DIR}/task_notify.sh a $1 $2 'Rebooted.'" >> $REBOOTFILE
+    echo "${TOOL_DIR}/task_notify.sh 1 $1 $2 'Job Complete'" >> $REBOOTFILE
+    echo "cronRemoveLine '@reboot bash -x $REBOOTFILE >> /tmp/rebootlog'" >> $REBOOTFILE
+    echo "rm $REBOOTFILE" >> $REBOOTFILE
+    chmod +x $REBOOTFILE
+    cronAddLine "@reboot bash -x $REBOOTFILE >> /tmp/rebootlog"
+    sync
+    sleep 2
+    /sbin/reboot
+}
+
+##############################################################################
+# Read timeout for wget, default is 900 seconds.  set shorter for testing.
+READTIMEOUT=120
+READRETRIES=5
+
+# constants for retry logic
+HOUR=$(expr 60 \* 60)
+DAY=$(expr $HOUR \* 24)
+WEEK=$(expr $DAY \* 7)
+
+download_with_retry()
+{
+    finished=0
+    error=0
+    log "$1"
+
+    filename=$(echo "$1" | awk '{ print $3 }')
+    log "$filename"
+
+    # remove any possible existing file of same name we are about to download
+    if [ -e "$filename" ]; then
+        log "Removing pre-existing $filename"
+        rm "$filename"
+    fi
+
+    START=$(date +%s)
+    log "Download started at $START"
+
+    while [ $finished -eq 0 ]; do
+    wget_o=$(wget -c --read-timeout="$READTIMEOUT" -t $READRETRIES --no-check-certificate $1 )
+    retval=$?
+ 
+    if [ $retval -eq 0 ]; then
+        finished=1
+	else
+	    if [ $retval -eq 4 ]; then
+		NOW=$(date +%s)
+		DELTA=$((NOW - START))
+		log "$filename: wget returned $retval at $time, elapsed = $DELTA"
+
+            if [ $DELTA -gt $WEEK ]; then exit; fi
+            sleep 5
+	    else
+		finished=1
+                error=$retval
+            fi
+	fi
+     done
+     echo "$filename"
+}
