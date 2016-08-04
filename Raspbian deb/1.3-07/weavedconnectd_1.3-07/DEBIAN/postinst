@@ -1,0 +1,38 @@
+#!/bin/sh
+# postinst script for weavedconnectd
+#
+
+set -e
+
+logger "Weaved installer postinst $1"
+ 
+case "$1" in
+    purge|remove|failed-upgrade|abort-install|abort-upgrade|disappear)
+    ;;
+
+    configure|upgrade)
+    if [ -f /usr/bin/weavedstart.sh ]; then
+# need to handle rename of launchschannel in previous versions to weavedschannel
+	sed s/launchschannel/weavedschannel/ < /usr/bin/weavedstart.sh > /tmp/weavedstart.sh
+	mv /tmp/weavedstart.sh /usr/bin
+	chmod +x /usr/bin/weavedstart.sh
+        logger "Restarting Weaved daemons"
+	weavedstart.sh    
+    fi
+  ;;
+
+  *)
+    echo "postinst called with unknown argument \`$1'" >&2
+    exit 1
+  ;;
+
+esac
+echo
+echo "================================================================================"
+echo " Available commands: "
+echo " 1) weavedinstaller interactively adds remot3.it connection services."
+echo " 2) remot3it_register allows batch installation. "
+echo "    Edit /usr/bin/remot3it_register to select the services you wish to add."
+echo
+echo " All commands should be run using sudo, e.g. sudo weavedinstaller."
+echo

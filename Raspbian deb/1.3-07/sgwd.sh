@@ -4,10 +4,7 @@
 # scripts on Ubuntu system and removing backup file to avoid warning/error
 
 DIR=/DEBIAN
-pkg=remot3it
-version=1.3-07
-arch=armhf
-packageName="$pkg"_"$version"_"$arch"
+packageName=weavedconnectd_1.3-07
 
 sudo gedit "$packageName"$DIR/control "$packageName"$DIR/prerm "$packageName"$DIR/postrm "$packageName"$DIR/postinst "$packageName"$DIR/conffiles
 sudo rm "$packageName"$DIR/*~
