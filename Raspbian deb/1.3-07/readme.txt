@@ -1,8 +1,8 @@
 To install Weaved to your ARM Debian system:
 1) Copy the deb file to your system.
 2) Run "sudo dpkg -i weavedconnectd_1.3-07b.deb"
-3) Now run "sudo weavedinstaller" to install services interactively.
-4) Edit and run /usr/bin/remot3_register for a table-based installation script suitable for mass production.
+3) Now run "sudo weavedinstaller" to install remot3.it services individually from the on-screen menus.
+4) Or alternatively, you may edit and run /usr/bin/remot3_register for a table-based installation script suitable for mass production.
 =============================================================
 The weavedconnectd_1.3-07 folder contains the source files for the Debian package creation process.
 
