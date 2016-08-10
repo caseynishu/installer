@@ -131,6 +131,8 @@ main()
 #    makeConnection web 80 "$SERVICEBASENAME-web-80"
 #    makeConnection tcp 3389 "$SERVICEBASENAME-tcp-3389"
 # =============================================  
+# this line is only used to automate conversion of pre-remot3.it evices to remot3.it
+# convertExistingUIDs
 
     echo
     if [ "$REGISTERSERVICE" == "0" ]; then

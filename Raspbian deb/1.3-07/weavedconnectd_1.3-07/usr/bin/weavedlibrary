@@ -850,7 +850,14 @@ checkForDeviceName()
         configureConnection
 	debug $SerialID
 	# now iterate through existing conf files, skipping rmt3 one, and add HWID to others
+    	convertExistingUIDs
 
+    fi
+}
+
+#=======================================
+convertExistingUIDs()
+{
     	for file in $WEAVED_DIR/*.conf; do
 	    debug "$file"
             if [ "$file" != Weavedrmt365535.conf ]; then
@@ -858,14 +865,13 @@ checkForDeviceName()
                 uid="$(grep '^UID' $file | awk '{print $2}')"
 
                 result=$(curl -s $deviceHWIDURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"hardwareid\":\"$SerialID\"}" -H “Content-Type:application/json” -H "apikey:$APIKEY" -H "token:$token" &> /dev/null)
-		debug result
+#		debug result
 	        addHWIDResult=$(jsonval "$result" "status")
-	        debug $addHWIDResult
+#	        debug $addHWIDResult
 		echo "Updating $file"
 	        logger "weaved: Adding HWID $SerialID to $serviceName UID $uid - $addHWIDResult"
             fi
         done
-    fi
 }
 
 ######### Install Enablement #########
