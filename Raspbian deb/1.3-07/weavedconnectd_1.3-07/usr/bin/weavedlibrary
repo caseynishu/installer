@@ -870,6 +870,9 @@ convertExistingUIDs()
 #	        debug $addHWIDResult
 		echo "Updating $file"
 	        logger "weaved: Adding HWID $SerialID to $serviceName UID $uid - $addHWIDResult"
+# now update start/stop script
+		WEAVED_PORT=$(basename $file ".conf")
+		installStartStop
             fi
         done
 }
