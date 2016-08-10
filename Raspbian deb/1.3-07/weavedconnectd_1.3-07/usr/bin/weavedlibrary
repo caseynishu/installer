@@ -861,7 +861,7 @@ checkForDeviceName()
 		debug result
 	        addHWIDResult=$(jsonval "$result" "status")
 	        debug $addHWIDResult
-
+		echo "Updating $file"
 	        logger "weaved: Adding HWID $SerialID to $serviceName UID $uid - $addHWIDResult"
             fi
         done
