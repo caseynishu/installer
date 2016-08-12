@@ -28,7 +28,6 @@ OUTPUT="$TMP/notification.txt"
 WRITE_DB_STRING="/bin/ffdb -s -d /data/cfg/config.lua -t /data/cfg/ffdb.tmp"
 
 NOTIFICATION_SERVER="notification.yoics.net"
-#NOTIFICATION_SERVER="home.mycal.net"
 NOTIFICATION_VERSION="/v2"
 NOTIFICATION_SEND_URI_AUTH="${NOTIFICATION_VERSION}/send_notification_auth.php?"
 NOTIFICATION_SEND_URI="${NOTIFICATION_VERSION}/send_notification.php?"
