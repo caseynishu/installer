@@ -12,14 +12,13 @@
 ##### Settings #####
 LIBVERSION=lib_v1.3-06_x86
 AUTHOR="Gary Worsham"
-LIBMODIFIED="June 20, 2016"
+LIBMODIFIED="August 14, 2016"
 DAEMON=weavedconnectd
 
 # ----------------------------------------
 # folders and files
-WEAVED_DIR=/etc/weaved/available
-# WEAVED_DIR_AVAILABLE=/etc/weaved/available
-# WEAVED_DIR_ACTIVE=/etc/weaved/active
+# these folders are not the same as used by Bulk Registration
+WEAVED_DIR=/etc/weaved/services
 WEAVED_LIB_DIR=/usr/share/weavedconnectd
 BIN_DIR=/usr/bin
 TMP_DIR=/tmp
@@ -807,15 +806,9 @@ testLogin()
 installEnablement()
 {
     printf "."
-#    if [ ! -d "WEAVED_DIR" ]; then
-#	mkdir -p "$WEAVED_DIR"
-#    fi
-#    if [ ! -d "WEAVED_DIR_ACTIVE" ]; then#
-#	mkdir -p "$WEAVED_DIR_ACTIVE"
-#    fi
-#    if [ ! -d "WEAVED_DIR_AVAILABLE" ]; then
-#	mkdir -p "$WEAVED_DIR_AVAILABLE"
-#    fi
+    if [ ! -d "WEAVED_DIR" ]; then
+	mkdir -p "$WEAVED_DIR"
+    fi
 
     if [[ "$WEBIOPI" == "1" && "$INSTALLWEBIOPI" == "1" ]]; then
         cp /etc/webiopi/weavedconnectd.conf $TMP_DIR/"$WEAVED_PORT".conf
