@@ -2,16 +2,17 @@
 
 #  weavedinstaller
 #
-#  Run 'sudo weavedinstaller' to install, configure or remove Weaved
+#  Run 'sudo weavedinstaller' to install, configure or remove remot3.it
 #  attachment services for tcp listeners.
 #
-#  Weaved, Inc. Copyright 2016. All rights reserved.
+#  remot3.it by Weaved, Inc. 
+#  Copyright 2016. All rights reserved.
 #
 
 ##### Settings #####
 VERSION=v1.3-07_Pi
 AUTHOR="Gary Worsham"
-MODIFIED="August 03, 2016"
+MODIFIED="August 21, 2016"
 
 USERNAME=""
 PASSWORD=""

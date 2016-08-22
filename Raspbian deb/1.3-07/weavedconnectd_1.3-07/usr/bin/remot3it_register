@@ -3,20 +3,20 @@
 #  remot3it_register
 #  for mfg line configuration of services, or preparation of a master image for cloning.
 #
-#  Run 'sudo remot3it_register' to install Weaved
+#  Run 'sudo remot3it_register' to install remot3.it
 #  attachment services for tcp listeners.
 #
 #  Edit the makeConnection lines towards the bottom of this file to specify
-#  which Weaved services you wish to install.
+#  which remot3.it services you wish to install.
 #
-#  Installs these Weaved services:
+#  Installs these remot3.it services:
 #
 #  rmt3
 #  ssh on port 22 (commented out)
 #  http on port 80 (commented out)
 #  tcp on port 3389 (commented out)
 #
-#  Weaved, Inc. Copyright 2016. All rights reserved.
+#  remot3.it, Inc. Copyright 2016. All rights reserved.
 #
 
 ##### Settings #####
@@ -25,7 +25,7 @@ AUTHOR="Gary Worsham"
 MODIFIED="August 02, 2016"
 DEBUG="0"
 #=======================================================================
-# Weaved recommends running this script (with real username/password) from /tmp folder.
+# remot3.it recommends running this script (with real username/password) from /tmp folder.
 # e.g. use wget to copy master script to /tmp from a local web server, then run it.
 # on next boot, /tmp folder is wiped
 #
@@ -46,7 +46,7 @@ APIKEY="WeavedDeveloperToolsWy98ayxR"
 # if REGISTERSERVICE is 1, then it means that we need the account credentials to register the
 # services at the time of running this script.
 # if REGISTERSERVICE is 0, then all we do is to install the daemon, scripts and initialized enablement files
-# in anticipation of either bulk registration or registering via developer.weaved.com.
+# in anticipation of either bulk registration at remot3.it.
 
 REGISTERSERVICE="1"
 
@@ -70,10 +70,10 @@ main()
     platformDetection
     echo "Platform = " $PLATFORM 
 #-----------------------------------------------------------------------
-#   each OEM should obtain an APIKEY from Weaved applications engineering
+#   each OEM should obtain an APIKEY from remot3.it applications engineering
 #
     if [ "$APIKEY" == "" ]; then
-        echo "APIKEY is blank.  Please contact Weaved applications engineering for an API key."
+        echo "APIKEY is blank.  Please contact remot3.it applications engineering for an API key."
 	exit
     fi
 #-----------------------------------------------------------------------

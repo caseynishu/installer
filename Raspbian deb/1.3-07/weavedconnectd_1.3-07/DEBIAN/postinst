@@ -4,8 +4,6 @@
 
 set -e
 
-logger "Weaved installer postinst $1"
- 
 case "$1" in
     purge|remove|failed-upgrade|abort-install|abort-upgrade|disappear)
     ;;
@@ -16,23 +14,20 @@ case "$1" in
 	sed s/launchschannel/weavedschannel/ < /usr/bin/weavedstart.sh > /tmp/weavedstart.sh
 	mv /tmp/weavedstart.sh /usr/bin
 	chmod +x /usr/bin/weavedstart.sh
-        logger "Restarting Weaved daemons"
+        logger "remot3.it: Restarting daemons"
 	weavedstart.sh    
     fi
   ;;
 
   *)
-    echo "postinst called with unknown argument \`$1'" >&2
+    logger "remot3.it: postinst called with unknown argument \`$1'" >&2
     exit 1
   ;;
 
 esac
 echo
-echo "================================================================================"
-echo " Available commands: "
-echo " 1) weavedinstaller interactively adds remot3.it connection services."
-echo " 2) remot3it_register allows batch installation. "
-echo "    Edit /usr/bin/remot3it_register to select the services you wish to add."
+echo "=============================================================================="
+echo "Available commands:"
 echo
-echo " All commands should be run using sudo, e.g. sudo weavedinstaller."
+echo "sudo weavedinstaller - configures your device's tcp services for remote access" 
 echo

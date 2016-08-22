@@ -6,13 +6,13 @@
 #  attachment services for tcp listeners.
 #  Interactive and preconfigured modes supported.
 #
-#  Weaved, Inc. Copyright 2016. All rights reserved.
-#vice:
+#  remot3.it by Weaved, Inc. 
+#  Copyright 2016. All rights reserved.
 
 ##### Settings #####
 LIBVERSION=lib_v1.3-07_Pi
 AUTHOR="Gary Worsham"
-LIBMODIFIED="August 04, 2016"
+LIBMODIFIED="August 21, 2016"
 DAEMON=weavedconnectd
 
 # ----------------------------------------
@@ -55,7 +55,7 @@ regdeviceURL=https://$server.weaved.com/$version/api/device/register
 ##### Version #####
 displayVersion()
 {
-    printf "Weaved connection installer Version: %s %s \n" "$VERSION" "$LIBVERSION"
+    printf "remot3.it connection installer Version: %s %s \n" "$VERSION" "$LIBVERSION"
     printf "Modified: %s (library) %s \n" "$MODIFIED" "$LIBMODIFIED"
     # check for sudo user at this point
     if [[ $EUID -ne 0 ]]; then
@@ -75,10 +75,10 @@ weavedCompatibility()
     number=$(cat $TMP_DIR/.networkDump | wc -l)
 
     if [ "$number" -ge 3 ]; then
-        printf "Your network is compatible with Weaved services.\n\n"
+        printf "Your network is compatible with remot3.it services.\n\n"
         sleep 2
     elif [ "$(cat $TMP_DIR/.networkDump | grep "Send to" | grep "OK" | wc -l)" -lt 1 ]; then
-        printf "Unfortunately, it appears your network may not currently be compatible with Weaved services.\n"
+        printf "Unfortunately, it appears your network may not currently be compatible with remot3.it services.\n"
         printf "Please visit https://forum.weaved.com for help.\n\n"
         exit
     fi
@@ -106,7 +106,7 @@ getSerialID()
 	echo "$SerialID" > "$SERIALNUMBERFILE"
 	chmod -w "$SERIALNUMBERFILE"
     fi
-    logger "Weaved SerialID is $SerialID"
+    logger "remot3.it SerialID is $SerialID"
 }
 
 ##### end get SerialID address #####
@@ -143,8 +143,8 @@ checkforServices()
     fi
     legacyInstances=$(cat $TMP_DIR/.instances)
     echo
-    echo "===========  Installed Weaved Services  ================="
-    printf "Protocol\tPort\tService\t\tWeaved Name\n"
+    echo "===========  Installed remot3.it Services  ================="
+    printf "Protocol\tPort\tService\t\tremot3.it Name\n"
     echo "---------------------------------------------------------"
     WARNING="0"
     confFiles=$(find $WEAVED_DIR -name "*.conf")
@@ -228,7 +228,7 @@ checkforServices()
         fi
     done
     echo "---------------------------------------------------------"
-    echo "             Device Name: $DeviceName"
+    echo " Device Name: $DeviceName"
     echo "========================================================="
 
     if [ "$WARNING" == "1" ]; then
@@ -249,9 +249,9 @@ menuLoop()
 	alias=""	# reset alias,so you will be asked
         printf "********************** Main Menu ************************\n"
         printf "*                                                       *\n"
-        printf "*       1) Attach/reinstall Weaved to a Service         *\n"
-        printf "*       2) Remove Weaved attachment from a Service      *\n"
-        printf "*       3) Remove all Weaved attachments, then exit     *\n"
+        printf "*       1) Attach/reinstall remot3.it to a Service      *\n"
+        printf "*       2) Remove remot3.it attachment from a Service   *\n"
+        printf "*       3) Remove all remot3.it attachments, then exit  *\n"
         printf "*       4) Exit                                         *\n"
         printf "*                                                       *\n"
         printf "*********************************************************\n\n"
@@ -422,7 +422,7 @@ protocolSelection()
 	# process the entry for all menu choices other than MAXSEL  
         if [ "$get_num" != $MAXSEL ]; then
           #  clear
-            printf "We will attach a Weaved connection to the following service:\n\n"
+            printf "We will attach a remot3.it connection to the following service:\n\n"
             if [ "$CUSTOM" = 1 ]; then
                 printf "Protocol: %s " "$CUSTOM_PROTOCOL"
             else
@@ -434,7 +434,7 @@ protocolSelection()
             
 	    alreadyThere=$(cat $TMP_DIR/.legacy_instances | grep -w $WEAVED_PORT)
             if [ "$alreadyThere"  != "" ]; then
-                printf "Weaved is already attached to this Service.\n" 
+                printf "remot3.it is already attached to this Service.\n" 
                 if ask "Do you wish to overwrite your previous settings?"; then
                     testLogin
                     deleteDevice
@@ -442,9 +442,9 @@ protocolSelection()
                         if [ -f $BIN_DIR/$WEAVED_PORT.sh ]; then
                             $BIN_DIR/$WEAVED_PORT.sh stop -q > /dev/null
                         else
-                            if ask "May we stop all Weaved services to continue?"; then
+                            if ask "May we stop all remot3.it services to continue?"; then
                                 killall weavedConnectd
-                                echo "Run $STARTEMUP to restart all installed Weaved Services."
+                                echo "Run $STARTEMUP to restart all installed remot3.it Services."
                             fi
                             if [ -f $PID_DIR/$WEAVED_PORT.pid ]; then
                                 rm $PID_DIR/$WEAVED_PORT.pid
@@ -467,7 +467,7 @@ protocolSelection()
 ##### Delete Connection
 deleteConnection()
 {
-    printf "\nEnter the Weaved Name of the Service you wish to detach.\n"
+    printf "\nEnter the remot3.it Name of the Service you wish to detach.\n"
     printf "This will not affect the installed service.\n"
     read deviceToDelete
     deviceFound=0
@@ -487,7 +487,7 @@ deleteConnection()
             deviceFound=1
 	    # get the protocol name
 	    deviceType=$(jsonval "$resp" "title")
-	    if ask "Are you sure you want to delete the Weaved $deviceType attachment $serviceName?"; then
+	    if ask "Are you sure you want to delete the remot3.it $deviceType attachment $serviceName?"; then
 		printf "Deleting $serviceName...\n"
 		result=$(curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H “Content-Type:application/json” -H "apikey:$APIKEY" -H "token:$token" &> /dev/null)
 		deleteResult=$(jsonval "$result" "status")
@@ -524,7 +524,7 @@ deleteConnection()
 ##### Delete All Connections
 deleteAllConnections()
 {
-    if ask "Are you sure you want to delete ALL Weaved attachments?"; then
+    if ask "Are you sure you want to delete ALL remot3.it attachments?"; then
 
     # now iterate through all enablement files to find it
     # stop all daemons.  
@@ -578,14 +578,14 @@ deleteAllConnections()
 bashCheck()
 {
     if [ "$BASH_VERSION" = '' ]; then
-	clear
+#	clear
 	printf "You executed this script with dash vs bash! \n\n"
 	printf "Please execute \"chmod +x "$filename"\" and then \n"
 	printf "execute \"./"$filename"\".  \n\n"
 	printf "Thank you! \n"
 	exit
     else
-	echo "Now launching the Weaved connectd daemon installer..." > /dev/null
+	echo "Now launching the remot3.it connectd daemon installer..." > /dev/null
     fi
 }
 ##### End Bash Check #####
@@ -599,8 +599,8 @@ askRegisterLogin()
 #        printf "\n\n"
         printf "********************* Sign In Menu *********************\n"
         printf "*                                                      *\n"
-        printf "*    1) Sign in to your existing Weaved account        *\n"
-        printf "*    2) Request a code for a new Weaved account        *\n"
+        printf "*    1) Sign in to your existing remot3.it account        *\n"
+        printf "*    2) Request a code for a new remot3.it account        *\n"
         printf "*    3) Enter a verification code received in e-mail     *\n"
         printf "*    4) Exit                                           *\n"
         printf "*                                                      *\n"
@@ -639,7 +639,7 @@ askRegisterLogin()
 ######### Begin getEmail #########
 getEmail() 
 {
-    printf "Enter your e-mail address to create a new Weaved account.\n"
+    printf "Enter your e-mail address to create a new remot3.it account.\n"
     if [ "$USERNAME" != "" ]; then 
 	username="$USERNAME"
     else        
@@ -736,7 +736,7 @@ userLogin () #Portal login function
     if [ "$USERNAME" != "" ]; then 
 	username="$USERNAME"
     else        
-	printf "Please enter your Weaved Username (email address): \n"
+	printf "Please enter your remot3.it Username (e-mail address): \n"
 	read username
     fi
     if [ "$AUTHHASH" != "REPLACE_AUTHHASH" ]; then
@@ -803,7 +803,7 @@ testLogin()
         printf "Please correct the system date if needed and run the installer again.\n"
         printf "Run the command 'man date' for help resetting the date.\n\n"
         printf "If you are receiving this message and your system date is correct,\n"
-        printf "please contact Weaved support at forum.weaved.com.\n"
+        printf "please contact remot3.it support at forum.weaved.com.\n"
         exit
     fi
 }
@@ -942,14 +942,14 @@ cronRemoveLine()
     crontab $TMP_DIR/.crontmp
 }
 
-######### Enable Weaved services to start at reboot time ######
+######### Enable remot3.it services to start at reboot time ######
 enableStartup()
 {
     cronAddLine "@reboot $BIN_DIR/$STARTEMUP"
 }
-######### End Enable Weaved services to start at reboot time ######
+######### End Enable remot3.it services to start at reboot time ######
 
-######### Disable Weaved services to start at reboot time ######
+######### Disable remot3.it services to start at reboot time ######
 disableStartup()
 {
     cronRemoveLine "@reboot $BIN_DIR/$STARTEMUP"
@@ -1042,7 +1042,7 @@ retryFetchUID()
     checkforUID="$(tail "$TMP_DIR"/"$WEAVED_PORT".conf | grep UID | wc -l)"
     if [ "$checkforUID" != 2 ]; then
 	printf "We have unsuccessfully retried to obtain a UID.\n"
-        printf "Please contact Weaved Support at http://forum.weaved.com for help.\n\n"
+        printf "Please contact remot3.it Support at http://forum.weaved.com for help.\n\n"
     fi
 }
 ######### Retry Fetch UID ##########
@@ -1121,11 +1121,11 @@ registerDevice()
     printf "."
     while [ "$alias" == "" ]; do
         if [ "$PROTOCOL" == "rmt3" ]; then
-	    printf "\nEnter a name for your Device. \n"
-	    printf "This name will be shown in the remot3it Device List.\n"
+	    printf "\nEnter a name for your Device (e.g. my_Pi_001).\n"
+	    printf "This name will be shown in the remot3.it portal.\n"
 	else
-	    printf "\nEnter a name for this Service Attachment (e.g. SSH-Pi). \n"
-	    printf "This name will be shown in your Weaved Service List.\n"
+	    printf "\nEnter a name for this remot3.it Service (e.g. SSH-Pi). \n"
+	    printf "This name will be shown in your remot3.it Service List.\n"
         fi    
         printf "Only letters, numbers, underscore, space and dash are allowed.\n\n"
         read alias
@@ -1138,7 +1138,7 @@ registerDevice()
 startService()
 {
     printf "\n"
-    logger "Weaved Connection starting: $alias"
+    logger "remot3.it Connection starting: $alias"
     echo -n "Registering $alias" ; sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -n ".";sleep 1;echo -e "\n\n"
     $BIN_DIR/$WEAVED_PORT.sh restart > /dev/null
 }
@@ -1300,7 +1300,7 @@ ask()
 #======== end of utility functions used in installers and scripts
 
 
-#================ Functions below are for use in remot3it bash scripts
+#================ Functions below are for use in remot3.it bash scripts
 
 ########################################
 # Support Functions                    #
