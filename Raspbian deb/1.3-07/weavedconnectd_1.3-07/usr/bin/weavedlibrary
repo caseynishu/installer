@@ -12,7 +12,7 @@
 ##### Settings #####
 LIBVERSION=lib_v1.3-07_Pi
 AUTHOR="Gary Worsham"
-LIBMODIFIED="August 21, 2016"
+LIBMODIFIED="August 22, 2016"
 DAEMON=weavedconnectd
 
 # ----------------------------------------
@@ -145,7 +145,7 @@ checkforServices()
     echo
     echo "===========  Installed remot3.it Services  ================="
     printf "Protocol\tPort\tService\t\tremot3.it Name\n"
-    echo "---------------------------------------------------------"
+    echo "------------------------------------------------------------"
     WARNING="0"
     confFiles=$(find $WEAVED_DIR -name "*.conf")
     DeviceName=""
@@ -227,14 +227,14 @@ checkforServices()
             fi
         fi
     done
-    echo "---------------------------------------------------------"
+    echo "------------------------------------------------------------"
     echo " Device Name: $DeviceName"
-    echo "========================================================="
+    echo "============================================================"
 
     if [ "$WARNING" == "1" ]; then
         printf "WARNING-NONE indicates that there is no TCP listener \n"
         printf "detected at that port. Please check your settings.\n"
-        echo "========================================================="
+        echo "============================================================"
     fi
     printf "\n"
 }
@@ -247,14 +247,14 @@ menuLoop()
    #     clear
         checkforServices
 	alias=""	# reset alias,so you will be asked
-        printf "********************** Main Menu ************************\n"
-        printf "*                                                       *\n"
-        printf "*       1) Attach/reinstall remot3.it to a Service      *\n"
-        printf "*       2) Remove remot3.it attachment from a Service   *\n"
-        printf "*       3) Remove all remot3.it attachments, then exit  *\n"
-        printf "*       4) Exit                                         *\n"
-        printf "*                                                       *\n"
-        printf "*********************************************************\n\n"
+        printf "********************** Main Menu *************************\n"
+        printf "*                                                        *\n"
+        printf "*     1) Attach/reinstall remot3.it to a Service         *\n"
+        printf "*     2) Remove remot3.it attachment from a Service      *\n"
+        printf "*     3) Remove all remot3.it attachments, then exit     *\n"
+        printf "*     4) Exit                                            *\n"
+        printf "*                                                        *\n"
+        printf "**********************************************************\n\n"
         unset get_num
         while [[ ! "${get_num}" =~ ^[0-9]+$ ]]; do
             echo "Please select from the above options (1-4):"
@@ -599,9 +599,9 @@ askRegisterLogin()
 #        printf "\n\n"
         printf "********************* Sign In Menu *********************\n"
         printf "*                                                      *\n"
-        printf "*    1) Sign in to your existing remot3.it account        *\n"
-        printf "*    2) Request a code for a new remot3.it account        *\n"
-        printf "*    3) Enter a verification code received in e-mail     *\n"
+        printf "*    1) Sign in to your existing remot3.it account     *\n"
+        printf "*    2) Request a code for a new remot3.it account     *\n"
+        printf "*    3) Enter a verification code received in e-mail   *\n"
         printf "*    4) Exit                                           *\n"
         printf "*                                                      *\n"
         printf "********************************************************\n\n"
