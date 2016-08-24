@@ -12,7 +12,7 @@
 ##### Settings #####
 LIBVERSION=lib_v1.3-07_Pi
 AUTHOR="Gary Worsham"
-LIBMODIFIED="August 22, 2016"
+LIBMODIFIED="August 23, 2016"
 DAEMON=weavedconnectd
 
 # ----------------------------------------
@@ -248,12 +248,12 @@ menuLoop()
         checkforServices
 	alias=""	# reset alias,so you will be asked
         printf "********************** Main Menu *************************\n"
-        printf "*                                                        *\n"
-        printf "*     1) Attach/reinstall remot3.it to a Service         *\n"
-        printf "*     2) Remove remot3.it attachment from a Service      *\n"
-        printf "*     3) Remove all remot3.it attachments, then exit     *\n"
-        printf "*     4) Exit                                            *\n"
-        printf "*                                                        *\n"
+        printf "                                                         \n"
+        printf "      1) Attach/reinstall remot3.it to a Service         \n"
+        printf "      2) Remove remot3.it attachment from a Service      \n"
+        printf "      3) Remove all remot3.it attachments, then exit     \n"
+        printf "      4) Exit                                            \n"
+        printf "                                                         \n"
         printf "**********************************************************\n\n"
         unset get_num
         while [[ ! "${get_num}" =~ ^[0-9]+$ ]]; do
@@ -337,15 +337,15 @@ protocolSelection()
         checkforServices
         printf "\n\n"
         printf "*********** Protocol Selection Menu ***********\n"
-        printf "*                                             *\n"
-        printf "*    1) SSH on port 22                        *\n"
-        printf "*    2) Web (HTTP) on port 80                 *\n"
-        printf "*    3) VNC on port 5901                      *\n"
-        printf "*    4) Custom (TCP)                          *\n"
-        printf "*    5) Return to previous menu               *\n"
-        printf "*                                             *\n"
+        printf "                                             \n"
+        printf "     1) SSH on port 22                       \n"
+        printf "     2) Web (HTTP) on port 80                \n"
+        printf "     3) VNC on port 5901                     \n"
+        printf "     4) Custom (TCP)                         \n"
+        printf "     5) Return to previous menu              \n"
+        printf "                                             \n"
         printf "***********************************************\n\n"
-        printf " You can change the port value during install *\n\n"
+        printf " You can change the port value during install  \n\n"
         printf "***********************************************\n\n"
         MAXSEL=5
         unset get_num
@@ -598,12 +598,12 @@ askRegisterLogin()
    #     clear
 #        printf "\n\n"
         printf "********************* Sign In Menu *********************\n"
-        printf "*                                                      *\n"
-        printf "*    1) Sign in to your existing remot3.it account     *\n"
-        printf "*    2) Request a code for a new remot3.it account     *\n"
-        printf "*    3) Enter a verification code received in e-mail   *\n"
-        printf "*    4) Exit                                           *\n"
-        printf "*                                                      *\n"
+        printf "                                                      \n"
+        printf "     1) Sign in to your existing remot3.it account    \n"
+        printf "     2) Request a code for a new remot3.it account    \n"
+        printf "     3) Enter a verification code received in e-mail  \n"
+        printf "     4) Exit                                          \n"
+        printf "                                                      \n"
         printf "********************************************************\n\n"
         unset get_num
         while [[ ! "${get_num}" =~ ^[0-9]+$ ]]; do
@@ -706,13 +706,13 @@ getNewPassword() {
     if [ "$PASSWORD" != "" ]; then
 	password="$PASSWORD"
     else
-	printf "\nPlease choose a password to use with your new account.\n"
+	printf "\nPlease choose a password to use with your remot3.it account.\n"
 	printf "It should be between 7 and 15 characters in length.\n"
 	printf "Valid special characters are limited to .!-_@$^.\n"
 	printf "Please enter it now:\n"
 	password=""
 	read  -s password
-        printf "\nPlease confirm your password: \n"
+        printf "\nPlease confirm your remot3.it password: \n"
         read  -s passwordConfirm
 
         if [ "$password" != "$passwordConfirm" ]; then
@@ -745,7 +745,7 @@ userLogin () #Portal login function
         if [ "$PASSWORD" != "" ]; then
 	    password="$PASSWORD"
         else
-	    printf "\nPlease enter your password: \n"
+	    printf "\nPlease enter your remot3.it password: \n"
 	    password=""
 	    read  -s password
         fi
@@ -1122,10 +1122,11 @@ registerDevice()
     while [ "$alias" == "" ]; do
         if [ "$PROTOCOL" == "rmt3" ]; then
 	    printf "\nEnter a name for your Device (e.g. my_Pi_001).\n"
-	    printf "This name will be shown in the remot3.it portal.\n"
+	    printf "The Device Name identifies your device in the remot3.it portal.\n"
+            printf "Your services will be grouped under the Device Name.\n\n"
 	else
 	    printf "\nEnter a name for this remot3.it Service (e.g. SSH-Pi). \n"
-	    printf "This name will be shown in your remot3.it Service List.\n"
+	    printf "The is name will be shown in your remot3.it Service List.\n\n"
         fi    
         printf "Only letters, numbers, underscore, space and dash are allowed.\n\n"
         read alias

@@ -3,7 +3,7 @@
 #
 
 set -e
-logger "Weaved installer prerm $1"
+logger "remot3.it installer prerm $1"
 
 case "$1" in
 
@@ -12,6 +12,7 @@ case "$1" in
     if [ -e /etc/weaved/serial.txt ]; then
       rm /etc/weaved/serial.txt
     fi
+    weavedstop.sh
   ;;
 
     upgrade|failed-upgrade)
@@ -21,7 +22,7 @@ case "$1" in
   ;;
 
   *)
-    echo "postrm called with unknown argument \`$1'" >&2
+    logger "postrm called with unknown argument \`$1'" >&2
     exit 1
   ;;
 
