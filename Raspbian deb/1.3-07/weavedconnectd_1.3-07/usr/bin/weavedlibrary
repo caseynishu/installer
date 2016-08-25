@@ -144,7 +144,7 @@ checkforServices()
     legacyInstances=$(cat $TMP_DIR/.instances)
     echo
     echo "===========  Installed remot3.it Services  ================="
-    printf "Protocol\tPort\tService\t\tremot3.it Name\n"
+    printf "Protocol\tPort\tService\t\tremot3.it Service Name\n"
     echo "------------------------------------------------------------"
     WARNING="0"
     confFiles=$(find $WEAVED_DIR -name "*.conf")
@@ -259,7 +259,11 @@ menuLoop()
         while [[ ! "${get_num}" =~ ^[0-9]+$ ]]; do
             echo "Please select from the above options (1-4):"
             read get_num
-            ! [[ "${get_num}" -ge 1 && "${get_num}" -le 4 ]] && unset get_num
+            if [ $(validateInput $get_num '[:digit:]') != 0 ]; then
+	        printf "\nSorry, enter numbers only.\n"
+	    else
+                ! [[ "${get_num}" -ge 1 && "${get_num}" -le 4 ]] && unset get_num
+            fi 
         done
         if [ "$get_num" == 1 ]; then
             protocolSelection
@@ -353,7 +357,12 @@ protocolSelection()
         while [[ ! "${get_num}" =~ ^[0-9]+$ ]]; do
             echo "Please select from the above options (1-$MAXSEL):"
             read get_num
-            ! [[ "${get_num}" -ge 1 && "${get_num}" -le $MAXSEL ]] && unset get_num
+            if [ $(validateInput $get_num '[:digit:]') != 0 ]; then
+	        printf "\nSorry, enter numbers only.\n"
+                unset get_num
+	    else
+                ! [[ "${get_num}" -ge 1 && "${get_num}" -le $MAXSEL ]] && unset get_num
+            fi
         done
         printf "You have selected: %s. \n\n" "${get_num}"
         if [ "$get_num" == 1 ]; then
@@ -611,7 +620,12 @@ askRegisterLogin()
         while [[ ! "${get_num}" =~ ^[0-9]+$ ]]; do
             echo "Please select from the above options (1-4):"
             read get_num
-            ! [[ "${get_num}" -ge 1 && "${get_num}" -le 4 ]] && unset get_num
+            if [ $(validateInput $get_num '[:digit:]') != 0 ]; then
+	        printf "\nSorry, enter numbers only.\n"
+                unset get_num
+	    else
+                ! [[ "${get_num}" -ge 1 && "${get_num}" -le 4 ]] && unset get_num
+            fi
         done
 #        printf "You have selected: %s. \n\n" "${get_num}"
         if [ "$get_num" = 2 ]; then
@@ -795,7 +809,9 @@ signInAPI()
     else
     	loginFailed=$(echo "$resp" | grep "The username or password are invalid" | sed 's/"//g')
     	slimError=$(echo "$resp" | grep "Slim Application Error" | sed 's/"//g')
-    	login404=$(echo "$resp" | grep 404 | sed 's/"//g')
+# 404 is triggered when you enter some special character in e-mail.  this specific search may fail if API
+# server is moved
+    	login404=$(echo "$resp" | grep "404 Page Not Found" | sed 's/"//g')
 #	echo "Error" $loginFailed $slimError $login404
     fi
 
@@ -808,10 +824,10 @@ signInAPI()
 ######### Test Login #########
 testLogin()
 {
-    while [ "$loginFailed" != "" ] || [ "$slimError" != "" ]; do
+    while [ "$loginFailed" != "" ] || [ "$slimError" != "" ] || [ "$login404" != "" ]; do
 #	clear
-	printf "You have entered either an incorrect username or password. Please try again.\n"
-	printf "Press the 'Enter' key to continue.\n"
+	printf "\nYou have entered either an incorrect username or password.\n"
+	printf "Please try again.  Press the 'Enter' key to continue.\n"
         read
 	loginFailed=""
 	userLogin
@@ -1082,6 +1098,7 @@ preregisterUID()
     elif [ "$test2" = 1 ]; then
 	printf "You are not currently logged in. \n"
 	userLogin
+	testLogin
 	preregisterUID
     elif [ "$test3" = 1 ]; then
 	printf "Sorry, the pre-registration of UID: %s is failing. You can finish registration\n" "$uid"
@@ -1129,6 +1146,7 @@ getSecret()
     	elif [ $test2 = 1 ]; then
 		printf "For some reason, you were logged out and must log back in. \n"
 		userLogin
+		testLogin
 		getSecret
     	fi
     fi

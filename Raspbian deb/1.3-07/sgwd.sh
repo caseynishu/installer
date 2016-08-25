@@ -11,5 +11,5 @@ sudo gunzip $packageName$LOGDIR/changelog.Debian.gz
 sudo gedit "$packageName"$DIR/control "$packageName"$DIR/prerm "$packageName"$DIR/postrm "$packageName"$DIR/postinst "$packageName"$DIR/conffiles "$packageName""$LOGDIR"/changelog.Debian
 sudo rm "$packageName"$DIR/*~
 sudo rm "$packageName"$LOGDIR/*~
-sudo gzip -9 "$packageName""$LOGDIR"/changelog.Debian
+sudo gzip -9 -n "$packageName""$LOGDIR"/changelog.Debian
 
