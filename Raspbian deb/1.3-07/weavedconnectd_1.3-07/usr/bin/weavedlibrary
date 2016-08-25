@@ -12,7 +12,7 @@
 ##### Settings #####
 LIBVERSION=lib_v1.3-07_Pi
 AUTHOR="Gary Worsham"
-LIBMODIFIED="August 23, 2016"
+LIBMODIFIED="August 24, 2016"
 DAEMON=weavedconnectd
 
 # ----------------------------------------
@@ -605,6 +605,8 @@ askRegisterLogin()
         printf "     4) Exit                                          \n"
         printf "                                                      \n"
         printf "********************************************************\n\n"
+        printf "       Use your Weaved account with remot3.it! \n"
+        printf "********************************************************\n\n"
         unset get_num
         while [[ ! "${get_num}" =~ ^[0-9]+$ ]]; do
             echo "Please select from the above options (1-4):"
@@ -706,12 +708,30 @@ getNewPassword() {
     if [ "$PASSWORD" != "" ]; then
 	password="$PASSWORD"
     else
-	printf "\nPlease choose a password to use with your remot3.it account.\n"
+	printf "\nChoose a password to use with your remot3.it account.\n"
 	printf "It should be between 7 and 15 characters in length.\n"
-	printf "Valid special characters are limited to .!-_@$^.\n"
+	printf "Valid special characters are limited to ! . - @ _ $ \n"
 	printf "Please enter it now:\n"
 	password=""
 	read  -s password
+
+        if [ $(validateInput $password '\$ \@ \! \- \_ \. [:alnum:] [:space:]') != 0 ]; then
+	    printf "\nSorry, password contains one or more invalid characters.\n"
+	    password=""
+	    passwordOK=-1
+	    return
+	fi 
+
+	l=${#password}
+	# echo "Length of $password is $l".
+
+	if [[ ( "$l" -lt 7 ) || ( "$l" -gt 15 ) ]]; then
+	    printf "\nPassword length should be between 7 and 15 characters.\n"
+	    password=""
+	    passwordOK=-1
+	    return
+	fi
+
         printf "\nPlease confirm your remot3.it password: \n"
         read  -s passwordConfirm
 
@@ -1121,15 +1141,19 @@ registerDevice()
     printf "."
     while [ "$alias" == "" ]; do
         if [ "$PROTOCOL" == "rmt3" ]; then
-	    printf "\nEnter a name for your Device (e.g. my_Pi_001).\n"
+	    printf "\nEnter a name for your device (e.g. my_Pi_001).\n"
 	    printf "The Device Name identifies your device in the remot3.it portal.\n"
             printf "Your services will be grouped under the Device Name.\n\n"
 	else
-	    printf "\nEnter a name for this remot3.it Service (e.g. SSH-Pi). \n"
-	    printf "The is name will be shown in your remot3.it Service List.\n\n"
+	    printf "\nEnter a name for this remot3.it service (e.g. SSH-Pi). \n"
+	    printf "This name will be shown in your remot3.it Service List.\n\n"
         fi    
         printf "Only letters, numbers, underscore, space and dash are allowed.\n\n"
         read alias
+        if [ "$(validateInput "$alias" '\- \_ \. [:alnum:] [:space:]')" != 0 ]; then
+            printf "\nSorry, $alias contains one or more invalid characters.\n\n"
+            alias=""
+        fi
     done
     printf "Your Service Attachment will be called %s.\n\n" "$alias" > /dev/null
 }
@@ -1298,6 +1322,24 @@ ask()
     done
 }
 ######### End Ask Function #########
+
+############# validate input - check $1 against tr control string $2
+
+validateInput()
+{
+# Comb out invalid characters from input and assign to new variable
+export VAR_CLEAN="`echo "$1" | tr -cd "$2" `"
+# if the before and after are the same, then there were no bad characters
+if [ "${VAR_CLEAN}" == "$1" ]; then
+   echo 0
+else
+   echo 1
+fi
+}
+
+############# end of validate input
+
+
 #======== end of utility functions used in installers and scripts
 
 
