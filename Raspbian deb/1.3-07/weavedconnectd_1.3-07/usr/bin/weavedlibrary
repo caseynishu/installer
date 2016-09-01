@@ -12,7 +12,7 @@
 ##### Settings #####
 LIBVERSION=lib_v1.3-07_Pi
 AUTHOR="Gary Worsham"
-LIBMODIFIED="August 24, 2016"
+LIBMODIFIED="August 31, 2016"
 DAEMON=weavedconnectd
 
 # ----------------------------------------
@@ -35,19 +35,21 @@ STARTEMUP=weavedstart.sh
 
 # ----------------------------------------
 # web API URLs
-version=v27
-server=api
-loginURL=https://$server.weaved.com/$version/api/user/login
-loginAuthURL=https://$server.weaved.com/$version/api/user/login/authhash
-unregdeviceURL=https://$server.weaved.com/$version/api/device/list/unregistered
-preregdeviceURL=https://$server.weaved.com/$version/api/device/create
-deleteURL=https://$server.weaved.com/$version/api/device/delete
-connectURL=https://$server.weaved.com/$version/api/device/connect
-deviceURL=https://$server.weaved.com/$version/api/device
-deviceHWIDURL=https://$server.weaved.com/$version/api/developer/device/hardwareid
-regAccountURL=https://$server.weaved.com/$version/api/user/create/verify
-regAccountURLVerified=https://$server.weaved.com/$version/api/user/create/verified
-regdeviceURL=https://$server.weaved.com/$version/api/device/register
+
+version=api17i
+server=api.remot3.it
+
+loginURL=https://$server/$version/user/login
+loginAuthURL=https://$server/$version/user/login/authhash
+unregdeviceURL=https://$server/$version/device/list/unregistered
+preregdeviceURL=https://$server/$version/device/create
+deleteURL=https://$server/$version/device/delete
+connectURL=https://$server/$version/device/connect
+deviceURL=https://$server/$version/device
+deviceHWIDURL=https://$server/$version/developer/device/hardwareid
+regAccountURL=https://$server/$version/user/create/verify
+regAccountURLVerified=https://$server/$version/user/create/verified
+regdeviceURL=https://$server/$version/device/register
 
 # ----------------------------------------
 ##### End Settings #####
@@ -570,6 +572,7 @@ deleteAllConnections()
         done
         if [ -f $BIN_DIR/$STARTEMUP ]; then
 	    rm $BIN_DIR/$STARTEMUP
+            rm $BIN_DIR/Weaved*.sh
    	fi
 # also should clear out crontab at this point
 	disableStartup
@@ -1118,12 +1121,21 @@ preregisterUID()
 }
 ######### End Pre-register Device #########
 
-######### Pre-register Device #########
+######### Get secret #########
 getSecret()
 {
     printf "."
-    secretCall="$(curl -s $regdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$SerialID\"}" -H “Content-Type:application/json” -H "apikey:$APIKEY" -H "token:$token")"
-    debug $secretCall
+
+    if [ "$PROTOCOL" == "rmt3" ]; then
+        secretCall="$(curl -s $regdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$SerialID\"}" -H “Content-Type:application/json” -H "apikey:$APIKEY" -H "token:$token")"    
+
+    else
+
+        secretCall="$(curl -s $regdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$SerialID\", \"skipemail\":\"true\"}" -H “Content-Type:application/json” -H "apikey:$APIKEY" -H "token:$token")"
+    
+    fi
+
+debug $secretCall
 
     error=$(jsonval "$secretCall" "Error")
     debug $error
@@ -1151,9 +1163,9 @@ getSecret()
     	fi
     fi
 }
-######### End Pre-register Device #########
+######### End Register Device #########
 
-######### Register Device #########
+######### Get Device Name #########
 registerDevice()
 {
     printf "."
@@ -1175,7 +1187,7 @@ registerDevice()
     done
     printf "Your Service Attachment will be called %s.\n\n" "$alias" > /dev/null
 }
-######### End Register Device #########
+######### Get Device Name #########
 
 ######### Start Service #########
 startService()
@@ -1372,7 +1384,7 @@ fi
 internet_available()
 {
     ret=0
-    nc -z api.weaved.com 80  >/dev/null 2>&1
+    nc -z "$server" 80  >/dev/null 2>&1
     online=$?
     if [ $online -eq 0 ]; then
         if [ $VERBOSE -gt 0 ]; then
