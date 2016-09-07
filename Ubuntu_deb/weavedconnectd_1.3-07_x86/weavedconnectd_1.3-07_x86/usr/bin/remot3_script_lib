@@ -1,0 +1,277 @@
+#!/bin/bash
+#
+# remot3_script_lib is a collection of useful functions
+# for use in remot3 scripts
+#
+#
+# 
+#----------------------------------------------------------
+VERSION="0.0.5"
+MODIFIED="June 30, 2016"
+VERBOSE=1
+
+########################################
+# Support Functions                    #
+########################################
+
+#----------------------------------------------------------
+# internet_available - check to see if API is available
+internet_available()
+{
+    ret=0
+    nc -z api.weaved.com 80  >/dev/null 2>&1
+    online=$?
+    if [ $online -eq 0 ]; then
+        if [ $VERBOSE -gt 0 ]; then
+            logger "$0 Internet Available"
+        fi
+        ret=1
+    else
+        if [ $VERBOSE -gt 0 ]; then
+            logger "$0 Internet Not Available"
+        fi
+    fi
+    return $ret
+}
+# end of internet_available
+
+#----------------------------------------------------------
+# wait_for_internet - waits until API is available
+wait_for_internet()
+{
+while [ 1 ]
+do
+    internet_available
+    if [ $? -eq 1 ]; then
+        # internet is available, return
+        sleep 2
+        #
+        break
+    fi 
+    sleep 15
+    logger "$0 Looping while internet not available"
+done
+}
+# end of wait_for_internet
+
+#----------------------------------------------------------
+#
+# Print Usage
+#
+usage()
+{
+    echo "Usage: $0 <jobid> <api server> <shortcode>" >&2
+    echo "Version $VERSION Build $MODIFIED" >&2
+    return 0
+}
+
+#----------------------------------------------------------
+#
+# log if DEBUG_ON is set to /tmp
+#
+log()
+{
+    if [ $DEBUG_ON -gt 0 ]; then
+        ts=$(date)
+        echo "$ts $1" >> ${DEBUG_DIR}/$(basename $0).log
+    fi
+}
+
+#----------------------------------------------------------
+#
+# Job Complete
+#
+Job_Complete()
+{
+    ret=$(${TOOL_DIR}/task_notify.sh 1 $jobid $api_server "Job Complete")
+}
+
+#----------------------------------------------------------
+#
+# Job Failed
+#
+Job_Failed()
+{
+    ret=$(${TOOL_DIR}/task_notify.sh 2 $jobid $api_server "Job Failed")
+}
+#----------------------------------------------------------
+#
+# Status column A
+#
+Status_A()
+{
+    ret=$(${TOOL_DIR}/task_notify.sh a $jobid $api_server "$1")
+}
+
+#----------------------------------------------------------
+#
+# Status column B
+#
+Status_B()
+{
+    ret=$(${TOOL_DIR}/task_notify.sh b $jobid $api_server "$1")
+}
+
+#----------------------------------------------------------
+#
+# Status column C
+#
+Status_C()
+{
+    ret=$(${TOOL_DIR}/task_notify.sh c $jobid $api_server "$1")
+}
+
+#----------------------------------------------------------
+#
+# Status column D
+#
+Status_D()
+{
+    ret=$(${TOOL_DIR}/task_notify.sh d $jobid $api_server "$1")
+}
+
+#----------------------------------------------------------
+#
+# Status column E
+#
+Status_E()
+{
+    ret=$(${TOOL_DIR}/task_notify.sh e $jobid $api_server "$1")
+}
+
+#----------------------------------------------------------
+# JSON parse (very simplistic):  get value frome key $2 in buffer $1,  values or keys must not have the characters {}[", 
+#   and the key must not have : in it
+#
+#  Example:
+#   value=$(jsonval "$json_buffer" "$key") 
+#                                                   
+jsonval()                                              
+{
+#    echo "jsonval $1 $2"
+    temp=`echo "$1" | sed -e 's/[{}\"]//g' | sed -e 's/,/\'$'\n''/g' | grep -w $2 | cut -d"[" -f2- | cut -d":" -f2-`
+    #echo ${temp##*|}         
+    echo ${temp}                                                
+}                                                   
+
+#----------------------------------------------------------
+jsonvalx()
+{
+    temp=`echo $1 | sed -e 's/[{}"]//g' -e "s/,/\\$liblf/g" | grep -w $2 | cut -d":" -f2-`
+    #echo ${temp##*|}
+    echo ${temp}    
+}
+
+#----------------------------------------------------------
+#
+# translate short code
+#
+translate()
+{
+    ret=0
+    # make api call
+    translate_url=${apiMethod}${api_server}${apiURI}${short_code}
+
+    log "Translate URL call using URL $translate_url"
+
+    resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR" "$translate_url")
+    
+    status=$(jsonval "$resp" "status")
+
+    log "return status $status"
+
+    if [ "$status" == "true" ]; then
+        #jsonvalx()
+        item=$(jsonval "$resp" "item")
+        #
+        # Convert from base64
+        decode=$(echo "$item" | base64 --decode)
+       
+        log "item $item -> $decode"
+   
+        echo -n "$decode"
+    else
+        printf "Fail"
+        ret=1
+    fi
+
+    return $ret
+}
+
+##############################################################################
+prepare_and_reboot()
+{
+    if [ ! -d "/root/.remot3.it" ]; then
+        mkdir "/root/.remot3.it"
+    fi
+
+# save command and parameters for pass of uncompleted command through reboots
+# cron reboot job needs to be in place to scan and execute commands left in the file above
+REBOOTFILE=/root/.remot3.it/reboot.sh
+    echo "#!/bin/bash" > "$REBOOTFILE"
+    echo "# REBOOT DEVICE" >> "$REBOOTFILE"
+    echo "source /usr/bin/remot3_script_lib" >> "$REBOOTFILE"
+    echo "source /usr/bin/weavedinstallerlib" >> "$REBOOTFILE"
+    echo "wait_for_internet" >> "$REBOOTFILE"
+    echo "sleep 5" >> "$REBOOTFILE"
+    echo "${TOOL_DIR}/task_notify.sh a $1 $2 'Rebooted.'" >> $REBOOTFILE
+    echo "${TOOL_DIR}/task_notify.sh 1 $1 $2 'Job Complete'" >> $REBOOTFILE
+    echo "cronRemoveLine '@reboot bash -x $REBOOTFILE >> /tmp/rebootlog'" >> $REBOOTFILE
+    echo "rm $REBOOTFILE" >> $REBOOTFILE
+    chmod +x $REBOOTFILE
+    cronAddLine "@reboot bash -x $REBOOTFILE >> /tmp/rebootlog"
+    sync
+    sleep 2
+    /sbin/reboot
+}
+
+##############################################################################
+# Read timeout for wget, default is 900 seconds.  set shorter for testing.
+READTIMEOUT=120
+READRETRIES=5
+
+# constants for retry logic
+HOUR=$(expr 60 \* 60)
+DAY=$(expr $HOUR \* 24)
+WEEK=$(expr $DAY \* 7)
+
+download_with_retry()
+{
+    finished=0
+    error=0
+    log "$1"
+
+    filename=$(echo "$1" | awk '{ print $3 }')
+    log "$filename"
+
+    # remove any possible existing file of same name we are about to download
+    if [ -e "$filename" ]; then
+        log "Removing pre-existing $filename"
+        rm "$filename"
+    fi
+
+    START=$(date +%s)
+    log "Download started at $START"
+
+    while [ $finished -eq 0 ]; do
+    wget_o=$(wget -c --read-timeout="$READTIMEOUT" -t $READRETRIES --no-check-certificate $1 )
+    retval=$?
+ 
+    if [ $retval -eq 0 ]; then
+        finished=1
+	else
+	    if [ $retval -eq 4 ]; then
+		NOW=$(date +%s)
+		DELTA=$((NOW - START))
+		log "$filename: wget returned $retval at $time, elapsed = $DELTA"
+
+            if [ $DELTA -gt $WEEK ]; then exit; fi
+            sleep 5
+	    else
+		finished=1
+                error=$retval
+            fi
+	fi
+     done
+     echo "$filename"
+}
