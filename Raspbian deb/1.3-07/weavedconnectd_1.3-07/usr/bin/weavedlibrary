@@ -12,11 +12,12 @@
 ##### Settings #####
 LIBVERSION=lib_v1.3-07_Pi
 AUTHOR="Gary Worsham"
-LIBMODIFIED="August 31, 2016"
+LIBMODIFIED="September 2, 2016"
 DAEMON=weavedconnectd
 
 # ----------------------------------------
 # folders and files
+# these folders are not the same as used by Bulk Registration
 WEAVED_DIR=/etc/weaved/services
 WEAVED_LIB_DIR=/usr/share/weavedconnectd
 SERIALNUMBERFILE=/etc/weaved/serial.txt
@@ -88,7 +89,7 @@ weavedCompatibility()
 ##### End Compatibility checker #####
 
 ##### get SerialID address #####
-# Pi serial is a UUID concatenated with eth0 MAC address
+# SerialID is a UUID concatenated with eth0 MAC address
 # if the file /etc/weaved/serial.txt does not exist, create the
 # value and write it there.  Otherwise read the value from then
 # file.
@@ -768,7 +769,7 @@ getNewPassword() {
 ######### Begin Portal Login #########
 userLogin () #Portal login function
 {
-#    echo "weavedinstallerlib Username = $USERNAME Password = $PASSWORD"
+#    echo "weavedlibrary Username = $USERNAME Password = $PASSWORD"
 
     if [ "$USERNAME" != "" ]; then 
 	username="$USERNAME"

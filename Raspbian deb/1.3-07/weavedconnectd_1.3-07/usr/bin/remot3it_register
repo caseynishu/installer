@@ -22,7 +22,7 @@
 ##### Settings #####
 VERSION=v1.3-07
 AUTHOR="Gary Worsham"
-MODIFIED="August 02, 2016"
+MODIFIED="September 02, 2016"
 DEBUG="0"
 #=======================================================================
 # remot3.it recommends running this script (with real username/password) from /tmp folder.
@@ -127,11 +127,11 @@ main()
 # =============================================    
     makeConnection rmt3 65535 "$SERVICEBASENAME-rmt3"
 
-#    makeConnection ssh 22 "$SERVICEBASENAME-ssh-22"
+    makeConnection ssh 22 "$SERVICEBASENAME-ssh-22"
 #    makeConnection web 80 "$SERVICEBASENAME-web-80"
 #    makeConnection tcp 3389 "$SERVICEBASENAME-tcp-3389"
 # =============================================  
-# this line is only used to automate conversion of pre-remot3.it evices to remot3.it
+# this line is only used to automate conversion of pre-remot3.it devices to remot3.it
 # convertExistingUIDs
 
     echo
