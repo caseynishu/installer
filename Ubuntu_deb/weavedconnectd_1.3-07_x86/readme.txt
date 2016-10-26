@@ -1,4 +1,4 @@
-To install Weaved to your ARM Debian system:
+To install Weaved to your x86 64-bit Debian system:
 1) Copy the deb file to your system.  We now have both armhf and armel versions.
 2) Run "sudo dpkg -i <deb file name>"
 3) Now run "sudo weavedinstaller" to install remot3.it services individually from the on-screen menus.
