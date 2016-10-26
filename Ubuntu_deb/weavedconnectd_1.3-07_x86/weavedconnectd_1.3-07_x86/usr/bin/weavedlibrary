@@ -12,7 +12,7 @@
 ##### Settings #####
 LIBVERSION=lib_v1.3-07_x86
 AUTHOR="Gary Worsham"
-LIBMODIFIED="September 2, 2016"
+LIBMODIFIED="October 25, 2016"
 DAEMON=weavedconnectd
 
 # ----------------------------------------
@@ -573,7 +573,7 @@ deleteAllConnections()
         done
         if [ -f $BIN_DIR/$STARTEMUP ]; then
 	    rm $BIN_DIR/$STARTEMUP
-            rm $BIN_DIR/Weaved*.sh
+#            rm $BIN_DIR/Weaved*.sh
    	fi
 # also should clear out crontab at this point
 	disableStartup
@@ -1172,11 +1172,11 @@ registerDevice()
     printf "."
     while [ "$alias" == "" ]; do
         if [ "$PROTOCOL" == "rmt3" ]; then
-	    printf "\nEnter a name for your device (e.g. my_Pi_001).\n"
+	    printf "\n\nEnter a name for your device (e.g. my_Pi_001).\n\n"
 	    printf "The Device Name identifies your device in the remot3.it portal.\n"
             printf "Your services will be grouped under the Device Name.\n\n"
 	else
-	    printf "\nEnter a name for this remot3.it service (e.g. SSH-Pi). \n"
+	    printf "\n\nEnter a name for this remot3.it service (e.g. SSH-Pi). \n"
 	    printf "This name will be shown in your remot3.it Service List.\n\n"
         fi    
         printf "Only letters, numbers, underscore, space and dash are allowed.\n\n"
