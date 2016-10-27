@@ -6,9 +6,9 @@
 #  Weaved, Inc. Copyright 2016. All rights reserved.
 #
 
-VERSION="v1.4"
+VERSION="v1.5"
 AUTHOR="Gary Worsham"
-MODIFIED="April 4, 2016"
+MODIFIED="October 27, 2016"
 WEAVED_PORT=
 DAEMON=weavedconnectd.pi
 WEAVED_DIR=/etc/weaved/services
@@ -82,6 +82,8 @@ startWeaved()
 	else
 		echo "$WEAVED_PORT is already started"
 	fi
+        # need to sleep because the next maintainer script may try to start the daemons immediately, and can fail
+        sleep 2
 }
 
 restartWeaved()

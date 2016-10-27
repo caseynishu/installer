@@ -21,8 +21,8 @@
 # set -x
 
 #### Settings #####
-VERSION=0.5
-MODIFIED="October 3, 2016"
+VERSION=0.6
+MODIFIED="October 26, 2016"
 #
 # Log to system log if set to 1
 LOGGING=1
@@ -347,7 +347,7 @@ case $cmd in
         # Send Update 
         #
         URL="$apiMethod$api_base$API_TASK_UPDATE"
-	sendAPIresponse $URL
+	    sendAPIresponse $URL
     ;;
 
     "1")
@@ -355,24 +355,24 @@ case $cmd in
         # Task Done 
         #
         URL="$apiMethod$api_base$API_TASK_DONE"
-	sendAPIresponse $URL
+	    sendAPIresponse $URL
     ;;
     "2")
         #
         # Task Failed 
         #
-        URL="$apiMethod$api_base$API_TASK_DONE"
-	sendAPIresponse $URL
+        URL="$apiMethod$api_base$API_TASK_FAILED"
+	    sendAPIresponse $URL
     ;;
     "3" | "A" | "a")
         # device status A
         URL="$apiMethod$api_base$API_DEVICE_STATUS_A"
-	sendAPIresponse $URL
+	    sendAPIresponse $URL
     ;;
     "4" | "B" | "b")
         # device status 2
         URL="$apiMethod$api_base$API_DEVICE_STATUS_B"
-	sendAPIresponse $URL
+	    sendAPIresponse $URL
     ;;
     '5' | 'C' | 'c')
         generic='c'

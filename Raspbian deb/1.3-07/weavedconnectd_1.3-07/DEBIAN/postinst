@@ -15,6 +15,9 @@ case "$1" in
 	mv /tmp/weavedstart.sh /usr/bin
 	chmod +x /usr/bin/weavedstart.sh
         logger "remot3.it: Restarting daemons"
+        # need to add sleep for upgrade script, so that upgrade over remot3.it will restart
+        # daemons more reliably
+        sleep 2
 	weavedstart.sh    
     fi
   ;;
