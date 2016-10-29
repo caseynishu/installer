@@ -3,18 +3,15 @@
 # remot3_script_lib is a collection of useful functions
 # for use in remot3 scripts
 #
-#
-# 
-#----------------------------------------------------------
+
 VERSION="1.1.0"
-MODIFIED="July 27, 2016"
-VERBOSE=1
+MODIFIED="October 27, 2016"
 
 TOOL_DIR="/usr/bin"
 DEBUG_DIR="/tmp"
 # turn on debug, set to 1 and will write to DEBUG_DIR/scriptname.log
 DEBUG_ON=0
-DEBUG=0
+SHOW_STATUS=0
 
 HOUR=$(expr 60 \* 60)
 DAY=$(expr $HOUR \* 24)
@@ -39,10 +36,8 @@ Has_Task_Expired()
 	
 	if [ $delta -gt $TASK_LIFE ]; then
 		# exit the script since task has expired
-		Log "Task started at $START (present time $now, delta of $delta) with life of $TASK_LIFE has expired.  Exiting..."		
 		exit 1
 	else
-		Log "Task <good> started at $START (present time $now, delta of $delta) with life of $TASK_LIFE."
 		return 0
 	fi
 }
@@ -52,22 +47,14 @@ Has_Task_Expired()
 # Internet_Available - check to see if API is available
 Internet_Available()
 {
-    Log "Checking to see if Internet is available... $(date +%s)"
 	ret=0
     nc -z api.weaved.com 80  >/dev/null 2>&1
     online=$?
-	Log "api.weaved.com response at $(date +%s) -- $online"
     if [ $online -eq 0 ]; then
-        if [ $VERBOSE -gt 0 ]; then
-            logger "$0 Internet Available"
-			Log "Internet is available"
-        fi
+        Log "$0 Internet Available"
         ret=1
     else
-        if [ $VERBOSE -gt 0 ]; then
-            logger "$0 Internet Not Available"
-			Log "Internet NOT available"
-        fi
+        Log "$0 Internet Not Available"
     fi
     return $ret
 }
@@ -94,7 +81,6 @@ do
 		fi 
 		
 		# wait for 15 seconds and recheck internet 
-		Log "Wait_For_Internet - sleeping for 15 before checking internet again"
 		sleep 15
 		logger "$0 Looping while internet not available"
 	fi
@@ -119,7 +105,7 @@ usage()
 #
 Log()
 {
-    if [ $DEBUG_ON -gt 0 ]; then
+    if [ $DEBUG_ON -eq 1 ]; then
         ts=$(date)
         echo "$ts $1" >> ${DEBUG_DIR}/$(basename $0).log
     fi
@@ -131,16 +117,25 @@ Log()
 #
 Task_Update()
 {
-	Log "Task_Update"
-    Wait_For_Internet
-    task_entry_time=$(date +%s)
-    Log "     task_notify - begin at $task_entry_time"
-	Wait_For_Internet
-	ret=$(${TOOL_DIR}/task_notify.sh 0 $jobid $api_server "$1")
-	task_now=$(date +%s)
-	task_delta=$((task_now-task_entry_time))
-	Log "--->task_notify - end - lasted $task_delta sec."
-	Log " "
+    if [ $SHOW_STATUS -eq 1 ]; then
+		retry=1
+		
+		while [ $retry -eq 1 ]
+		do
+			Wait_For_Internet
+			ret=$(${TOOL_DIR}/task_notify.sh 0 $jobid $api_server "$1")
+			
+			if [ "$ret" == "200 true" ]; then
+				retry=0
+			else
+				if [[ "$ret" == *"403"* ]]; then
+					exit 1
+				else
+					sleep 60
+				fi
+			fi
+		done
+	fi
 }
 
 #----------------------------------------------------------
@@ -149,16 +144,23 @@ Task_Update()
 #
 Task_Complete()
 {
-	Log "Task_Complete"
-    Wait_For_Internet
-    task_entry_time=$(date +%s)
-    Log "     task_notify - begin at $task_entry_time"
-	Wait_For_Internet
-	ret=$(${TOOL_DIR}/task_notify.sh 1 $jobid $api_server "$1")
-	task_now=$(date +%s)
-	task_delta=$((task_now-task_entry_time))
-	Log "--->task_notify - end - lasted $task_delta sec."
-	Log " "
+	retry=1
+	
+	while [ $retry -eq 1 ]
+	do
+		Wait_For_Internet
+		ret=$(${TOOL_DIR}/task_notify.sh 1 $jobid $api_server "$1")
+		
+		if [ "$ret" == "200 true" ]; then
+			retry=0
+		else
+			if [[ "$ret" == *"403"* ]]; then
+				exit 1
+			else
+				sleep 60
+			fi
+		fi
+	done
 }
 
 #----------------------------------------------------------
@@ -167,16 +169,23 @@ Task_Complete()
 #
 Task_Failed()
 {
-	Log "Task_Failed"
-    Wait_For_Internet
-    task_entry_time=$(date +%s)
-    Log "     task_notify - begin at $task_entry_time"
-	Wait_For_Internet
-	ret=$(${TOOL_DIR}/task_notify.sh 2 $jobid $api_server "$1")
-	task_now=$(date +%s)
-	task_delta=$((task_now-task_entry_time))
-	Log "--->task_notify - end - lasted $task_delta sec."
-	Log " "
+	retry=1
+	
+	while [ $retry -eq 1 ]
+	do
+		Wait_For_Internet
+		ret=$(${TOOL_DIR}/task_notify.sh 2 $jobid $api_server "$1")
+		
+		if [ "$ret" == "200 true" ]; then
+			retry=0
+		else
+			if [[ "$ret" == *"403"* ]]; then
+				exit 1
+			else
+				sleep 60
+			fi
+		fi
+	done	
 }
 
 #----------------------------------------------------------
@@ -185,16 +194,25 @@ Task_Failed()
 #
 Status_A()
 {
-	Log "Status_A"
-    Wait_For_Internet
-    task_entry_time=$(date +%s)
-    Log "     task_notify - begin at $task_entry_time"
-	Wait_For_Internet
-	ret=$(${TOOL_DIR}/task_notify.sh a $jobid $api_server "$1")
-	task_now=$(date +%s)
-	task_delta=$((task_now-task_entry_time))
-	Log "--->task_notify - end - lasted $task_delta sec."
-	Log " "
+    if [ $SHOW_STATUS -eq 1 ]; then
+		retry=1
+		
+		while [ $retry -eq 1 ]
+		do
+			Wait_For_Internet
+			ret=$(${TOOL_DIR}/task_notify.sh a $jobid $api_server "$1")
+			
+			if [ "$ret" == "200 true" ]; then
+				retry=0
+			else
+				if [[ "$ret" == *"403"* ]]; then
+					exit 1
+				else
+					sleep 60
+				fi
+			fi
+		done
+	fi
 }
 
 #----------------------------------------------------------
@@ -203,16 +221,25 @@ Status_A()
 #
 Status_B()
 {
-	Log "Status_B"
-    Wait_For_Internet
-    task_entry_time=$(date +%s)
-    Log "     task_notify - begin at $task_entry_time"
-	Wait_For_Internet
-	ret=$(${TOOL_DIR}/task_notify.sh b $jobid $api_server "$1")
-	task_now=$(date +%s)
-	task_delta=$((task_now-task_entry_time))
-	Log "--->task_notify - end - lasted $task_delta sec."
-	Log " "
+    if [ $SHOW_STATUS -eq 1 ]; then
+		retry=1
+		
+		while [ $retry -eq 1 ]
+		do
+			Wait_For_Internet
+			ret=$(${TOOL_DIR}/task_notify.sh b $jobid $api_server "$1")
+			
+			if [ "$ret" == "200 true" ]; then
+				retry=0
+			else
+				if [[ "$ret" == *"403"* ]]; then
+					exit 1
+				else
+					sleep 60
+				fi
+			fi
+		done
+	fi
 }
 
 #----------------------------------------------------------
@@ -221,16 +248,25 @@ Status_B()
 #
 Status_C()
 {
-	Log "Status_C"
-    Wait_For_Internet
-    task_entry_time=$(date +%s)
-    Log "     task_notify - begin at $task_entry_time"
-	Wait_For_Internet
-	ret=$(${TOOL_DIR}/task_notify.sh c $jobid $api_server "$1")
-	task_now=$(date +%s)
-	task_delta=$((task_now-task_entry_time))
-	Log "--->task_notify - end - lasted $task_delta sec."
-	Log " "
+    if [ $SHOW_STATUS -eq 1 ]; then
+		retry=1
+		
+		while [ $retry -eq 1 ]
+		do
+			Wait_For_Internet
+			ret=$(${TOOL_DIR}/task_notify.sh c $jobid $api_server "$1")
+			
+			if [ "$ret" == "200 true" ]; then
+				retry=0
+			else
+				if [[ "$ret" == *"403"* ]]; then
+					exit 1
+				else
+					sleep 60
+				fi
+			fi
+		done
+	fi
 }
 
 #----------------------------------------------------------
@@ -239,16 +275,25 @@ Status_C()
 #
 Status_D()
 {
-	Log "Status_D"
-    Wait_For_Internet
-    task_entry_time=$(date +%s)
-    Log "     task_notify - begin at $task_entry_time"
-	Wait_For_Internet
-	ret=$(${TOOL_DIR}/task_notify.sh d $jobid $api_server "$1")
-	task_now=$(date +%s)
-	task_delta=$((task_now-task_entry_time))
-	Log "--->task_notify - end - lasted $task_delta sec."
-	Log " "
+    if [ $SHOW_STATUS -eq 1 ]; then
+		retry=1
+		
+		while [ $retry -eq 1 ]
+		do
+			Wait_For_Internet
+			ret=$(${TOOL_DIR}/task_notify.sh d $jobid $api_server "$1")
+			
+			if [ "$ret" == "200 true" ]; then
+				retry=0
+			else
+				if [[ "$ret" == *"403"* ]]; then
+					exit 1
+				else
+					sleep 60
+				fi
+			fi
+		done
+	fi
 }
 
 #----------------------------------------------------------
@@ -257,16 +302,25 @@ Status_D()
 #
 Status_E()
 {
-	Log "Status_E"
-    Wait_For_Internet
-    task_entry_time=$(date +%s)
-    Log "     task_notify - begin at $task_entry_time"
-	Wait_For_Internet
-	ret=$(${TOOL_DIR}/task_notify.sh e $jobid $api_server "$1")
-	task_now=$(date +%s)
-	task_delta=$((task_now-task_entry_time))
-	Log "--->task_notify - end - lasted $task_delta sec."
-	Log " "
+    if [ $SHOW_STATUS -eq 1 ]; then
+		retry=1
+		
+		while [ $retry -eq 1 ]
+		do
+			Wait_For_Internet
+			ret=$(${TOOL_DIR}/task_notify.sh e $jobid $api_server "$1")
+			
+			if [ "$ret" == "200 true" ]; then
+				retry=0
+			else
+				if [[ "$ret" == *"403"* ]]; then
+					exit 1
+				else
+					sleep 60
+				fi
+			fi
+		done
+	fi
 }
 
 #----------------------------------------------------------
@@ -278,9 +332,7 @@ Status_E()
 #                                                   
 JSONval()                                              
 {
-#    echo "jsonval $1 $2"
-    temp=`echo "$1" | sed -e 's/[{}\"]//g' | sed -e 's/,/\'$'\n''/g' | grep -w $2 | cut -d"[" -f2- | cut -d":" -f2-`
-    #echo ${temp##*|}         
+    temp=`echo "$1" | sed -e 's/[{}\"]//g' | sed -e 's/,/\'$'\n''/g' | grep -w $2 | cut -d"[" -f2- | cut -d":" -f2-`       
     echo ${temp}                                                
 }                                                   
 
@@ -288,7 +340,6 @@ JSONval()
 JSONvalx()
 {
     temp=`echo $1 | sed -e 's/[{}"]//g' -e "s/,/\\$liblf/g" | grep -w $2 | cut -d":" -f2-`
-    #echo ${temp##*|}
     echo ${temp}    
 }
 
@@ -339,6 +390,7 @@ Save_State()
 # $5 - Status_B message
 # $6 - Task_Complete message
 # $7 - DEBUG_ON
+# $8 - SHOW_STATUS
  
     if [ ! -d "/root/.remot3.it" ]; then
         mkdir "/root/.remot3.it"
@@ -348,18 +400,21 @@ Save_State()
 # cron reboot task needs to be in place to scan and execute commands left in the file above
 	REBOOTFILE=/root/.remot3.it/weaved-reboot.sh
 	
-	# clear old cronjob in case last one didn't get executed possibly due to task expired
+	# clear old cronjob in case last one didn't get executed possibly due to task expiration
     cronRemoveLine "@reboot bash -x $REBOOTFILE >> /tmp/rebootlog"
 
 	echo "#!/bin/bash" > $REBOOTFILE
 	echo "#" >> $REBOOTFILE
     echo "# Update status and task after reboot" >> $REBOOTFILE
 	echo "#" >> $REBOOTFILE
+	echo "# $(date)" >> $REBOOTFILE
+	echo "#" >> $REBOOTFILE	
 	echo " " >> $REBOOTFILE
     echo "source /usr/bin/remot3_script_lib-1.1" >> $REBOOTFILE
     echo "source /usr/bin/weavedinstallerlib" >> $REBOOTFILE
 	echo " " >> $REBOOTFILE
 	echo "DEBUG_ON=$7" >> $REBOOTFILE
+	echo "SHOW_STATUS=$8" >> $REBOOTFILE
 	echo " " >> $REBOOTFILE
 	echo "jobid=$1" >> $REBOOTFILE
 	echo "api_server=$2" >> $REBOOTFILE
@@ -372,12 +427,11 @@ Save_State()
     echo "Status_C \"$5\"" >> $REBOOTFILE
     echo "Task_Complete \"$6\"" >> $REBOOTFILE
     echo "cronRemoveLine '@reboot bash -x $REBOOTFILE >> /tmp/rebootlog'" >> $REBOOTFILE
-#    echo "rm $REBOOTFILE" >> $REBOOTFILE
+
     chmod +x $REBOOTFILE
     cronAddLine "@reboot bash -x $REBOOTFILE >> /tmp/rebootlog"
     sync
     sleep 2
-#    /sbin/reboot
 }
 
 ##############################################################################
@@ -390,22 +444,22 @@ READRETRIES=5
 
 Download_With_Retry()
 {
-    Log "$1"
-
     filename=$(echo "$1" | awk '{ print $3 }')
-    Log "$filename"
 
     # remove any possible existing file of same name we are about to download
     if [ -e "$filename" ]; then
-        Log "Removing pre-existing $filename"
         rm "$filename"
     fi
 
-    Log "Download started at $START"
-
+	if [ -z $2 ]; then
+		LIMITRATE="100k"
+	else 
+		LIMITRATE=$2
+	fi
+	
 	# while task has not expired
     while Has_Task_Expired; do    	
-		wget_o=$(wget -c --read-timeout="$READTIMEOUT" -t $READRETRIES --no-check-certificate $1 )
+		wget_o=$(wget -c --limit-rate="$LIMITRATE" --read-timeout="$READTIMEOUT" -t $READRETRIES --no-check-certificate $1 )
 		retval=$?
 			
 		# download was successful
@@ -414,7 +468,6 @@ Download_With_Retry()
 		else
 			# wget returned error, check for connectivity issue
 			if [ $retval -eq 4 ]; then
-				Log "$filename: wget returned $retval at $time, elapsed = $DELTA"
 				Task_Update "Download interrupted, retry in 5 sec."
 				sleep 5
 			else
@@ -425,5 +478,5 @@ Download_With_Retry()
 				exit 1 
 			fi
 		fi
-     done
+    done
 }
