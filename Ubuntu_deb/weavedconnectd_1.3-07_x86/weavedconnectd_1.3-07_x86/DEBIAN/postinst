@@ -2,31 +2,39 @@
 # postinst script for weavedconnectd
 #
 
+logger "weavedconnectd 1.3-07 postinst state $1"
+
 set -e
 
-logger "Weaved Deb installer postinst $1"
- 
 case "$1" in
     purge|remove|failed-upgrade|abort-install|abort-upgrade|disappear|abort-remove)
     ;;
 
     configure|upgrade)
     if [ -f /usr/bin/weavedstart.sh ]; then
-        logger "Restarting Weaved daemons"
+# need to handle rename of launchschannel in previous versions to weavedschannel
+	sed s/launchschannel/weavedschannel/ < /usr/bin/weavedstart.sh > /tmp/weavedstart.sh
+	mv /tmp/weavedstart.sh /usr/bin
+	chmod +x /usr/bin/weavedstart.sh
+        logger "weavedconnectd: Restarting daemons"
+        # need to add sleep for upgrade script, so that upgrade over remot3.it will restart
+        # daemons more reliably
+        sleep 2
 	weavedstart.sh    
     fi
   ;;
 
   *)
-    echo "postinst called with unknown argument \`$1'" >&2
+    logger "weavedconnectd: postinst called with unknown argument \`$1'" >&2
     exit 1
   ;;
 
 esac
-
-echo "================================================================================"
 echo
-echo "Run sudo weavedinstaller to interactively add Weaved remote connection services."
+echo "=============================================================================="
+echo "Available commands:"
+echo
+echo "sudo weavedinstaller - configures your device's tcp services for remote access" 
 echo
 echo "================================================================================"
 

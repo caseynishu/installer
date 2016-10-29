@@ -4,7 +4,9 @@
 /etc/weaved/pfiles/rmt3.i686
 /etc/weaved/pfiles/ssh.i686
 /etc/weaved/pfiles/web.i686
-/etc/weaved/pfiles/web8080.i686
+/etc/weaved/pfiles/vnc.i686
+/etc/weaved/pfiles/tcp.i686
+/etc/weaved/pfiles/smb.i686
 /etc/weaved/schannel.conf
 /etc/init.d/weaved
 /etc/init.d/weaved.schannel

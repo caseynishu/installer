@@ -1,20 +1,28 @@
 #!/bin/sh
-# postrm script for weavedconnectd
+# prerm script for weavedconnectd
 #
 
 set -e
-logger "prerm $1"
+logger "weavedconnectd 1.3-07 installer prerm $1"
 
 case "$1" in
 
-    remove|upgrade|failed-upgrade|deconfigure|abort-remove)
+    remove|purge|deconfigure)
+# remove serial number (HWID) file
+    if [ -e /etc/weaved/serial.txt ]; then
+      rm /etc/weaved/serial.txt
+    fi
+    weavedstop.sh
+  ;;
+
+    upgrade|failed-upgrade)
   ;;
 
     upgrade)
   ;;
 
   *)
-    echo "postrm called with unknown argument \`$1'" >&2
+    logger "weavedconnectd prerm called with unknown argument \`$1'" >&2
     exit 1
   ;;
 

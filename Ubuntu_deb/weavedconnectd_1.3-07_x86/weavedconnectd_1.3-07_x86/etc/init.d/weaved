@@ -1,4 +1,5 @@
 #! /bin/sh
+# Version 0.5 October 26, 2016
 ### BEGIN INIT INFO
 # Provides:          weaved
 # Required-Start:    $network $named $portmap $syslog $remote_fs
@@ -21,7 +22,7 @@ DESC="Description of the service"
 NAME=weavedconnectd
 DAEMON=/usr/sbin/$NAME
 DAEMON_ARGS="--options args"
-PIDFILE=/var/run/$NAME.pid
+START_PIDFILE=/var/run/remot3_start.pid
 SCRIPTNAME=/etc/init.d/$NAME
 
 # Exit if the package is not installed
@@ -45,6 +46,7 @@ do_start()
 {
 	# startup monitor
 	nohup /usr/bin/remot3_start.sh > /tmp/remot3_start.log 2>&1 &
+	echo $! > $START_PIDFILE  
 	#info=$(remot3_control.sh bprovision all)
 	#logger [Weaved] $info
     #sleep 2
@@ -72,6 +74,14 @@ do_stop()
 	#   1 if daemon was already stopped
 	#   2 if daemon could not be stopped
 	#   other if a failure occurred
+	
+	#kill startup monitor
+	if [ -e $START_PIDFILE ]; then  
+	    pid=`cat $START_PIDFILE`
+	    kill $pid
+	    rm  $START_PIDFILE
+    fi
+
 	remot3_control.sh stop all
 	RETVAL="$?"
 	

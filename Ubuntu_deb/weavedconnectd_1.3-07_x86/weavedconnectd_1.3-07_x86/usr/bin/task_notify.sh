@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 #
-# Copyright (C) 2016 Weaved Inc
+# Copyright (C) 2016 remot3.it
 #
 # This is a notification plugin for for bulk managment.  
 #
@@ -18,10 +18,11 @@
 # 
 # task_notify.sh [0/1/2/3] <$taskid> <api> <$status>
 #
+# set -x
 
 #### Settings #####
-VERSION=0.3
-MODIFIED="June 02, 2016"
+VERSION=0.6
+MODIFIED="October 26, 2016"
 #
 # Log to system log if set to 1
 LOGGING=1
@@ -66,7 +67,7 @@ dev_random()
 {
     local count=$1
     
-    #defualt is 10 digits if none specified
+    #default is 10 digits if none specified
     count=${1:-10};
 
     #1 to 50 digits supported    
@@ -129,6 +130,14 @@ return_code()
             #Good Reponse
             echo "$resp OK"
             ;;
+        "404")
+            #Good Reponse
+            echo "$resp Not found!"
+            ;;
+        "429")
+            #Good Reponse
+            echo "$resp API server busy!"
+            ;;
         "500")
             ret=$(jsonval "$(cat $OUTPUT)" "error") 
             echo "$resp $ret"
@@ -160,8 +169,129 @@ usage()
         exit 1
 }
 
+###############################
+# Beginning of backoff/retry wrapper function
+###############################
+# Retries a command a configurable number of times with backoff timeout.
+#
+# The maximum retry count is given by MAX_ATTEMPTS
+# The initial backoff timeout is TIMEOUT_INITIAL
+# The minimum timeout to be used is TIMEOUT_MIN
+# The cap on the timeout to be used is TIMEOUT_CAP
+# The base or multiplier to be used in calculating successive timeouts is TIMEOUT_BASE
+#
+# Successive backoffs increase the timeout.
+# See https://www.awsarchitectureblog.com/2015/03/backoff.html
+# See also http://stackoverflow.com/questions/8350942/how-to-re-run-the-curl-command-automatically-when-the-error-occurs (edited)
+#
+
+random_between() {
+ local range_min=$1;
+ local range_max=$2;
+ echo $(( RANDOM % (range_max - range_min + 1 ) + range_min ));
+}
+
+min() {
+ echo $([ $1 -le $2 ] && echo "$1" || echo "$2")
+}
+
+with_backoff () {
+
+ local max_attempts=${MAX_ATTEMPTS-10} # default = 10 attempts
+ local timeout_initial=${TIMEOUT_INITIAL-1} # default = 1 second
+ local timeout_min=${TIMEOUT_MIN-1} # default = 1 second
+ local timeout_cap=${TIMEOUT_CAP-600} # default = 600 seconds
+ local timeout_base=${TIMEOUT_BASE-1} # default = 1
+ local timeout=${timeout_initial}
+ local attempt=0
+ 
+ local exitCode=0
+
+# echo "attempt = $attempt max_attempts = $max_attempts"
+
+while (( $attempt < $max_attempts ))
+ do
+   set +e
+   "$@"
+   exitCode=$?
+   set -e
+
+   if [[ $exitCode == 0 ]]
+   then
+     break
+   fi
+
+   echo "Failure $exitcode! Retrying in $timeout..." 1>&2
+   
+#debug and test
+#test1=$( min 1 2 )
+#test2=$( random_between 1 10 )
+#test3=$( min 600 1 )
+#test4=$( min $timeout_cap 1 )
+
+# The intermediate variables in the code below have been constructed so that changing
+# the formula for backoff timeout should be straightforward.
+#
+# The code below implements "full jitter":
+# sleep = random_between(0, min(cap, base * 2 ** attempt))
+#
+# You can also use "decorrelated jitter":
+# sleep = min(cap, random_between(base, sleep * 3))
+#
+# An alternative "equal Jitter" is not recommended:
+# temp = min(cap, base * 2 ** attempt)
+# sleep = temp / 2 + random_between(0, temp / 2)
+#
+# The simple "exponential" is also not recommended:
+# sleep = min(cap, base * 2 ** attempt)
+
+   sleep $timeout
+   attempt=$(( $attempt + 1 ))
+   temp1=$(( 2** $attempt ))
+   temp2=$(( $timeout_base * $temp1 ))
+   temp3=$( min $timeout_cap $temp2 )
+   timeout=$( random_between $timeout_min $temp3 )
+
+#debug and test
+#echo "attempt = $attempt temp1 = $temp1 temp2 = $temp2 temp3 = $temp3 timeout = $timeout"
 
 
+ done
+
+ if [[ $exitCode != 0 ]]
+ then
+   echo "You've failed me for the last time! ($@)" 1>&2
+echo
+echo "with_backoff exitcode = $exitcode"
+echo
+ fi
+
+ return $exitCode
+}
+
+# example: with_backoff curl 'https://google.com/'
+###############################
+# end of backoff/retry wrapper function
+###############################
+
+# sendAPIresponse sends the proper command to the given URL
+# 
+sendAPIresponse() {
+        data="{\"taskid\":\"${task_id}\",\"description\":\"${status}\"}"
+
+        resp=$(with_backoff $CURL $CURL_OPS -w "%{http_code}\\n" -X POST -o "$OUTPUT" "$1" -d "$data")
+echo "sendAPIresponse curl resp = $resp"
+	if [ "$resp" -eq 200 ]; then
+           # echo URL "return USERID"
+           ret=$(jsonval "$(cat $OUTPUT)" "status")
+           echo "$resp $ret"
+       else
+           ret=$(jsonval "$(cat $OUTPUT)" "reason")
+           echo "[task_notify.sh failed with $resp, $ret]"
+           echo $(return_code $resp)
+       fi
+
+}
 ###############################
 # Main program starts here    #
 ###############################
@@ -217,19 +347,7 @@ case $cmd in
         # Send Update 
         #
         URL="$apiMethod$api_base$API_TASK_UPDATE"
-        data="{\"taskid\":\"${task_id}\",\"description\":\"${status}\"}"
-
-        resp=$($CURL $CURL_OPS -w "%{http_code}\\n" -X POST -o "$OUTPUT" $URL -d "$data")
-
-	if [ "$resp" -eq 200 ]; then
-           # echo URL "return USERID"
-           ret=$(jsonval "$(cat $OUTPUT)" "status")
-           echo "$resp $ret"
-       else
-           ret=$(jsonval "$(cat $OUTPUT)" "reason")
-           logger "[task_notify.sh failed with $resp, $ret]"
-           return_code $resp
-       fi
+	    sendAPIresponse $URL
     ;;
 
     "1")
@@ -237,64 +355,24 @@ case $cmd in
         # Task Done 
         #
         URL="$apiMethod$api_base$API_TASK_DONE"
-        data="{\"taskid\":\"${task_id}\",\"description\":\"${status}\"}"
-
-        resp=$($CURL $CURL_OPS -w "%{http_code}\\n" -X POST -o "$OUTPUT" $URL -d "$data")
-
-        if [ "$resp" -eq "200" ]; then
-            # echo URL "return USERID"
-            ret=$(jsonval "$(cat $OUTPUT)" "status")
-            echo "$resp $ret"
-        else
-            return_code $resp
-        fi
+	    sendAPIresponse $URL
     ;;
     "2")
         #
         # Task Failed 
         #
-        URL="$apiMethod$api_base$API_TASK_DONE"
-        data="{\"taskid\":\"${task_id}\",\"description\":\"${status}\"}"
-
-        resp=$($CURL $CURL_OPS -w "%{http_code}\\n" -X POST -o "$OUTPUT" $URL -d "$data")
-
-        if [ "$resp" -eq 200 ]; then
-            # echo URL "return USERID"
-            ret=$(jsonval "$(cat $OUTPUT)" "status")
-            echo "$resp $ret"
-        else
-            return_code $resp
-        fi        
+        URL="$apiMethod$api_base$API_TASK_FAILED"
+	    sendAPIresponse $URL
     ;;
     "3" | "A" | "a")
         # device status A
         URL="$apiMethod$api_base$API_DEVICE_STATUS_A"
-        data="{\"taskid\":\"${task_id}\",\"description\":\"${status}\"}"
-
-        resp=$($CURL $CURL_OPS -w "%{http_code}\\n" -X POST -o "$OUTPUT" $URL -d "$data")
-
-        if [ "$resp" -eq 200 ]; then
-            # echo URL "return USERID"
-            ret=$(jsonval "$(cat $OUTPUT)" "status")
-            echo "$resp $ret"
-        else
-            return_code $resp
-        fi        
+	    sendAPIresponse $URL
     ;;
     "4" | "B" | "b")
         # device status 2
         URL="$apiMethod$api_base$API_DEVICE_STATUS_B"
-        data="{\"taskid\":\"${task_id}\",\"description\":\"${status}\"}"
-
-        resp=$($CURL $CURL_OPS -w "%{http_code}\\n" -X POST -o "$OUTPUT" $URL -d "$data")
-
-        if [ "$resp" -eq 200 ]; then
-            # echo URL "return USERID"
-            ret=$(jsonval "$(cat $OUTPUT)" "status")
-            echo "$resp $ret"
-        else
-            return_code $resp
-        fi
+	    sendAPIresponse $URL
     ;;
     '5' | 'C' | 'c')
         generic='c'
@@ -329,7 +407,7 @@ if [ -n "$generic" ]; then
     URL="$apiMethod$api_base$API_DEVICE_STATUS$generic/"
     data="{\"taskid\":\"${task_id}\",\"description\":\"${status}\"}"
 
-    resp=$($CURL $CURL_OPS -w "%{http_code}\\n" -X POST -o "$OUTPUT" $URL -d "$data")
+    resp=$(with_backoff $CURL $CURL_OPS -w "%{http_code}\\n" -X POST -o "$OUTPUT" $URL -d "$data")
 
     if [ "$resp" -eq 200 ]; then
         # echo URL "return USERID"

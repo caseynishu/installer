@@ -5,7 +5,8 @@
 TMP_DIR=/tmp
 
 set -e
-logger "Weaved installer postrm state $1"
+logger "weavedconnectd 1.3-07 postrm state $1"
+
 case "$1" in
   purge)
 # remove global startup file
@@ -39,9 +40,10 @@ case "$1" in
     crontab -l | grep -v weavedstart.sh | cat > $TMP_DIR/.crontmp
     crontab $TMP_DIR/.crontmp
     echo
-    echo "If you uninstalled weavedconnectd without deleting Services first,"
-    echo "there may be orphaned Services in your Service List.  Use the "
-    echo "'Settings' link in the web portal Service List to delete these."
+    echo "If you uninstalled weavedconnectd without first deleting your"
+    echo "devices and services, there may be orphaned devices or services"
+    echo "in your remot3.it account.  Use the delete feature in remot3.it"
+    echo "to remove them from your account."
   ;;
 
   remove|failed-upgrade|abort-install|abort-upgrade|disappear|abort-remove)

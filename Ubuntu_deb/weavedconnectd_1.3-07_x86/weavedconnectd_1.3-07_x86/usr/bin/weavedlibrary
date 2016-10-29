@@ -12,7 +12,7 @@
 ##### Settings #####
 LIBVERSION=lib_v1.3-07_x86
 AUTHOR="Gary Worsham"
-LIBMODIFIED="October 25, 2016"
+LIBMODIFIED="October 28, 2016"
 DAEMON=weavedconnectd
 
 # ----------------------------------------
@@ -830,9 +830,12 @@ testLogin()
 {
     while [ "$loginFailed" != "" ] || [ "$slimError" != "" ] || [ "$login404" != "" ]; do
 #	clear
-	printf "\nYou have entered either an incorrect username or password.\n"
-	printf "Please try again.  Press the 'Enter' key to continue.\n"
+	printf "\n\nYou have entered either an incorrect username or password.\n"
+        sleep 1
+	printf "\nPlease try again.  Press the 'Enter' key to continue.\n"
         read
+        printf "\n\nOne moment please...\n"
+        sleep 4
 	loginFailed=""
 	userLogin
     done
