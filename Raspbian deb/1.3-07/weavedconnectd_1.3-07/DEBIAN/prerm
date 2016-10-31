@@ -1,9 +1,9 @@
 #!/bin/sh
-# postrm script for weavedconnectd
+# prerm script for weavedconnectd
 #
 
 set -e
-logger "remot3.it installer prerm $1"
+logger "weavedconnectd 1.3-07p installer prerm $1"
 
 case "$1" in
 
@@ -22,7 +22,7 @@ case "$1" in
   ;;
 
   *)
-    logger "postrm called with unknown argument \`$1'" >&2
+    logger "weavedconnectd prerm called with unknown argument \`$1'" >&2
     exit 1
   ;;
 

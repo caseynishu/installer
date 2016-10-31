@@ -5,7 +5,8 @@
 TMP_DIR=/tmp
 
 set -e
-logger "Weaved installer postrm state $1"
+logger "weavedconnectd 1.3-07p postrm state $1"
+
 case "$1" in
   purge)
 # remove global startup file
@@ -45,7 +46,7 @@ case "$1" in
     echo "to remove them from your account."
   ;;
 
-  remove|failed-upgrade|abort-install|abort-upgrade|disappear)
+  remove|failed-upgrade|abort-install|abort-upgrade|disappear|abort-remove)
     if [ -d /usr/share/weavedconnectd ]; then
       rm -r /usr/share/weavedconnectd
     fi

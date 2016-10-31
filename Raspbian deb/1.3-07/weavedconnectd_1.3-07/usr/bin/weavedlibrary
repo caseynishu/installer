@@ -1001,7 +1001,7 @@ disableStartup()
 ######### Install Start/Stop Scripts #########
 installStartStop()
 {
-        printf "."
+    printf "."
     # crontab approach
     if [ $startupScripts = 3 ]; then
 	sed s/WEAVED_PORT=/WEAVED_PORT="$WEAVED_PORT"/ < "$WEAVED_LIB_DIR"/scripts/launchweaved.sh > "$TMP_DIR"/"$WEAVED_PORT".sh
@@ -1175,11 +1175,11 @@ registerDevice()
     printf "."
     while [ "$alias" == "" ]; do
         if [ "$PROTOCOL" == "rmt3" ]; then
-	    printf "\nEnter a name for your device (e.g. my_Pi_001).\n"
+	    printf "\n\nEnter a name for your device (e.g. my_Pi_001).\n\n"
 	    printf "The Device Name identifies your device in the remot3.it portal.\n"
             printf "Your services will be grouped under the Device Name.\n\n"
 	else
-	    printf "\nEnter a name for this remot3.it service (e.g. SSH-Pi). \n"
+	    printf "\n\nEnter a name for this remot3.it service (e.g. SSH-Pi). \n"
 	    printf "This name will be shown in your remot3.it Service List.\n\n"
         fi    
         printf "Only letters, numbers, underscore, space and dash are allowed.\n\n"

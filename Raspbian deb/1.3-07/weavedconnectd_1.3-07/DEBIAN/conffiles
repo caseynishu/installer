@@ -1,1 +1,3 @@
 /etc/weaved/schannel.conf
+/etc/init.d/weaved
+/etc/init.d/weaved.schannel

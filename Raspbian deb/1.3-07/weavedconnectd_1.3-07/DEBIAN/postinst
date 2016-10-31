@@ -2,10 +2,12 @@
 # postinst script for weavedconnectd
 #
 
+logger "weavedconnectd 1.3-07p postinst state $1"
+
 set -e
 
 case "$1" in
-    purge|remove|failed-upgrade|abort-install|abort-upgrade|disappear)
+    purge|remove|failed-upgrade|abort-install|abort-upgrade|disappear|abort-remove)
     ;;
 
     configure|upgrade)
@@ -14,7 +16,7 @@ case "$1" in
 	sed s/launchschannel/weavedschannel/ < /usr/bin/weavedstart.sh > /tmp/weavedstart.sh
 	mv /tmp/weavedstart.sh /usr/bin
 	chmod +x /usr/bin/weavedstart.sh
-        logger "remot3.it: Restarting daemons"
+        logger "weavedconnectd: Restarting daemons"
         # need to add sleep for upgrade script, so that upgrade over remot3.it will restart
         # daemons more reliably
         sleep 2
@@ -23,7 +25,7 @@ case "$1" in
   ;;
 
   *)
-    logger "remot3.it: postinst called with unknown argument \`$1'" >&2
+    logger "weavedconnectd: postinst called with unknown argument \`$1'" >&2
     exit 1
   ;;
 
@@ -34,3 +36,5 @@ echo "Available commands:"
 echo
 echo "sudo weavedinstaller - configures your device's tcp services for remote access" 
 echo
+echo "================================================================================"
+
