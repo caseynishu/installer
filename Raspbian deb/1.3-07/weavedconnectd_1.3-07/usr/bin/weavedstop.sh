@@ -1,8 +1,12 @@
 #!/bin/bash
+# Updated October 31, 2016
 
-# weavedStop.sh, stops all running Weaved services
+# weavedstop.sh, stops all running Weaved services
 
-for f in /usr/bin/Weaved*.sh; do
+if [ -e /usr/bin/Weaved*.sh ]; then
+    for f in /usr/bin/Weaved*.sh; do
 	$f stop
-done
+    done
+fi
+
 weavedschannel stop
