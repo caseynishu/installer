@@ -12,6 +12,14 @@ case "$1" in
     if [ -e /etc/weaved/serial.txt ]; then
       rm /etc/weaved/serial.txt
     fi
+# remove configured and active enablement files
+    if [ -e /etc/weaved/active/*.i686 ]; then
+      rm /etc/weaved/active/*.i686
+    fi
+# remove configured enablement files
+    if [ -e /etc/weaved/available/*.i686 ]; then
+      rm /etc/weaved/available/*.i686
+    fi
     weavedstop.sh
   ;;
 
