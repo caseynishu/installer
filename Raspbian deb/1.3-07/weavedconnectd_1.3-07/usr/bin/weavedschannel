@@ -23,7 +23,7 @@ LOG_DIR=/var/log
 displayVersion()
 {
     printf "Weaved server channel daemon start/stop script Version: %s \n" "$VERSION"
-    # check for sudo user at this point
+    # check for su user at this point
     if [[ $EUID -ne 0 ]]; then
         echo "Running $0 requires root access." 1>&2
         echo "Please run sudo $0" 1>&2
@@ -53,8 +53,8 @@ stopWeaved()
 		if [ "$2" != "-q" ]; then
 			echo "Stopping $DAEMON..."
 		fi
-		sudo kill $runningPID 2> /dev/null
-		sudo rm $PIDPATH 2> /dev/null
+		kill $runningPID 2> /dev/null
+		rm $PIDPATH 2> /dev/null
 	else
 		if [ "$2" != "-q" ]; then
 			echo "$DAEMON not currently active. Nothing to stop."
@@ -69,7 +69,7 @@ startWeaved()
 		if [ "$2" != "-q" ]; then
 			echo "Starting $DAEMON..."
 		fi
-		sudo $BIN_DIR/$DAEMON -f $CONF_FILE -d $PID_DIR/$DAEMON.pid
+		$BIN_DIR/$DAEMON -f $CONF_FILE -d $PID_DIR/$DAEMON.pid
 	else
 		if [ "$2" != "-q" ]; then
 			echo "$DAEMON is already started"

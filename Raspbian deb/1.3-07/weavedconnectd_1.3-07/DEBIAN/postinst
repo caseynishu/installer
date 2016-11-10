@@ -2,7 +2,7 @@
 # postinst script for weavedconnectd
 #
 
-logger "weavedconnectd 1.3-07p postinst state $1"
+logger "weavedconnectd 1.3-07s postinst state $1"
 
 set -e
 

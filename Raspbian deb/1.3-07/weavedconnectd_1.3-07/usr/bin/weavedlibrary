@@ -12,7 +12,7 @@
 ##### Settings #####
 LIBVERSION=lib_v1.3-07_Pi
 AUTHOR="Gary Worsham"
-LIBMODIFIED="October 28, 2016"
+LIBMODIFIED="November 08, 2016"
 DAEMON=weavedconnectd
 
 # ----------------------------------------
@@ -60,7 +60,7 @@ displayVersion()
 {
     printf "remot3.it connection installer Version: %s %s \n" "$VERSION" "$LIBVERSION"
     printf "Modified: %s (library) %s \n" "$MODIFIED" "$LIBMODIFIED"
-    # check for sudo user at this point
+    # check for su user at this point
     if [[ $EUID -ne 0 ]]; then
         echo "Running weavedinstaller requires root access." 1>&2
         echo "Please run sudo weavedinstaller instead of weavedinstaller." 1>&2
@@ -901,6 +901,9 @@ checkForDeviceName()
 #=======================================
 convertExistingUIDs()
 {
+# check to make sure there is an existing directory before trying to iterate.
+    if [ -d "$WEAVED_DIR" ]; then
+        logger "updating existing services to add HWID"
     	for file in $WEAVED_DIR/*.conf; do
 	    debug "$file"
             if [ "$file" != Weavedrmt365535.conf ]; then
@@ -918,6 +921,7 @@ convertExistingUIDs()
 		installStartStop
             fi
         done
+    fi
 }
 
 ######### Install Enablement #########
