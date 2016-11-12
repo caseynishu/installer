@@ -267,35 +267,48 @@ update()
     fi
 }
 
-
-
 #
 # killit pid
 #
 killit()
 {
-    pid=$1
-    ret=1
-    kill $pid 
-    #wait for pid to die 5 seconds
-    count=0                   # Initialise a counter
-    while [ $count -lt 5 ]  
-    do
-	if [ ! -d /proc/$pid ]; then
-        #if [ "$pid" != `pidrunning $pid`  ] 
-        #then
-           ret=0
-           break;
-        fi
-        # not dead yet
-        count=`expr $count + 1`  # Increment the counter
-        if [ $VERBOSE -gt 0 ]; then
-            echo "still running"
-        fi
-        sleep 1
-    done
-    return $ret    
+   pid=$1
+   ret=1
+   kill $pid
+   #wait for pid to die 5 seconds
+   count=0                   # Initialise a counter
+   while [ $count -lt 5 ]  
+   do
+   if [ ! -d /proc/$pid ]; then
+       #if [ "$pid" != `pidrunning $pid`  ]
+       #then
+          ret=0
+          break;
+       fi
+       # not dead yet
+       count=`expr $count + 1`  # Increment the counter
+       if [ $VERBOSE -gt 0 ]; then
+           echo "still running"
+       fi
+       sleep 1
+   done    
+   if [ -d /proc/$pid ]; then
+# set -x
+     # hard kill
+     kill -9 $pid
+     if [ 0 -ne $? ]; then
+          logger "weavedconnectd, kill -9 did not work"
+          ret=1;
+#          break;
+     else
+          logger "weavedconnectd, kill -9 required to stop"
+	  ret=0;
+#          break;
+     fi
+   fi    
+   return $ret
 }
+
 #
 # Stopit name
 #
@@ -313,7 +326,7 @@ stopit()
                     killit $pid
                     retval=$?
                     if [ $retval -ne 0 ]; then
-                        echo "FAIL: Could not kill $1 on pid $pid"
+                        echo "FAIL: Could not kill $1 on pid $pid: $retval"
                     else
                         ret=0
                         echo "OK: $1 is stopped"

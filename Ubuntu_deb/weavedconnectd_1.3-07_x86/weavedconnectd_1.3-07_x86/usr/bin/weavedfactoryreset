@@ -14,12 +14,12 @@
 ##### Settings #####
 VERSION=v1.3-06_Factory_Reset
 AUTHOR="Gary Worsham"
-MODIFIED="June 2, 2016"
+MODIFIED="October 09, 2016"
 DEBUG="0"
 
 #==========================================================================
 
-source weavedinstallerlib
+source weavedlibrary
 
 ######### Main Program #########
 main()

@@ -280,7 +280,6 @@ sendAPIresponse() {
         data="{\"taskid\":\"${task_id}\",\"description\":\"${status}\"}"
 
         resp=$(with_backoff $CURL $CURL_OPS -w "%{http_code}\\n" -X POST -o "$OUTPUT" "$1" -d "$data")
-echo "sendAPIresponse curl resp = $resp"
 	if [ "$resp" -eq 200 ]; then
            # echo URL "return USERID"
            ret=$(jsonval "$(cat $OUTPUT)" "status")

@@ -125,7 +125,7 @@ Task_Update()
 			Wait_For_Internet
 			ret=$(${TOOL_DIR}/task_notify.sh 0 $jobid $api_server "$1")
 			
-			if [ "$ret" == "200 true" ]; then
+			if [[ "$ret" == *"200"* ]]; then
 				retry=0
 			else
 				if [[ "$ret" == *"403"* ]]; then
@@ -151,7 +151,7 @@ Task_Complete()
 		Wait_For_Internet
 		ret=$(${TOOL_DIR}/task_notify.sh 1 $jobid $api_server "$1")
 		
-		if [ "$ret" == "200 true" ]; then
+		if [[ "$ret" == *"200"* ]]; then
 			retry=0
 		else
 			if [[ "$ret" == *"403"* ]]; then
@@ -176,7 +176,7 @@ Task_Failed()
 		Wait_For_Internet
 		ret=$(${TOOL_DIR}/task_notify.sh 2 $jobid $api_server "$1")
 		
-		if [ "$ret" == "200 true" ]; then
+		if [[ "$ret" == *"200"* ]]; then
 			retry=0
 		else
 			if [[ "$ret" == *"403"* ]]; then
@@ -202,7 +202,7 @@ Status_A()
 			Wait_For_Internet
 			ret=$(${TOOL_DIR}/task_notify.sh a $jobid $api_server "$1")
 			
-			if [ "$ret" == "200 true" ]; then
+			if [[ "$ret" == *"200"* ]]; then
 				retry=0
 			else
 				if [[ "$ret" == *"403"* ]]; then
@@ -229,7 +229,7 @@ Status_B()
 			Wait_For_Internet
 			ret=$(${TOOL_DIR}/task_notify.sh b $jobid $api_server "$1")
 			
-			if [ "$ret" == "200 true" ]; then
+			if [[ "$ret" == *"200"* ]]; then
 				retry=0
 			else
 				if [[ "$ret" == *"403"* ]]; then
@@ -256,7 +256,7 @@ Status_C()
 			Wait_For_Internet
 			ret=$(${TOOL_DIR}/task_notify.sh c $jobid $api_server "$1")
 			
-			if [ "$ret" == "200 true" ]; then
+			if [[ "$ret" == *"200"* ]]; then
 				retry=0
 			else
 				if [[ "$ret" == *"403"* ]]; then
@@ -283,7 +283,7 @@ Status_D()
 			Wait_For_Internet
 			ret=$(${TOOL_DIR}/task_notify.sh d $jobid $api_server "$1")
 			
-			if [ "$ret" == "200 true" ]; then
+			if [[ "$ret" == *"200"* ]]; then
 				retry=0
 			else
 				if [[ "$ret" == *"403"* ]]; then
@@ -310,7 +310,7 @@ Status_E()
 			Wait_For_Internet
 			ret=$(${TOOL_DIR}/task_notify.sh e $jobid $api_server "$1")
 			
-			if [ "$ret" == "200 true" ]; then
+			if [[ "$ret" == *"200"* ]]; then
 				retry=0
 			else
 				if [[ "$ret" == *"403"* ]]; then
