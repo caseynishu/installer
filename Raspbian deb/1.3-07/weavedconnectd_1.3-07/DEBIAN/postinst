@@ -2,7 +2,7 @@
 # postinst script for weavedconnectd
 #
 
-logger "weavedconnectd 1.3-07t postinst state $1"
+logger "weavedconnectd 1.3-07u postinst state $1"
 
 set -e
 
@@ -20,9 +20,9 @@ case "$1" in
         # need to add sleep for upgrade script, so that upgrade over remot3.it will restart
         # daemons more reliably
         sleep 2
-	for f in /usr/bin/Weaved*.sh; do
-            if [ -f $f ]; then
-                $f restart
+	for file in /usr/bin/Weaved*.sh; do
+            if [ -f $file ]; then
+                $file restart
             fi
         done  
         /usr/bin/weavedschannel restart 

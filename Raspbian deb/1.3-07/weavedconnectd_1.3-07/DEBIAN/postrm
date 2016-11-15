@@ -5,7 +5,7 @@
 TMP_DIR=/tmp
 
 set -e
-logger "weavedconnectd 1.3-07t postrm state $1"
+logger "weavedconnectd 1.3-07u postrm state $1"
 
 case "$1" in
   purge)
@@ -15,22 +15,30 @@ case "$1" in
     fi
 # remove startup scripts	
     for file in /usr/bin/Weaved*.sh ; do
-      rm -f $file
+        if [ -f $file ]; then
+            rm -f $file
+        fi
     done
 # remove notification scripts
     if [ -f /usr/bin/weavednotify.sh ]; then
       rm -f /usr/bin/weavednotify.sh
     fi
     for file in /usr/bin/notify_Weaved*.sh ; do
-      rm -f $file
+        if [ -f $file ]; then
+           rm -f $file
+        fi
     done
 # remove configuration files
     for file in /etc/weaved/services/Weaved*.conf ; do
-      rm -f $file
+        if [ -f $file ]; then
+            rm -f $file
+        fi
     done
 # remove PID files
     for file in /var/run/Weaved*.pid ; do
-      rm -f $file
+        if [ -f $file ]; then
+            rm -f $file
+        fi
     done
 # remove installation template files
     if [ -d /usr/share/weavedconnectd ]; then
