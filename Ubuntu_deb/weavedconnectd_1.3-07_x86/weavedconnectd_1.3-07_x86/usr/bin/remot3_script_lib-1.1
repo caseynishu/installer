@@ -5,10 +5,11 @@
 #
 
 VERSION="1.1.0"
-MODIFIED="October 27, 2016"
+MODIFIED="December 12, 2016"
 
 TOOL_DIR="/usr/bin"
 DEBUG_DIR="/tmp"
+TMP_DIR="/tmp"
 # turn on debug, set to 1 and will write to DEBUG_DIR/scriptname.log
 DEBUG_ON=0
 SHOW_STATUS=0
@@ -29,6 +30,10 @@ apiURI="/tiny/lookup/"
 # Support Functions                    #
 ########################################
 
+#----------------------------------------------------------
+#
+# Check to see if task has expired
+#
 Has_Task_Expired()
 {
 	now=$(date +%s)
@@ -42,9 +47,10 @@ Has_Task_Expired()
 	fi
 }
 
-
 #----------------------------------------------------------
-# Internet_Available - check to see if API is available
+#
+# Check to see if API is available
+#
 Internet_Available()
 {
 	ret=0
@@ -58,35 +64,35 @@ Internet_Available()
     fi
     return $ret
 }
-# end of Internet_Available
 
 #----------------------------------------------------------
-# Wait_For_Internet - waits until API is available
+#
+# Waits until API is available
+#
 Wait_For_Internet()
 {
-while [ 1 ]
-do
-    Has_Task_Expired
+	while [ 1 ]
+	do
+		Has_Task_Expired
 	
-	# task has not expired
-	if [ $? -eq 0 ]; then
+		# task has not expired
+		if [ $? -eq 0 ]; then
 	
-		# check to see if internet is available
-		Internet_Available
+			# check to see if internet is available
+			Internet_Available
 		
-		if [ $? -eq 1 ]; then
-			# internet is available, return
-			sleep 2
-			return 0
-		fi 
+			if [ $? -eq 1 ]; then
+				# internet is available, return
+				sleep 2
+				return 0
+			fi 
 		
-		# wait for 15 seconds and recheck internet 
-		sleep 15
-		logger "$0 Looping while internet not available"
-	fi
-done
+			# wait for 15 seconds and recheck internet 
+			sleep 15
+			logger "$0 Looping while internet not available"
+		fi
+	done
 }
-# end of Wait_For_Internet
 
 #----------------------------------------------------------
 #
@@ -140,7 +146,7 @@ Task_Update()
 
 #----------------------------------------------------------
 #
-# Task Complete
+# Send Task Complete notification to server
 #
 Task_Complete()
 {
@@ -165,7 +171,7 @@ Task_Complete()
 
 #----------------------------------------------------------
 #
-# Task Failed
+# Send Task Failed notificationto server
 #
 Task_Failed()
 {
@@ -190,7 +196,7 @@ Task_Failed()
 
 #----------------------------------------------------------
 #
-# Status column A
+# Update Status column A
 #
 Status_A()
 {
@@ -217,7 +223,7 @@ Status_A()
 
 #----------------------------------------------------------
 #
-# Status column B
+# Update Status column B
 #
 Status_B()
 {
@@ -244,7 +250,7 @@ Status_B()
 
 #----------------------------------------------------------
 #
-# Status column C
+# Update Status column C
 #
 Status_C()
 {
@@ -271,7 +277,7 @@ Status_C()
 
 #----------------------------------------------------------
 #
-# Status column D
+# Update Status column D
 #
 Status_D()
 {
@@ -298,7 +304,7 @@ Status_D()
 
 #----------------------------------------------------------
 #
-# Status column E
+# Update Status column E
 #
 Status_E()
 {
@@ -324,6 +330,7 @@ Status_E()
 }
 
 #----------------------------------------------------------
+#
 # JSON parse (very simplistic):  get value frome key $2 in buffer $1,  values or keys must not have the characters {}[", 
 #   and the key must not have : in it
 #
@@ -335,13 +342,6 @@ JSONval()
     temp=`echo "$1" | sed -e 's/[{}\"]//g' | sed -e 's/,/\'$'\n''/g' | grep -w $2 | cut -d"[" -f2- | cut -d":" -f2-`       
     echo ${temp}                                                
 }                                                   
-
-#----------------------------------------------------------
-JSONvalx()
-{
-    temp=`echo $1 | sed -e 's/[{}"]//g' -e "s/,/\\$liblf/g" | grep -w $2 | cut -d":" -f2-`
-    echo ${temp}    
-}
 
 #----------------------------------------------------------
 #
@@ -362,7 +362,6 @@ Translate()
     Log "return status $status"
 
     if [ "$status" == "true" ]; then
-        #jsonvalx()
         item=$(JSONval "$resp" "item")
         #
         # Convert from base64
@@ -379,9 +378,33 @@ Translate()
     return $ret
 }
 
-##############################################################################
-Save_State()
+#----------------------------------------------------------
+#
+# Remove cron job
+#
+Cron_Remove_Line()
 {
+	crontab -l | grep -v "$1" | cat > $TMP_DIR/.crontmp
+	crontab $TMP_DIR/.crontmp
+}
+
+#----------------------------------------------------------
+#
+# Add cron job
+#
+Cron_Add_Line()
+{
+	crontab -l 2>/dev/null 1> "$TMP_DIR"/.crontab_old
+	echo "$1" >> "$TMP_DIR"/.crontab_old
+	logger "Cron_Add_Line $1"
+	crontab "$TMP_DIR"/.crontab_old
+}
+
+
+#----------------------------------------------------------
+#
+# Create script to run after reboot
+#
 # Parameters passed
 # $1 - jobid
 # $2 - api_server
@@ -391,6 +414,9 @@ Save_State()
 # $6 - Task_Complete message
 # $7 - DEBUG_ON
 # $8 - SHOW_STATUS
+#
+Save_State()
+{
  
     if [ ! -d "/root/.remot3.it" ]; then
         mkdir "/root/.remot3.it"
@@ -401,7 +427,7 @@ Save_State()
 	REBOOTFILE=/root/.remot3.it/weaved-reboot.sh
 	
 	# clear old cronjob in case last one didn't get executed possibly due to task expiration
-    cronRemoveLine "@reboot bash -x $REBOOTFILE >> /tmp/rebootlog"
+    Cron_Remove_Line "@reboot bash -x $REBOOTFILE >> /tmp/rebootlog"
 
 	echo "#!/bin/bash" > $REBOOTFILE
 	echo "#" >> $REBOOTFILE
@@ -411,7 +437,6 @@ Save_State()
 	echo "#" >> $REBOOTFILE	
 	echo " " >> $REBOOTFILE
     echo "source /usr/bin/remot3_script_lib-1.1" >> $REBOOTFILE
-    echo "source /usr/bin/weavedinstallerlib" >> $REBOOTFILE
 	echo " " >> $REBOOTFILE
 	echo "DEBUG_ON=$7" >> $REBOOTFILE
 	echo "SHOW_STATUS=$8" >> $REBOOTFILE
@@ -426,22 +451,20 @@ Save_State()
     echo "Status_B \"Success\"" >> $REBOOTFILE
     echo "Status_C \"$5\"" >> $REBOOTFILE
     echo "Task_Complete \"$6\"" >> $REBOOTFILE
-    echo "cronRemoveLine '@reboot bash -x $REBOOTFILE >> /tmp/rebootlog'" >> $REBOOTFILE
+    echo "Cron_Remove_Line '@reboot bash -x $REBOOTFILE >> /tmp/rebootlog'" >> $REBOOTFILE
 
     chmod +x $REBOOTFILE
-    cronAddLine "@reboot bash -x $REBOOTFILE >> /tmp/rebootlog"
+    Cron_Add_Line "@reboot bash -x $REBOOTFILE >> /tmp/rebootlog"
     sync
     sleep 2
 }
 
-##############################################################################
-# Read timeout for wget, default is 900 seconds.  set shorter for testing.
+#----------------------------------------------------------
+#
+# Download package and retry when connecitivity issue occur
+# 
 READTIMEOUT=120
 READRETRIES=5
-
-# constants for retry logic
-
-
 Download_With_Retry()
 {
     filename=$(echo "$1" | awk '{ print $3 }')
