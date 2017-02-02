@@ -23,7 +23,7 @@ DEBUG="0"
 MAXSEL=6
 
 #==================================================================================
-# If STARTDAEMONSONREBOOT is set to "1", then following the execution of the weavedinstaller_OEM script,
+# If STARTDAEMONSONREBOOT is set to "1", then following the execution of the remot3it_register script,
 # the next time the device is rebooted, the daemons will be started.
 # If it is preferred that the daemons not autostart on the next reboot, set STARTDAEMONSONREBOOT to "0".
 

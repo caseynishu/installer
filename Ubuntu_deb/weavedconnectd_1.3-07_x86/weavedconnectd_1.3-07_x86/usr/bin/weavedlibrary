@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#  weavedinstallerlib
+#  weavedlibrary
 #
 #  Provides library functions to install, configure or remove Weaved
 #  attachment services for tcp listeners.
@@ -12,7 +12,7 @@
 ##### Settings #####
 LIBVERSION=lib_v1.3-07_x86
 AUTHOR="Gary Worsham"
-LIBMODIFIED="October 28, 2016"
+LIBMODIFIED="February 01, 2017"
 DAEMON=weavedconnectd
 
 # ----------------------------------------
@@ -94,7 +94,7 @@ weavedCompatibility()
 # value and write it there.  Otherwise read the value from then
 # file.
 # mac is also determined here as it is used for the SERVICEBASENAME
-# in weavedinstaller_OEM
+# in remot3it_register
 
 getSerialID()
 {
@@ -1559,7 +1559,7 @@ REBOOTFILE=/root/.remot3.it/reboot.sh
     echo "#!/bin/bash" > "$REBOOTFILE"
     echo "# REBOOT DEVICE" >> "$REBOOTFILE"
     echo "source /usr/bin/remot3_script_lib" >> "$REBOOTFILE"
-    echo "source /usr/bin/weavedinstallerlib" >> "$REBOOTFILE"
+    echo "source /usr/bin/weavedlibrary" >> "$REBOOTFILE"
     echo "wait_for_internet" >> "$REBOOTFILE"
     echo "sleep 5" >> "$REBOOTFILE"
     echo "${TOOL_DIR}/task_notify.sh a $1 $2 'Rebooted.'" >> $REBOOTFILE

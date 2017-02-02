@@ -26,9 +26,6 @@ case "$1" in
     upgrade|failed-upgrade)
   ;;
 
-    upgrade)
-  ;;
-
   *)
     logger "weavedconnectd prerm called with unknown argument \`$1'" >&2
     exit 1

@@ -8,14 +8,14 @@
 #  Weaved, Inc. Copyright 2016. All rights reserved.
 #
 ##### Settings #####
-VERSION=v1.3-06_Enable_Startup
+VERSION=v1.3-07_Enable_Startup
 AUTHOR="Gary Worsham"
-MODIFIED="June 02, 2016"
+MODIFIED="February 01, 2017"
 DEBUG="1"
 
 #==========================================================================
 
-source weavedinstallerlib
+source weavedlibrary
 
 ######### Main Program #########
 main()

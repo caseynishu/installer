@@ -211,7 +211,7 @@ REBOOTFILE=/root/.remot3.it/reboot.sh
     echo "#!/bin/bash" > "$REBOOTFILE"
     echo "# REBOOT DEVICE" >> "$REBOOTFILE"
     echo "source /usr/bin/remot3_script_lib" >> "$REBOOTFILE"
-    echo "source /usr/bin/weavedinstallerlib" >> "$REBOOTFILE"
+    echo "source /usr/bin/weavedlibrary" >> "$REBOOTFILE"
     echo "wait_for_internet" >> "$REBOOTFILE"
     echo "sleep 5" >> "$REBOOTFILE"
     echo "${TOOL_DIR}/task_notify.sh a $1 $2 'Rebooted.'" >> $REBOOTFILE

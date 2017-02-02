@@ -22,7 +22,7 @@
 ##### Settings #####
 VERSION=v1.3-07_x86_OEM
 AUTHOR="Gary Worsham"
-MODIFIED="September 02, 2016"
+MODIFIED="February 01, 2017"
 DEBUG="0"
 #=======================================================================
 # remot3.it recommends running this script (with real username/password) from /tmp folder.
@@ -51,7 +51,7 @@ APIKEY="WeavedDeveloperToolsWy98ayxR"
 REGISTERSERVICE="1"
 
 #==================================================================================
-# If STARTDAEMONSONREBOOT is set to "1", then following the execution of the weavedinstaller_OEM script,
+# If STARTDAEMONSONREBOOT is set to "1", then following the execution of the remot3it_register script,
 # the next time the device is rebooted, the daemons will be started.
 # If it is preferred that the daemons not autostart on the next reboot, set STARTDAEMONSONREBOOT to "0".
 
@@ -91,11 +91,11 @@ main()
         testLogin
 # =============================================    
 # $SERVICEBASENAME is the base name of all installed services installed
-# with weavedinstaller_OEM
+# with remot3it_register
 # $SerialID equates to a random number concatenated with 
 # the Ethernet MAC address
 # this is the HWID for all services registered from a given device.
-# This function is defined in /usr/bin/weavedinstallerlib.
+# This function is defined in /usr/bin/weavedlibrary.
 #
 # By default, we are setting SERVICEBASENAME to $mac
 # This forms the first part of the displayed service name.
