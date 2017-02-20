@@ -12,7 +12,7 @@
 ##### Settings #####
 LIBVERSION=lib_v1.3-07_Pi
 AUTHOR="Gary Worsham"
-LIBMODIFIED="November 08, 2016"
+LIBMODIFIED="February 20, 2017"
 DAEMON=weavedconnectd
 
 # ----------------------------------------
