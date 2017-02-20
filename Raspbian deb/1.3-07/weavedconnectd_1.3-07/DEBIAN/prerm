@@ -12,6 +12,14 @@ case "$1" in
     if [ -e /etc/weaved/serial.txt ]; then
       rm /etc/weaved/serial.txt
     fi
+# remove configured and active enablement files
+    if [ -e /etc/weaved/active/*.pi ]; then
+      rm /etc/weaved/active/*.pi
+    fi
+# remove configured enablement files
+    if [ -e /etc/weaved/available/*.pi ]; then
+      rm /etc/weaved/available/*.pi
+    fi
     weavedstop.sh
   ;;
 

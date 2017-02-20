@@ -1,0 +1,32 @@
+#!/bin/bash
+
+#  weavedenablestartup
+#
+#  Run 'sudo weavedenablestartup' to enable startup of 
+#  installed Weaved attachment services for tcp listeners.
+#
+#  Weaved, Inc. Copyright 2016. All rights reserved.
+#
+##### Settings #####
+VERSION=v1.3-06_Enable_Startup
+AUTHOR="Gary Worsham"
+MODIFIED="June 02, 2016"
+DEBUG="1"
+
+#==========================================================================
+
+source weavedinstallerlib
+
+######### Main Program #########
+main()
+{
+    displayVersion
+# =============================================    
+    update-rc.d -f weaved enable
+    update-rc.d -f weaved.schannel enable
+# =============================================   
+    echo "Remot3.it services enabled at startup." 
+}
+######### End Main Program #########
+# 
+main 

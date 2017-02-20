@@ -1,1 +1,6 @@
+/etc/weaved/sample_bulk_reg_file.csv
+/etc/weaved/firmware.ver
+/etc/weaved/weavedconnectd.ver
 /etc/weaved/schannel.conf
+/etc/init.d/weaved
+/etc/init.d/weaved.schannel

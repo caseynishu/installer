@@ -20,7 +20,7 @@
 #
 
 ##### Settings #####
-VERSION=v1.3-07
+VERSION=v1.3-07_x86_OEM
 AUTHOR="Gary Worsham"
 MODIFIED="September 02, 2016"
 DEBUG="0"
