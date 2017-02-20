@@ -501,7 +501,7 @@ deleteConnection()
 	    deviceType=$(jsonval "$resp" "title")
 	    if ask "Are you sure you want to delete the remot3.it $deviceType attachment $serviceName?"; then
 		printf "Deleting $serviceName...\n"
-		result=$(curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H “Content-Type:application/json” -H "apikey:$APIKEY" -H "token:$token" &> /dev/null)
+		result=$(curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token" &> /dev/null)
 		deleteResult=$(jsonval "$result" "status")
 		debug $deleteResult
 
@@ -551,7 +551,7 @@ deleteAllConnections()
 
 	    printf "\nDeleting $serviceName...\n"
 	
-	    result=$(curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H “Content-Type:application/json” -H "apikey:$APIKEY" -H "token:$token" &> /dev/null)
+	    result=$(curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token" &> /dev/null)
 	    deleteResult=$(jsonval "$result" "status")
 	    debug $deleteResult
 
@@ -910,7 +910,7 @@ convertExistingUIDs()
 	# get service name from UID
                 uid="$(grep '^UID' $file | awk '{print $2}')"
 
-                result=$(curl -s $deviceHWIDURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"hardwareid\":\"$SerialID\"}" -H “Content-Type:application/json” -H "apikey:$APIKEY" -H "token:$token" &> /dev/null)
+                result=$(curl -s $deviceHWIDURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"hardwareid\":\"$SerialID\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token" &> /dev/null)
 #		debug result
 	        addHWIDResult=$(jsonval "$result" "status")
 #	        debug $addHWIDResult
@@ -1099,7 +1099,7 @@ retryFetchUID()
 preregisterUID()
 {
     printf "."
-    preregUID="$(curl -s $preregdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicetype\":\"$DEVICETYPE\"}" -H “Content-Type:application/json” -H "apikey:$APIKEY" -H "token:$token")"
+    preregUID="$(curl -s $preregdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicetype\":\"$DEVICETYPE\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token")"
     test1="$(echo $preregUID | grep "true" | wc -l)"
     debug $preregUID
     test2="$(echo $preregUID | grep -E "missing api token|api token missing" | wc -l)"
@@ -1135,11 +1135,11 @@ getSecret()
     printf "."
 
     if [ "$PROTOCOL" == "rmt3" ]; then
-        secretCall="$(curl -s $regdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$SerialID\"}" -H “Content-Type:application/json” -H "apikey:$APIKEY" -H "token:$token")"    
+        secretCall="$(curl -s $regdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$SerialID\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token")"    
 
     else
 
-        secretCall="$(curl -s $regdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$SerialID\", \"skipemail\":\"true\"}" -H “Content-Type:application/json” -H "apikey:$APIKEY" -H "token:$token")"
+        secretCall="$(curl -s $regdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$SerialID\", \"skipemail\":\"true\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token")"
     
     fi
 
@@ -1226,7 +1226,7 @@ overridePort()
 deleteDevice()
 {
     uid=$(tail $WEAVED_DIR/$WEAVED_PORT.conf | grep UID | awk -F "UID" '{print $2}' | xargs echo -n)
-    curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H “Content-Type:application/json” -H "apikey:$APIKEY" -H "token:$token"
+    curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token"
     #    printf "\n\n"
 }
 ######### End Delete device #########
@@ -1235,7 +1235,7 @@ deleteDevice()
 deleteDeviceByUid()
 {
     uid="$1"
-    resp=$(url -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H “Content-Type:application/json” -H "apikey:$APIKEY" -H "token:$token")
+    resp=$(url -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token")
     echo "$resp"
 }
 ######### End Delete device by UID #########
