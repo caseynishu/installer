@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#  weavedinstallerlib
+#  weavedlibrary
 #
 #  Provides library functions to install, configure or remove Weaved
 #  attachment services for tcp listeners.
@@ -12,7 +12,7 @@
 ##### Settings #####
 LIBVERSION=lib_v1.3-07_Pi
 AUTHOR="Gary Worsham"
-LIBMODIFIED="February 20, 2017"
+LIBMODIFIED="February 24, 2017"
 DAEMON=weavedconnectd
 
 # ----------------------------------------
@@ -37,11 +37,12 @@ STARTEMUP=weavedstart.sh
 # ----------------------------------------
 # web API URLs
 
-version=api17i
+version=api_version/v21.12
 server=api.remot3.it
 
 loginURL=https://$server/$version/user/login
 loginAuthURL=https://$server/$version/user/login/authhash
+versionURL=https://$server/$version/version/PI_INSTALLER
 unregdeviceURL=https://$server/$version/device/list/unregistered
 preregdeviceURL=https://$server/$version/device/create
 deleteURL=https://$server/$version/device/delete
@@ -68,6 +69,37 @@ displayVersion()
     fi
 }
 ##### End Version #####
+
+#### check for updated installer
+checkForUpdate()
+{
+    echo
+    echo "-------------------"
+    echo    
+    currentlyInstalled=$(dpkg --status weavedconnectd | grep Version | awk '{ print $2 }')
+    echo "weavedconnectd version $currentlyInstalled is currently installed."
+
+    # check to see if updated version exists
+    resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:$APIKEY"  -H "token:$token" "$versionURL")
+    checkAPIResult "$versionURL" "$resp"
+    package=$(jsonval "$resp" "component")
+    latestVer=$(jsonval "$resp" "version")
+    echo    
+    echo "$latestVer is the most recent version of $package"
+    if [ "$currentlyInstalled" != "$latestVer" ]; then
+    	downloadMsg=$(jsonval "$resp" "description")
+    	echo "New installer is available at $downloadMsg"
+        if ask "Would you like to download this file now?"; then
+            cd /tmp
+            wget $downloadMsg
+            echo "Run sudo dpkg -i weavedconnectd_$latestVer\_armhf.deb to complete the update."
+            exit
+       fi
+    fi
+}
+
+##### end of check for update
+
 
 ##### Compatibility checker #####
 weavedCompatibility()
@@ -164,8 +196,7 @@ checkforServices()
 	    yooareell=$(echo  "$deviceURL/$uid")
 
 	    resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:$APIKEY"  -H "token:$token" "$yooareell")
-
-#	    debug $resp
+            checkAPIResult "$youareell" "$resp"
 
 	    # this next test checks to see if device is registered.  
 	    # If not, it was probably deleted at the web portal.
@@ -476,6 +507,23 @@ protocolSelection()
 }
 ##### End Protocol selection #####
 
+
+############ checkAPIResult ############
+# checks return value of API calls.  
+# if status == true, just returns silently
+# if status == false, reason is displayed and script exits
+# first parameter is something to display, usually the URL
+# second parameter is full JSON response
+
+checkAPIResult()
+{
+    debug "$1"
+    result=$(jsonval "$2" "status")
+    debug "$result"
+}
+
+###### End of checkAPIResult #######
+
 ##### Delete Connection
 deleteConnection()
 {
@@ -501,9 +549,9 @@ deleteConnection()
 	    deviceType=$(jsonval "$resp" "title")
 	    if ask "Are you sure you want to delete the remot3.it $deviceType attachment $serviceName?"; then
 		printf "Deleting $serviceName...\n"
-		result=$(curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token" &> /dev/null)
-		deleteResult=$(jsonval "$result" "status")
-		debug $deleteResult
+		result=$(curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token")
+
+                checkAPIResult "$deleteURL" "$result"
 
  		fileNameRoot=$(echo $file |xargs basename | awk -F "." {'print $1'})
 #		echo $fileNameRoot
@@ -551,9 +599,8 @@ deleteAllConnections()
 
 	    printf "\nDeleting $serviceName...\n"
 	
-	    result=$(curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token" &> /dev/null)
-	    deleteResult=$(jsonval "$result" "status")
-	    debug $deleteResult
+	    result=$(curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token")
+            checkAPIResult "$deleteURL" "$result"
 
 	    fileNameRoot=$(echo $file |xargs basename | awk -F "." {'print $1'})
 #		    echo $fileNameRoot
@@ -672,7 +719,7 @@ getEmail()
 registerUser()
 {
     getEmail
-     resp=$(curl -s $regAccountURL -X POST -d "{\"email\":\"$username\"}" -H "content-type:application/json" -H "apikey:$APIKEY" 2> $TMP_DIR/.curlerr)
+    resp=$(curl -s $regAccountURL -X POST -d "{\"email\":\"$username\"}" -H "content-type:application/json" -H "apikey:$APIKEY" 2> $TMP_DIR/.curlerr)
 
     debug $resp
     value=$(jsonval "$resp" "status") 
@@ -704,7 +751,7 @@ enterVerificationCode()
 
      resp=$(curl -s $regAccountURLVerified -X POST -d "{\"email\":\"$username\", \"password\":\"$password\", \"shortcode\":\"$registrationCode\"}" -H "content-type:application/json" -H "apikey:$APIKEY" 2> $TMP_DIR/.curlerr)
 
-#    debug $resp
+    debug $resp
     value=$(jsonval "$resp" "status") 
     if [ "$value" != "true" ]; then
 	reason=$(jsonval "$resp" "reason")
@@ -796,17 +843,16 @@ userLogin () #Portal login function
 ####### SignInAPI ###################
 signInAPI()
 {
-#    echo $username $password $authhash
+    debug "U:$username P:$password A:$authhash"
+    # if AUTHHASH is REPLACE_AUTHHASH it means user just wants to use password
     if [ "$AUTHHASH" == "REPLACE_AUTHHASH" ]; then
-        resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:$APIKEY" "$loginURL/$username/$password" 2> $TMP_DIR/.curlerr)
+          resp=$(curl -s -S -X POST -H "apikey: $APIKEY" -H "Content-Type:application/json" -H "Cache-Control:no-cache" -d "{ \"username\" : \"$username\", \"password\" : \"$password\" }" "$loginURL" 2> $TMP_DIR/.curlerr)
     else
-        resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:$APIKEY" "$loginAuthURL/$username/$authhash" 2> $TMP_DIR/.curlerr)
+             resp=$(curl -s -S -X POST -H "apikey: $APIKEY" -H "Content-Type:application/json" -H "Cache-Control:no-cache" -d "{ \"username\" : \"$username\", \"authhash\" : \"$AUTHHASH\" }" "$loginAuthURL" 2> $TMP_DIR/.curlerr)
     fi
 
-#    debug $resp
-
+    checkAPIResult "login" "$result"
     status=$(jsonval "$resp" "status")
-#    debug $status
 
     if [ "$status" == "true" ]; then
 	token=$(jsonval "$resp" "token")
@@ -871,7 +917,7 @@ checkForDeviceName()
 	    yooareell=$(echo  "$deviceURL/$uid")
 
 	    resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:$APIKEY"  -H "token:$token" "$yooareell")
-	    debug $resp
+            checkAPIResult "$yooareell" "$resp"
 
 	    # this next test checks to see if device is registered.  
 	    # If not, it was probably deleted at the web portal.
@@ -910,10 +956,12 @@ convertExistingUIDs()
 	# get service name from UID
                 uid="$(grep '^UID' $file | awk '{print $2}')"
 
-                result=$(curl -s $deviceHWIDURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"hardwareid\":\"$SerialID\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token" &> /dev/null)
-#		debug result
+                result=$(curl -s $deviceHWIDURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"hardwareid\":\"$SerialID\"}" -H “Content-Type:application/json” -H "apikey:$APIKEY" -H "token:$token" &> /dev/null)
+
+                checkAPIResult "$deviceHWID" "$result"
+
 	        addHWIDResult=$(jsonval "$result" "status")
-#	        debug $addHWIDResult
+
 		echo "Updating $file"
 	        logger "weaved: Adding HWID $SerialID to $serviceName UID $uid - $addHWIDResult"
 # now update start/stop script
@@ -1099,7 +1147,9 @@ retryFetchUID()
 preregisterUID()
 {
     printf "."
-    preregUID="$(curl -s $preregdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicetype\":\"$DEVICETYPE\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token")"
+    preregUID="$(curl -s $preregdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicetype\":\"$DEVICETYPE\"}" -H “Content-Type:application/json” -H "apikey:$APIKEY" -H "token:$token")"
+    checkAPIResult "$preregdeviceURL" "$preregUID"
+
     test1="$(echo $preregUID | grep "true" | wc -l)"
     debug $preregUID
     test2="$(echo $preregUID | grep -E "missing api token|api token missing" | wc -l)"
@@ -1135,15 +1185,15 @@ getSecret()
     printf "."
 
     if [ "$PROTOCOL" == "rmt3" ]; then
-        secretCall="$(curl -s $regdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$SerialID\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token")"    
+        secretCall="$(curl -s $regdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$SerialID\"}" -H “Content-Type:application/json” -H "apikey:$APIKEY" -H "token:$token")"    
 
     else
 
-        secretCall="$(curl -s $regdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$SerialID\", \"skipemail\":\"true\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token")"
+        secretCall="$(curl -s $regdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$SerialID\", \"skipemail\":\"true\"}" -H “Content-Type:application/json” -H "apikey:$APIKEY" -H "token:$token")"
     
     fi
 
-debug $secretCall
+    checkAPIResult "$regdeviceURL" "$secretCall"
 
     error=$(jsonval "$secretCall" "Error")
     debug $error
@@ -1226,7 +1276,9 @@ overridePort()
 deleteDevice()
 {
     uid=$(tail $WEAVED_DIR/$WEAVED_PORT.conf | grep UID | awk -F "UID" '{print $2}' | xargs echo -n)
-    curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token"
+    result=$(curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token")
+    checkAPIResult "$deleteURL $uid" "$result"
+
     #    printf "\n\n"
 }
 ######### End Delete device #########
@@ -1236,7 +1288,7 @@ deleteDeviceByUid()
 {
     uid="$1"
     resp=$(url -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token")
-    echo "$resp"
+    checkAPIResult "$deleteURL $uid" "$resp"
 }
 ######### End Delete device by UID #########
 
@@ -1300,6 +1352,7 @@ interactiveInstall()
     platformDetection
     weavedCompatibility
     askRegisterLogin
+    checkForUpdate
     checkForDeviceName
     # main menu loop 
     menuLoop
@@ -1527,6 +1580,8 @@ translate()
     log "Translate URL call using URL $translate_url"
 
     resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR" "$translate_url")
+
+    checkAPIResult "$translate_url" "$resp"
     
     status=$(jsonval "$resp" "status")
 

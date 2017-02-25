@@ -3,7 +3,7 @@ Version: 1.3-07v
 Section: non-free/net
 Priority: optional
 Homepage: https://remot3.it
-Architecture: armel
+Architecture: armhf
 Depends: libc6 (>= 2.1), mawk (>= 1.0), net-tools (>= 1.60-24), grep (>= 2.1.6), curl (>= 7.25.0), psmisc (>= 22.19-1), cron (>= 3.0pl1-124)
 Maintainer: Gary Worsham <gary@remot3.it>
 Description: remot3.it provides private, secure connections to tcp services.

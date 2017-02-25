@@ -89,6 +89,7 @@ main()
         fi
         userLogin
         testLogin
+        checkForUpdate
 # =============================================    
 # $SERVICEBASENAME is the base name of all installed services installed
 # with weavedinstaller_OEM
