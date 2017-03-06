@@ -12,7 +12,7 @@
 ##### Settings #####
 LIBVERSION=lib_v1.3-07_Pi
 AUTHOR="Gary Worsham"
-LIBMODIFIED="February 24, 2017"
+LIBMODIFIED="March 06, 2017"
 DAEMON=weavedconnectd
 
 # ----------------------------------------
@@ -37,7 +37,7 @@ STARTEMUP=weavedstart.sh
 # ----------------------------------------
 # web API URLs
 
-version=api_version/v21.12
+version=api_version/v21.14
 server=api.remot3.it
 
 loginURL=https://$server/$version/user/login
@@ -89,10 +89,10 @@ checkForUpdate()
     if [ "$currentlyInstalled" != "$latestVer" ]; then
     	downloadMsg=$(jsonval "$resp" "description")
     	echo "New installer is available at $downloadMsg"
-        if ask "Would you like to download this file now?"; then
+        if ask "Would you like to download and install this file now?"; then
             cd /tmp
-            wget $downloadMsg
-            echo "Run sudo dpkg -i weavedconnectd_$latestVer\_armhf.deb to complete the update."
+            wget $downloadMsg -O $TMP_DIR\weavedconnectdpackage.deb
+            dpkg -i $TMP_DIR\weavedconnectdpackage.deb &
             exit
        fi
     fi
@@ -956,7 +956,7 @@ convertExistingUIDs()
 	# get service name from UID
                 uid="$(grep '^UID' $file | awk '{print $2}')"
 
-                result=$(curl -s $deviceHWIDURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"hardwareid\":\"$SerialID\"}" -H “Content-Type:application/json” -H "apikey:$APIKEY" -H "token:$token" &> /dev/null)
+                result=$(curl -s $deviceHWIDURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"hardwareid\":\"$SerialID\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token" &> /dev/null)
 
                 checkAPIResult "$deviceHWID" "$result"
 
@@ -1147,7 +1147,7 @@ retryFetchUID()
 preregisterUID()
 {
     printf "."
-    preregUID="$(curl -s $preregdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicetype\":\"$DEVICETYPE\"}" -H “Content-Type:application/json” -H "apikey:$APIKEY" -H "token:$token")"
+    preregUID="$(curl -s $preregdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicetype\":\"$DEVICETYPE\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token")"
     checkAPIResult "$preregdeviceURL" "$preregUID"
 
     test1="$(echo $preregUID | grep "true" | wc -l)"
@@ -1173,7 +1173,6 @@ preregisterUID()
 	printf "worked for you. Sorry for the inconvenience. \n\n"
 	overridePort
 	startService
-	installNotifyAll
 	exit
     fi
 }
@@ -1185,11 +1184,11 @@ getSecret()
     printf "."
 
     if [ "$PROTOCOL" == "rmt3" ]; then
-        secretCall="$(curl -s $regdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$SerialID\"}" -H “Content-Type:application/json” -H "apikey:$APIKEY" -H "token:$token")"    
+        secretCall="$(curl -s $regdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$SerialID\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token")"    
 
     else
 
-        secretCall="$(curl -s $regdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$SerialID\", \"skipemail\":\"true\"}" -H “Content-Type:application/json” -H "apikey:$APIKEY" -H "token:$token")"
+        secretCall="$(curl -s $regdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$SerialID\", \"skipemail\":\"true\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token")"
     
     fi
 
