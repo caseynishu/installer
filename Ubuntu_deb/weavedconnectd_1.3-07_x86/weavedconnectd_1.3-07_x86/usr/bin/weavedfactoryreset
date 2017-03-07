@@ -12,9 +12,9 @@
 #
 
 ##### Settings #####
-VERSION=v1.3-06_Factory_Reset
+VERSION=v1.3-07_Factory_Reset
 AUTHOR="Gary Worsham"
-MODIFIED="October 09, 2016"
+MODIFIED="February 02, 2017"
 DEBUG="0"
 
 #==========================================================================

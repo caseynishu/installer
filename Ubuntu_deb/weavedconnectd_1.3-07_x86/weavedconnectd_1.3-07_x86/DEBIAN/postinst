@@ -2,7 +2,7 @@
 # postinst script for weavedconnectd
 #
 
-logger "weavedconnectd 1.3-07 postinst state $1"
+logger "weavedconnectd 1.3-07j postinst state $1"
 
 set -e
 
@@ -16,17 +16,17 @@ case "$1" in
 	sed s/launchschannel/weavedschannel/ < /usr/bin/weavedstart.sh > /tmp/weavedstart.sh
 	mv /tmp/weavedstart.sh /usr/bin
 	chmod +x /usr/bin/weavedstart.sh
-        logger "weavedconnectd: Restarting daemons"
-        # need to add sleep for upgrade script, so that upgrade over remot3.it will restart
-        # daemons more reliably
-        sleep 2
-	for file in /usr/bin/Weaved*.sh; do
-            if [ -f $file ]; then
-                $file restart
-            fi
-        done  
-        /usr/bin/weavedschannel restart 
     fi
+    logger "weavedconnectd: Restarting daemons"
+    # add sleep for upgrade script, so that upgrade over remot3.it will restart
+    # daemons more reliably
+    sleep 2
+    for file in /usr/bin/Weaved*.sh; do
+        if [ -f $file ]; then
+            $file restart
+        fi
+    done  
+    /usr/bin/weavedschannel restart 
   ;;
 
   *)
