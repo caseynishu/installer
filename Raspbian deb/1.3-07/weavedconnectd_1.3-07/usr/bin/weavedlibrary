@@ -12,7 +12,7 @@
 ##### Settings #####
 LIBVERSION=lib_v1.3-07_Pi
 AUTHOR="Gary Worsham"
-LIBMODIFIED="March 06, 2017"
+LIBMODIFIED="March 07, 2017"
 DAEMON=weavedconnectd
 
 # ----------------------------------------
@@ -37,7 +37,7 @@ STARTEMUP=weavedstart.sh
 # ----------------------------------------
 # web API URLs
 
-version=api_version/v21.14
+version=apv/v21.15
 server=api.remot3.it
 
 loginURL=https://$server/$version/user/login
@@ -88,11 +88,11 @@ checkForUpdate()
     echo "$latestVer is the most recent version of $package"
     if [ "$currentlyInstalled" != "$latestVer" ]; then
     	downloadMsg=$(jsonval "$resp" "description")
-    	echo "New installer is available at $downloadMsg"
+    	echo "A new installer is available at $downloadMsg"
         if ask "Would you like to download and install this file now?"; then
             cd /tmp
-            wget $downloadMsg -O $TMP_DIR\weavedconnectdpackage.deb
-            dpkg -i $TMP_DIR\weavedconnectdpackage.deb &
+            wget "$downloadMsg" -O "$TMP_DIR"\weavedconnectdpackage.deb
+            dpkg -i "$TMP_DIR"\weavedconnectdpackage.deb &
             exit
        fi
     fi
