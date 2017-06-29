@@ -1,0 +1,64 @@
+#!/bin/sh
+# postrm script for remot3it
+#
+
+TMP_DIR=/tmp
+
+set -e
+logger "remot3it installer postrm state $1"
+case "$1" in
+  purge)
+# remove global startup file
+    if [ -f /usr/bin/remot3itstart.sh ]; then
+      rm -f /usr/bin/remot3itstart.sh
+    fi
+# remove startup scripts	
+    for file in /usr/bin/remot3it*.sh ; do
+      rm -f $file
+    done
+# remove notification scripts
+    if [ -f /usr/bin/remot3itnotify.sh ]; then
+      rm -f /usr/bin/remot3itnotify.sh
+    fi
+    for file in /usr/bin/notify_remot3it*.sh ; do
+      rm -f $file
+    done
+# remove configuration files
+    for file in /etc/remot3it/services/remot3it*.conf ; do
+      rm -f $file
+    done
+# remove PID files
+    for file in /var/run/remot3it*.pid ; do
+      rm -f $file
+    done
+# remove installation template files
+    if [ -d /usr/share/remot3it ]; then
+      rm -r /usr/share/remot3it
+    fi
+# remove crontab entry
+    crontab -l | grep -v remot3itstart.sh | cat > $TMP_DIR/.crontmp
+    crontab $TMP_DIR/.crontmp
+    echo
+    echo "If you uninstalled remot3it without deleting Services first,"
+    echo "there may be orphaned Services in your Service List.  Use the "
+    echo "'Settings' link in the web portal Service List to delete these."
+  ;;
+
+  remove|failed-upgrade|abort-install|abort-upgrade|disappear)
+    if [ -d /usr/share/remot3it ]; then
+      rm -r /usr/share/remot3it
+    fi
+  ;;
+
+  upgrade)
+    echo "postrm called with upgrade" > /dev/null
+  ;;
+
+  *)
+    echo "postrm called with unknown argument \`$1'" >&2
+    exit 1
+  ;;
+
+esac
+
+exit 0
