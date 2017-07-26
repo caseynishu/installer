@@ -12,7 +12,7 @@
 ##### Settings #####
 LIBVERSION=lib_v1.3-07_Pi
 AUTHOR="Gary Worsham"
-LIBMODIFIED="June 26, 2017"
+LIBMODIFIED="July 03, 2017"
 DAEMON=weavedconnectd
 
 # ----------------------------------------
@@ -27,6 +27,9 @@ NOTIFIER=weavednotify.sh
 INIT_DIR=/etc/init.d
 PID_DIR=/var/run
 filename=$(basename "$0")
+
+#-------------- Global Variables
+token=""
 
 # ----------------------------------------
 # startupScripts = 0, ask; 1, init.d; 2, systemd; 3, crontab
@@ -62,9 +65,9 @@ displayVersion()
     printf "remot3.it connection installer Version: %s %s \n" "$VERSION" "$LIBVERSION"
     printf "Modified: %s (library) %s \n" "$MODIFIED" "$LIBMODIFIED"
     # check for su user at this point
-    if ! [ $(id -u) = 0 ]; then
-        echo "Running weavedinstaller requires root access." 1>&2
-        echo "Please run sudo weavedinstaller instead of weavedinstaller." 1>&2
+    if ! [ "$(id -u)" = 0 ]; then
+        echo "Running remot3it_installer requires root access." 1>&2
+        echo "Please run sudo remot3it_installer instead of remot3it_installer." 1>&2
 	exit 1
     fi
 }
@@ -107,7 +110,7 @@ weavedCompatibility()
     printf "\nChecking your network for compatibility... \n\n"
     "$BIN_DIR"/"$DAEMON"."$PLATFORM" -n > $TMP_DIR/.testdaemon
     grep OK $TMP_DIR/.testdaemon > $TMP_DIR/.networkDump
-    number=$(cat $TMP_DIR/.networkDump | wc -l)
+    number=$(wc -l $TMP_DIR/.networkDump)
 
     if [ "$number" -ge 3 ]; then
         printf "Your network is compatible with remot3.it services.\n\n"
@@ -194,7 +197,9 @@ checkforServices()
 
         if [ "$uid" != "" ]; then
             port="$(grep '^port' "$file" | awk '{print $2}')"
-	    yooareell=$("$deviceURL/$uid")
+	    debug "$port"
+            yooareell="$deviceURL/$uid"
+            debug "$yooareell"
 
 	    resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:$APIKEY"  -H "token:$token" "$yooareell")
             checkAPIResult "$yooareell" "$resp"
@@ -275,6 +280,31 @@ checkforServices()
 }
 ##### End Check for existing services #####
 
+######## get a number withing a given range
+### e.g. getNumRange 2 5 will ask you for a number between 2 and 5
+
+getNumRange()
+{
+     validInput="n"
+#     set -x
+        while [ "$validInput" = "n" ]; do
+            echo "Please select from the above options ($1 - $2):"
+            read num
+            if [ "$(validateInput "$num" '[:digit:]')" -ne 0 ]; then
+	        printf "\nSorry, enter numbers only.\n"
+	    else
+#		echo "You entered: $num"
+                if [ "${num}" -ge "$1" ]; then
+                   if [ "${num}" -le "$2" ]; then
+                      validInput="y"
+                   fi
+                fi
+            fi
+        done
+        return "$num"
+}
+
+
 ########## Begin menuLoop #################
 menuLoop()
 {
@@ -290,17 +320,10 @@ menuLoop()
         printf "      4) Exit                                            \n"
         printf "                                                         \n"
         printf "**********************************************************\n\n"
-        unset get_num
-set -x
-        while [ "$(validateInput "$get_num" '[:digit:]')" != 0 ]; do
-            echo "Please select from the above options (1-4):"
-            read get_num
-            if [ "$(validateInput "$get_num" '[:digit:]')" != 0 ]; then
-	        printf "\nSorry, enter numbers only.\n"
-	    else
-                ! [ "${get_num}" -ge 1 ] && [ "${get_num}" -le 4 ] && unset get_num
-            fi 
-        done
+
+        getNumRange 1 4
+        get_num=$?
+
         if [ "$get_num" = 1 ]; then
             protocolSelection
 # in protocolSelection, get_num will be set to MAXSEL to indicate "return to previous menu"
@@ -388,18 +411,11 @@ protocolSelection()
         printf " You can change the port value during install  \n\n"
         printf "***********************************************\n\n"
         MAXSEL=5
-        unset get_num
         unset get_port
-        while [ "$(validateInput "$get_num" '[:digit:]')" != 0 ]; do
-            echo "Please select from the above options (1-$MAXSEL):"
-            read get_num
-            if [ "$(validateInput "$get_num" '[:digit:]')" != 0 ]; then
-	        printf "\nSorry, enter numbers only.\n"
-                unset get_num
-	    else
-                ! [ "${get_num}" -ge 1 ] && [ "${get_num}" -le "$MAXSEL" ] && unset get_num
-            fi
-        done
+
+        getNumRange 1 "$MAXSEL"
+        get_num=$?
+
         printf "You have selected: %s. \n\n" "${get_num}"
         if [ "$get_num" = 1 ]; then
             PROTOCOL=ssh
@@ -408,12 +424,8 @@ protocolSelection()
                 PORT=22
             else
                 CUSTOM=2
-                while [ "$(validateInput "$get_num" '[:digit:]')" != 0 ]; do
-                    printf "Please enter your desired port number (1-65535):"
-                    read get_port
-                    ! [ "${get_port}" -ge 1 ] && [ "${get_port}" -le 65535 ] && unset get_port
-                done
-                PORT="$get_port"    
+                getNumRange 1 65535    
+                PORT=$?
             fi
             WEAVED_PORT=Weaved"$PROTOCOL""$PORT"
         elif [ "$get_num" = 2 ]; then
@@ -423,12 +435,8 @@ protocolSelection()
                 PORT=80
             else
                 CUSTOM=2
-                while [ "$(validateInput "$get_num" '[:digit:]')" != 0 ]; do
-                    printf "Please enter your desired port number (1-65535):"
-                    read get_port
-                    ! [ "${get_port}" -ge 1 ] && [ "${get_port}" -le 65535 ] && unset get_port
-                done
-                PORT="$get_port"    
+                getNumRange 1 65535    
+                PORT=$?
             fi
             WEAVED_PORT=Weaved"$PROTOCOL""$PORT"
         elif [ "$get_num" = 3 ]; then
@@ -438,13 +446,9 @@ protocolSelection()
                 PORT=5901
             else
                 CUSTOM=2
-                while [ "$(validateInput "$get_num" '[:digit:]')" != 0 ]; do
-                    printf "Please enter your desired port number (1-65535):"
-                    read get_port
-                    ! [ "${get_port}" -ge 1 ] && [ "${get_port}" -le 65535 ] && unset get_port
-                done
-                PORT="$get_port"    
-            fi    
+                getNumRange 1 65535    
+                PORT=$?
+           fi    
             WEAVED_PORT=Weaved"$PROTOCOL""$PORT"
         elif [ "$get_num" = 4 ]; then
             CUSTOM=1
@@ -456,12 +460,8 @@ protocolSelection()
             printf "Please enter the protocol name (e.g., ssh, http, nfs): \n"
             read port_name
             CUSTOM_PROTOCOL="$(echo "$port_name" | tr '[A-Z]' '[a-z]' | tr -d ' ')"
-            while [ "$(validateInput "$get_num" '[:digit:]')" != 0 ]; do
-                printf "Please enter your desired port number (1-65535):"
-                read get_port
-                ! [ "${get_port}" -ge 1 ] && [ "${get_port}" -le 65535 ] && unset get_port
-            done
-            PORT="$get_port"
+            getNumRange 1 65535    
+            PORT=$?
             WEAVED_PORT=Weaved"$CUSTOM_PROTOCOL""$PORT"
         fi
 	# process the entry for all menu choices other than MAXSEL  
@@ -519,9 +519,10 @@ protocolSelection()
 
 checkAPIResult()
 {
-    debug "$1"
-    result=$(jsonval "$2" "status")
-    debug "$result"
+# set -x
+# echo "checkAPIResult $1 $2"; echo
+    result=$(jsonval "$2" 'status')
+    debug "API result: $result"
 }
 
 ###### End of checkAPIResult #######
@@ -538,7 +539,7 @@ deleteConnection()
 
     for file in "$WEAVED_DIR"/*.conf; do
         uid="$(grep '^UID' "$file" | awk '{print $2}')"
-	yooareell=$(echo  "$deviceURL/$uid")
+	yooareell="$deviceURL/$uid"
 
 	resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:$APIKEY"  -H "token:$token" "$yooareell")
 
@@ -558,22 +559,22 @@ deleteConnection()
  		fileNameRoot=$(echo "$file" | xargs basename | awk -F "." '{print $1}')
 #		echo $fileNameRoot
  		# if daemon pid exists, stop daemon and remove start/stop script
- 		if [ -f $PID_DIR/$fileNameRoot.pid ]; then
- 		    if [ -f "$BIN_DIR"/$fileNameRoot.sh ]; then
- 			"$BIN_DIR"/$fileNameRoot.sh stop -q
- 			rm "$BIN_DIR"/$fileNameRoot.sh
+ 		if [ -f "$PID_DIR"/"$fileNameRoot".pid ]; then
+ 		    if [ -f "$BIN_DIR"/"$fileNameRoot".sh ]; then
+ 			"$BIN_DIR"/"$fileNameRoot".sh stop -q
+ 			rm "$BIN_DIR"/"$fileNameRoot".sh
 		    fi
 		fi
 		if [ -f "$file" ]; then
-		    rm $file
+		    rm "$file"
 		fi
-		if [ -f "$BIN_DIR"/notify_$fileNameRoot.sh ]; then
-		    rm "$BIN_DIR"/notify_$fileNameRoot.sh
+		if [ -f "$BIN_DIR"/notify_"$fileNameRoot".sh ]; then
+		    rm "$BIN_DIR"/notify_"$fileNameRoot".sh
 		fi
             fi
         fi
     done
-    if [ $deviceFound -eq 0 ]; then
+    if [ "$deviceFound" -eq 0 ]; then
         echo "Sorry, could not find $deviceToDelete."
         echo "Please check your spelling and try again."
         echo "Press the 'Enter' key to return to the menu."
@@ -595,11 +596,11 @@ deleteAllConnections()
 
     	for file in "$WEAVED_DIR"/*.conf; do
 	# get service name from UID
-            uid="$(grep '^UID' "$file" | awk '{print $2}')"
+            uid="$(grep '^UID' $file | awk '{print $2}')"
 	    resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:$APIKEY"  -H "token:$token" "$deviceURL/$uid")
-            serviceName=$(jsonval "$resp" "name")
+            serviceName="$(jsonval $resp name)"
 
-	    printf "\nDeleting $serviceName...\n"
+	    printf "\nDeleting %s...\n" "$serviceName"
 	
 	    result=$(curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token")
             checkAPIResult "$deleteURL" "$result"
@@ -669,18 +670,10 @@ askRegisterLogin()
         printf "********************************************************\n\n"
         printf "       Use your Weaved account with remot3.it! \n"
         printf "********************************************************\n\n"
-        unset get_num
-     set -x
-        while [ "$(validateInput "$get_num" '[:digit:]')" != 0 ]; do
-            echo "Please select from the above options (1-4):"
-            read get_num
-            if [ "$(validateInput "$get_num" '[:digit:]')" != 0 ]; then
-	        printf "\nSorry, enter numbers only.\n"
-                unset get_num
-	    else
-                ! [ "${get_num}" -ge 1 ] && [ "${get_num}" -le 4 ] && unset get_num
-            fi
-        done
+
+        getNumRange 1 4    
+        get_num=$?
+
 #        printf "You have selected: %s. \n\n" "${get_num}"
         if [ "$get_num" = 2 ]; then
 		registerUser
@@ -848,27 +841,36 @@ userLogin () #Portal login function
 signInAPI()
 {
     debug "U:$username P:$password A:$authhash"
+ set +x
     # if AUTHHASH is REPLACE_AUTHHASH it means user just wants to use password
     if [ "$AUTHHASH" = "REPLACE_AUTHHASH" ]; then
           resp=$(curl -s -S -X POST -H "apikey: $APIKEY" -H "Content-Type:application/json" -H "Cache-Control:no-cache" -d "{ \"username\" : \"$username\", \"password\" : \"$password\" }" "$loginURL" 2> $TMP_DIR/.curlerr)
     else
              resp=$(curl -s -S -X POST -H "apikey: $APIKEY" -H "Content-Type:application/json" -H "Cache-Control:no-cache" -d "{ \"username\" : \"$username\", \"authhash\" : \"$AUTHHASH\" }" "$loginAuthURL" 2> $TMP_DIR/.curlerr)
     fi
+    checkAPIResult 'login' "$resp"
 
-    checkAPIResult "login" "$result"
-    status=$(jsonval "$resp" "status")
+    status=$(jsonval "$resp" 'status')
+    debug "Status = $status"
+echo
+echo
 
-    if [ "$status" = "true" ]; then
+    token=$(jsonval "$resp" "token")
+    debug "Login token: $token"
+echo
+echo
+    if [ "$status" = 'true' ]; then
 	token=$(jsonval "$resp" "token")
+        debug "Login token: $token"
     else
     	loginFailed=$(echo "$resp" | grep "The username or password are invalid" | sed 's/"//g')
     	slimError=$(echo "$resp" | grep "Slim Application Error" | sed 's/"//g')
 # 404 is triggered when you enter some special character in e-mail.  this specific search may fail if API
 # server is moved
     	login404=$(echo "$resp" | grep "404 Page Not Found" | sed 's/"//g')
-#	echo "Error" $loginFailed $slimError $login404
+	echo "Error" $loginFailed $slimError $login404
     fi
-
+set +x
     # invalid cert can happen if system date is set to before current date
     invalidCert=$(grep "SSL certificate problem" "$TMP_DIR"/.curlerr)
     date +"%s" > "$TMP_DIR"/.lastlogin
@@ -1252,7 +1254,7 @@ startService()
 {
     printf "\n"
     logger "remot3.it Connection starting: $alias"
-    echo "Registering $alias" ; sleep 1;echo ".";sleep 1;echo ".";sleep 1;echo ".";sleep 1;echo ".";sleep 1;echo ".";sleep 1;echo ".";sleep 1;echo ".";sleep 1; echo ; echo
+    echo "Registering $alias" ; sleep 1;printf ".";sleep 1;printf ".";sleep 1;printf ".";sleep 1;printf ".";sleep 1;printf ".";sleep 1;printf ".";sleep 1;printf ".";sleep 1; echo ; echo
     "$BIN_DIR"/"$WEAVED_PORT".sh restart > /dev/null
 }
 ######### End Start Service #########
@@ -1296,7 +1298,7 @@ deleteDeviceByUid()
 debug()
 {
     if [ "$DEBUG" = "1" ]; then
-	echo $1
+	echo "$1"
     fi
 }
 
@@ -1372,9 +1374,12 @@ interactiveInstall()
 jsonval()                                              
 {
 #    echo "jsonval $1 $2"
-    temp=$(echo "$1" | sed -e 's/[{}\"]//g' | sed -e 's/,/\'$'\n''/g' | grep -w $2 | cut -d"[" -f2- | cut -d":" -f2-)
-    #echo ${temp##*|}         
-    echo ${temp}                                                
+# echo
+# set -x
+#     temp=$(echo "$1" | sed -e 's/[{}\"]//g' | sed -e 's/,/\'$'\n''/g' | grep -w $2 | cut -d"[" -f2- | cut -d":" -f2-)
+    temp=$(echo "$1" | sed -e 's/[{}\"]//g' | sed -e 's/,/\n/g' | grep -w $2 | cut -d"[" -f2- | cut -d":" -f2-)
+    #echo ${temp}                                                
+    echo ${temp##*|}         
 }                                                   
 
 #----------------------------------------------------------

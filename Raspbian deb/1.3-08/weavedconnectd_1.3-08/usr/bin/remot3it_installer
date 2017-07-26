@@ -13,8 +13,8 @@ VERSION=v1.3-07_Pi
 AUTHOR="Gary Worsham"
 MODIFIED="August 02, 2016"
 
-USERNAME=""
-PASSWORD=""
+USERNAME="gary@weaved.com"
+PASSWORD="poobert75"
 AUTHHASH="REPLACE_AUTHHASH"
 APIKEY="WeavedDeveloperToolsWy98ayxR"
 REGISTERSERVICE="1"
