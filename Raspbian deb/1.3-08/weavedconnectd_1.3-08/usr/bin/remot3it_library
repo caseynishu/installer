@@ -110,7 +110,7 @@ weavedCompatibility()
     printf "\nChecking your network for compatibility... \n\n"
     "$BIN_DIR"/"$DAEMON"."$PLATFORM" -n > $TMP_DIR/.testdaemon
     grep OK $TMP_DIR/.testdaemon > $TMP_DIR/.networkDump
-    number=$(wc -l $TMP_DIR/.networkDump)
+    number=$(cat $TMP_DIR/.networkDump | wc -l)
 
     if [ "$number" -ge 3 ]; then
         printf "Your network is compatible with remot3.it services.\n\n"

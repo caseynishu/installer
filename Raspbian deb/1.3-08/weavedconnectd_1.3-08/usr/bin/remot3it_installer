@@ -11,10 +11,10 @@
 ##### Settings #####
 VERSION=v1.3-07_Pi
 AUTHOR="Gary Worsham"
-MODIFIED="August 02, 2016"
+MODIFIED="July 27, 2017"
 
-USERNAME="gary@weaved.com"
-PASSWORD="poobert75"
+USERNAME=""
+PASSWORD=""
 AUTHHASH="REPLACE_AUTHHASH"
 APIKEY="WeavedDeveloperToolsWy98ayxR"
 REGISTERSERVICE="1"
@@ -28,7 +28,7 @@ MAXSEL=6
 
 STARTDAEMONSONREBOOT="1"
 
-. ./remot3it_library
+. /usr/bin/remot3it_library
 
 ######### Main Program #########
 main()
