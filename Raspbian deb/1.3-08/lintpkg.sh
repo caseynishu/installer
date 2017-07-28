@@ -1,9 +1,9 @@
 #! /bin/sh
 # lintpkg.sh
-# script to build Debian package for Weaved Installer
+# script to build Debian package for remot3.it connectd Installer
 # sorts out Lintian errors/warnings into individual
 # text files
-pkg=weavedconnectd
+pkg=connectd
 ver=1.3-08
 pkgFolder="$pkg"_"$ver"
 
