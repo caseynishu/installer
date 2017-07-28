@@ -1,10 +1,10 @@
 #!/bin/sh
-# postinst script for remot3it
+# postinst script for connectd
 #
 
 set -e
 
-logger "remot3it installer postinst $1"
+logger "connectd installer postinst $1"
  
 case "$1" in
     purge|remove|failed-upgrade|abort-install|abort-upgrade|disappear)
@@ -22,14 +22,14 @@ esac
 echo
 echo "================================================================================"
 echo
-echo "Run sudo remot3itinstaller to interactively add remot3.it connection services."
+echo "Run sudo connectdinstaller to interactively add remot3.it connection services."
 echo
 echo "================================================================================"
-echo "If you are adding remot3it services with minimal interaction:"
-echo "Copy and edit /usr/bin/remot3it_register to add account credentials"
+echo "If you are adding connectd services with minimal interaction:"
+echo "Copy and edit /usr/bin/connectd_register to add account credentials"
 echo "and definitions of services you wish to install."
 echo
-echo "Finally, run sudo remot3it_register to add remot3.it remote connection services."
+echo "Finally, run sudo connectd_register to add remot3.it remote connection services."
 echo
-echo "See additional information in the remot3it_register script."
+echo "See additional information in the connectd_register script."
 echo

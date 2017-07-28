@@ -1,9 +1,9 @@
-Package: remot3it
-Version: 1.3-07a
+Package: connectd
+Version: 1.3-08a
 Section: non-free/net
 Priority: optional
 Homepage: http://remot3it.com
-Architecture: armhf 
+Architecture: armhf
 Depends: libc6 (>= 2.1), mawk (>= 1.0), grep (>= 2.1.6), curl (>= 7.25.0), psmisc (>= 22.19-1)
 Maintainer: Gary Worsham <gary@remot3it.com>
 Description: remot3.it is a cloud service that provides secure connections to 
@@ -15,4 +15,4 @@ Description: remot3.it is a cloud service that provides secure connections to
  small daemon and configuration files, and it will be instantly available for 
  a secure connection.  The APIs and portal allow for easy 'bulk' management 
  of devices in the field.  
- For more information, visit remot3.it to create your free account.
+ For more information, visit https://remot3.it to create your free account.

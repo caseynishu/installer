@@ -1,32 +1,32 @@
-#!/bin/bash
+#!/bin/sh
 
-#  launchweaved.sh
+#  launch_connectd
 #  
 #
-#  Weaved, Inc. Copyright 2016. All rights reserved.
+#  remot3.it, Inc. Copyright 2017. All rights reserved.
 #
 
-VERSION="v1.4"
+VERSION="v1.5"
 AUTHOR="Gary Worsham"
-MODIFIED="April 4, 2016"
-WEAVED_PORT=
-DAEMON=weavedconnectd.pi
-WEAVED_DIR=/etc/weaved/services
+MODIFIED="July 29, 2017"
+CONNECTD_PORT=
+DAEMON=connectd.pi
+CONNECTD_DIR=/etc/connectd/services
 BIN_DIR=/usr/bin
 PID_DIR=/var/run
 BIN_PATH=$BIN_DIR/$DAEMON
-PIDPATH=$PID_DIR/$WEAVED_PORT.pid
+PIDPATH=$PID_DIR/$CONNECTD_PORT.pid
 LOG_FILE=/dev/null
 LOG_DIR=/var/log
 
 ##### Version #####
 displayVersion()
 {
-    printf "Weaved daemon start/stop script Version: %s \n" "$VERSION"
+    printf "Connectd daemon start/stop script Version: %s \n" "$VERSION"
     # check for root user at this point
     if [[ $EUID -ne 0 ]]; then
-        echo "Running $WEAVED_PORT.sh requires root access." 1>&2
-        echo "Please run sudo $WEAVED_PORT.sh" 1>&2
+        echo "Running $CONNECTD_PORT.sh requires root access." 1>&2
+        echo "Please run sudo $CONNECTD_PORT.sh" 1>&2
 	exit 1
     fi
 }
@@ -38,16 +38,16 @@ isRunningCmd()
 	if [ -f $PIDPATH ]; then
 		runningPID="$(cat $PIDPATH)"
 	fi
-	# see if there is ANY matching line with weaved and $WEAVED_PORT.conf
+	# see if there is ANY matching line with connectd and $CONNECTD_PORT.conf
 	# isRunning will be 0 if NOTHING matches
-	isRunningLine="$(ps ax | grep weaved | grep -w "$WEAVED_PORT.conf" | grep -v grep)"
+	isRunningLine="$(ps ax | grep connectd | grep -w "$CONNECTD_PORT.conf" | grep -v grep)"
 	isRunningps=$(echo -n $isRunningLine | wc -w)
-	ps ax | grep weaved | grep -w "$WEAVED_PORT.conf" | grep -v grep > /tmp/weavedps.txt
+	ps ax | grep connectd | grep -w "$CONNECTD_PORT.conf" | grep -v grep > /tmp/connectdps.txt
 	#-------------	
-	# this next part is to ensure, when Weaved services are installed on
+	# this next part is to ensure, when  remot3.it connectd services are installed on
 	# a VM and containers within that VM, that we can correctly identify 
 	# the PID corresponding the the service running on the VM. This is the
-	# one which has a matching PID in /var/run/$WEAVED_PORT.pid
+	# one which has a matching PID in /var/run/$CONNECTD_PORT.pid
 	#-------------	
 	isRunning=0
 	while read p; do
@@ -57,38 +57,38 @@ isRunningCmd()
 		isRunning=1
 		return
 	    fi
-	done < /tmp/weavedps.txt
+	done < /tmp/connectdps.txt
 }
 
-stopWeaved()
+stopConnectd()
 {
 	isRunningCmd
 	if [[ $isRunning != 0 && $psPID == $runningPID ]]; then
-		echo "Stopping $WEAVED_PORT..."
+		echo "Stopping $CONNECTD_PORT..."
 		kill $runningPID 2> /dev/null
 		rm $PIDPATH 2> /dev/null
 	else
-		echo "$WEAVED_PORT is not currently active. Nothing to stop."
+		echo "$CONNECTD_PORT is not currently active. Nothing to stop."
 	fi
 }
 
-startWeaved()
+startConnectd()
 {
 	isRunningCmd
 	if [ $isRunning == 0 ]; then
-		echo "Starting $WEAVED_PORT..."
-		$BIN_DIR/$DAEMON -f $WEAVED_DIR/$WEAVED_PORT.conf -d $PID_DIR/$WEAVED_PORT.pid > $LOG_DIR/$WEAVED_PORT.log
-		tail $LOG_DIR/$WEAVED_PORT.log
+		echo "Starting $CONNECTD_PORT..."
+		$BIN_DIR/$DAEMON -f $CONNECTD_DIR/$CONNECTD_PORT.conf -d $PID_DIR/$CONNECTD_PORT.pid > $LOG_DIR/$CONNECTD_PORT.log
+		tail $LOG_DIR/$CONNECTD_PORT.log
 	else
-		echo "$WEAVED_PORT is already started"
+		echo "$CONNECTD_PORT is already started"
 	fi
 }
 
-restartWeaved()
+restartConnectd()
 {
-	stopWeaved
+	stopConnectd
 	sleep 2
-	startWeaved
+	startConnectd
 }
 
 displayVersion
@@ -97,11 +97,11 @@ if [ -z $1 ]; then
 	echo "You need one of the following arguments: start|stop|restart"
 	exit
 elif [ "$(echo "$1" | tr '[A-Z]' '[a-z]' | tr -d ' ')" = "stop" ]; then 
-	stopWeaved
+	stopConnectd
 elif [ "$(echo "$1" | tr '[A-Z]' '[a-z]' | tr -d ' ')" = "start" ]; then
-	startWeaved
+	startConnectd
 elif [ "$(echo "$1" | tr '[A-Z]' '[a-z]' | tr -d ' ')" = "restart" ]; then
-	restartWeaved
+	restartConnectd
 else
 	echo "This option is not supported"
 fi

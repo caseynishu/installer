@@ -1,29 +1,29 @@
 #!/bin/sh
 
-#  weavedlibrary
+#  connectd_library
 #
-#  Provides library functions to install, configure or remove Weaved
+#  Provides library functions to install, configure or remove remot3.it connectd
 #  attachment services for tcp listeners.
 #  Interactive and preconfigured modes supported.
 #
-#  remot3.it by Weaved, Inc. 
-#  Copyright 2016. All rights reserved.
+#  connectd by remot3.it, Inc. 
+#  Copyright 2017. All rights reserved.
 
 ##### Settings #####
-LIBVERSION=lib_v1.3-07_Pi
+LIBVERSION=lib_v1.3-08_Pi
 AUTHOR="Gary Worsham"
-LIBMODIFIED="July 03, 2017"
-DAEMON=weavedconnectd
+LIBMODIFIED="July 29, 2017"
+DAEMON=connectd
 
 # ----------------------------------------
 # folders and files
 # these folders are not the same as used by Bulk Registration
-WEAVED_DIR=/etc/weaved/services
-WEAVED_LIB_DIR=/usr/share/weavedconnectd
-SERIALNUMBERFILE=/etc/weaved/serial.txt
+CONNECTD_DIR=/etc/connectd/services
+CONNECTD_LIB_DIR=/usr/share/connectdconnectd
+SERIALNUMBERFILE=/etc/connectd/serial.txt
 BIN_DIR=/usr/bin
 TMP_DIR=/tmp
-NOTIFIER=weavednotify.sh
+NOTIFIER=connectdnotify.sh
 INIT_DIR=/etc/init.d
 PID_DIR=/var/run
 filename=$(basename "$0")
@@ -35,12 +35,12 @@ token=""
 # startupScripts = 0, ask; 1, init.d; 2, systemd; 3, crontab
 # only crontab currently supported.
 startupScripts=3
-STARTEMUP=weavedstart.sh
+STARTEMUP=connectdstart.sh
 
 # ----------------------------------------
 # web API URLs
 
-version=apv/v21.15
+version=apv/v22.12
 server=api.remot3.it
 
 loginURL=https://$server/$version/user/login
@@ -79,8 +79,8 @@ checkForUpdate()
     echo
     echo "-------------------"
     echo    
-    currentlyInstalled=$(dpkg --status weavedconnectd | grep Version | awk '{ print $2 }')
-    echo "weavedconnectd version $currentlyInstalled is currently installed."
+    currentlyInstalled=$(dpkg --status connectdconnectd | grep Version | awk '{ print $2 }')
+    echo "connectdconnectd version $currentlyInstalled is currently installed."
 
     # check to see if updated version exists
     resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:$APIKEY"  -H "token:$token" "$versionURL")
@@ -88,14 +88,14 @@ checkForUpdate()
     package=$(jsonval "$resp" "component")
     latestVer=$(jsonval "$resp" "version")
     echo    
-    echo "$latestVer is the most recent version of $package"
-    if [ "$currentlyInstalled" != "$latestVer" ]; then
+    echo "$latestVer is the most recent version of $package available from the Raspbian repository."
+    if [ "$currentlyInstalled" < "$latestVer" ]; then
     	downloadMsg=$(jsonval "$resp" "description")
     	echo "A new installer is available at $downloadMsg"
         if ask "Would you like to download and install this file now?"; then
             cd /tmp
-            wget "$downloadMsg" -O "$TMP_DIR"/weavedconnectdpackage.deb
-            dpkg -i "$TMP_DIR"/weavedconnectdpackage.deb &
+            wget "$downloadMsg" -O "$TMP_DIR"/connectdconnectdpackage.deb
+            dpkg -i "$TMP_DIR"/connectdconnectdpackage.deb &
             exit
        fi
     fi
@@ -105,7 +105,7 @@ checkForUpdate()
 
 
 ##### Compatibility checker #####
-weavedCompatibility()
+connectdCompatibility()
 {
     printf "\nChecking your network for compatibility... \n\n"
     "$BIN_DIR"/"$DAEMON"."$PLATFORM" -n > $TMP_DIR/.testdaemon
@@ -117,7 +117,7 @@ weavedCompatibility()
         sleep 2
     elif [ "$(grep "$TMP_DIR/.networkDump" "Send to" | grep -c "OK" )" -lt 1 ]; then
         printf "Unfortunately, it appears your network may not currently be compatible with remot3.it services.\n"
-        printf "Please visit https://forum.weaved.com for help.\n\n"
+        printf "Please visit https://forum.connectd.com for help.\n\n"
         exit
     fi
 }
@@ -125,11 +125,11 @@ weavedCompatibility()
 
 ##### get SerialID address #####
 # SerialID is a UUID concatenated with eth0 MAC address
-# if the file /etc/weaved/serial.txt does not exist, create the
+# if the file /etc/connectd/serial.txt does not exist, create the
 # value and write it there.  Otherwise read the value from then
 # file.
 # mac is also determined here as it is used for the SERVICEBASENAME
-# in weavedinstaller_OEM
+# in connectdinstaller_OEM
 
 getSerialID()
 {
@@ -153,7 +153,7 @@ getSerialID()
 ##### factory reset - doesn't actually do anything at present
 factoryReset()
 {
-    for f in "$WEAVED_DIR"/*.conf ; do
+    for f in "$CONNECTD_DIR"/*.conf ; do
 	printf "%s\n" "$f"
     done 
 }
@@ -162,11 +162,11 @@ factoryReset()
 ##### Check for existing services #####
 checkforServices()
 {
-    services="$WEAVED_DIR/Weaved*.conf"
+    services="$CONNECTD_DIR/Connectd*.conf"
     firstFile=$(echo "$services" | awk '{print $1}')
 	echo "" > $TMP_DIR/.uidlist.txt
     if [ -e "$firstFile" ]; then
-	ls "$WEAVED_DIR/Weaved*.conf" > "$TMP_DIR/.legacy_instances"
+	ls "$CONNECTD_DIR/Connectd*.conf" > "$TMP_DIR/.legacy_instances"
 	instanceNumber=$(wc "$TMP_DIR/.legacy_instances" -l)
 	if [ -f "$TMP_DIR/.instances" ]; then
 	    rm "$TMP_DIR/.instances"
@@ -186,7 +186,7 @@ checkforServices()
     printf "Protocol\tPort\tService\t\tremot3.it Service Name\n"
     echo "------------------------------------------------------------"
     WARNING="0"
-    confFiles=$(find "$WEAVED_DIR" -name "*.conf")
+    confFiles=$(find "$CONNECTD_DIR" -name "*.conf")
     DeviceName=""
 
 #    echo $confFiles
@@ -376,7 +376,7 @@ platformDetection()
         SYSLOG=/var/log/syslog
     else
         printf "Sorry, you are running this installer on an unsupported device. But if you go to \n"
-        printf "http://forum.weaved.com we'll be happy to help you get your device up and running. \n\n"
+        printf "http://forum.connectd.com we'll be happy to help you get your device up and running. \n\n"
         printf "Please supply the following information: \n\n"
         uname -a
         cat /proc/cpuinfo
@@ -392,7 +392,7 @@ platformDetection()
 ##### Protocol selection #####
 protocolSelection()
 {
-    WEAVED_PORT=""
+    CONNECTD_PORT=""
     CUSTOM=0
     
     if [ "$PLATFORM" = "pi" ] || [ "$PLATFORM" = "i686" ] || [ "$PLATFORM" = "beagle" ]; then
@@ -427,7 +427,7 @@ protocolSelection()
                 getNumRange 1 65535    
                 PORT=$?
             fi
-            WEAVED_PORT=Weaved"$PROTOCOL""$PORT"
+            CONNECTD_PORT=Connectd"$PROTOCOL""$PORT"
         elif [ "$get_num" = 2 ]; then
             PROTOCOL=web
             printf "The default port for Web (http) is 80.\n"
@@ -438,7 +438,7 @@ protocolSelection()
                 getNumRange 1 65535    
                 PORT=$?
             fi
-            WEAVED_PORT=Weaved"$PROTOCOL""$PORT"
+            CONNECTD_PORT=Connectd"$PROTOCOL""$PORT"
         elif [ "$get_num" = 3 ]; then
             PROTOCOL=vnc
             printf "The default port for VNC (tightvncserver) is 5901.\n"
@@ -449,7 +449,7 @@ protocolSelection()
                 getNumRange 1 65535    
                 PORT=$?
            fi    
-            WEAVED_PORT=Weaved"$PROTOCOL""$PORT"
+            CONNECTD_PORT=Connectd"$PROTOCOL""$PORT"
         elif [ "$get_num" = 4 ]; then
             CUSTOM=1
             if ask "Does this protocol use a web browser (e.g. HTTP on port 8080 vs. 80)"; then
@@ -462,7 +462,7 @@ protocolSelection()
             CUSTOM_PROTOCOL="$(echo "$port_name" | tr '[A-Z]' '[a-z]' | tr -d ' ')"
             getNumRange 1 65535    
             PORT=$?
-            WEAVED_PORT=Weaved"$CUSTOM_PROTOCOL""$PORT"
+            CONNECTD_PORT=Connectd"$CUSTOM_PROTOCOL""$PORT"
         fi
 	# process the entry for all menu choices other than MAXSEL  
         if [ "$get_num" != "$MAXSEL" ]; then
@@ -477,22 +477,22 @@ protocolSelection()
             	printf "\nPort #: %s\n" "$PORT"
 	    fi
             
-	    alreadyThere=$(grep -w "$WEAVED_PORT" "$TMP_DIR/.legacy_instances")
+	    alreadyThere=$(grep -w "$CONNECTD_PORT" "$TMP_DIR/.legacy_instances")
             if [ "$alreadyThere"  != "" ]; then
                 printf "remot3.it is already attached to this Service.\n" 
                 if ask "Do you wish to overwrite your previous settings?"; then
                     testLogin
                     deleteDevice
-                    if [ -f $PID_DIR/"$WEAVED_PORT".pid ]; then
-                        if [ -f "$BIN_DIR"/"$WEAVED_PORT".sh ]; then
-                            "$BIN_DIR"/"$WEAVED_PORT".sh stop -q > /dev/null
+                    if [ -f $PID_DIR/"$CONNECTD_PORT".pid ]; then
+                        if [ -f "$BIN_DIR"/"$CONNECTD_PORT".sh ]; then
+                            "$BIN_DIR"/"$CONNECTD_PORT".sh stop -q > /dev/null
                         else
                             if ask "May we stop all remot3.it services to continue?"; then
-                                killall weavedConnectd
+                                killall connectdConnectd
                                 echo "Run $STARTEMUP to restart all installed remot3.it Services."
                             fi
-                            if [ -f $PID_DIR/"$WEAVED_PORT".pid ]; then
-                                rm $PID_DIR/"$WEAVED_PORT".pid
+                            if [ -f $PID_DIR/"$CONNECTD_PORT".pid ]; then
+                                rm $PID_DIR/"$CONNECTD_PORT".pid
                             fi
                         fi
                     fi
@@ -537,7 +537,7 @@ deleteConnection()
 
     # now iterate through known connections to find it
 
-    for file in "$WEAVED_DIR"/*.conf; do
+    for file in "$CONNECTD_DIR"/*.conf; do
         uid="$(grep '^UID' "$file" | awk '{print $2}')"
 	yooareell="$deviceURL/$uid"
 
@@ -592,9 +592,9 @@ deleteAllConnections()
     # now iterate through all enablement files to find it
     # stop all daemons.  
 
-	weavedstop.sh
+	connectdstop.sh
 
-    	for file in "$WEAVED_DIR"/*.conf; do
+    	for file in "$CONNECTD_DIR"/*.conf; do
 	# get service name from UID
             uid="$(grep '^UID' $file | awk '{print $2}')"
 	    resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:$APIKEY"  -H "token:$token" "$deviceURL/$uid")
@@ -623,7 +623,7 @@ deleteAllConnections()
         done
         if [ -f "$BIN_DIR"/$STARTEMUP ]; then
 	    rm "$BIN_DIR"/$STARTEMUP
-            rm "$BIN_DIR"/Weaved*.sh
+            rm "$BIN_DIR"/Connectd*.sh
    	fi
 # also should clear out crontab at this point
 	disableStartup
@@ -668,7 +668,7 @@ askRegisterLogin()
         printf "     4) Exit                                          \n"
         printf "                                                      \n"
         printf "********************************************************\n\n"
-        printf "       Use your Weaved account with remot3.it! \n"
+        printf "       Use your Connectd account with remot3.it! \n"
         printf "********************************************************\n\n"
 
         getNumRange 1 4    
@@ -813,7 +813,7 @@ getNewPassword() {
 ######### Begin Portal Login #########
 userLogin () #Portal login function
 {
-#    echo "weavedlibrary Username = $USERNAME Password = $PASSWORD"
+#    echo "connectdlibrary Username = $USERNAME Password = $PASSWORD"
 
     if [ "$USERNAME" != "" ]; then 
 	username="$USERNAME"
@@ -827,9 +827,11 @@ userLogin () #Portal login function
         if [ "$PASSWORD" != "" ]; then
 	    password="$PASSWORD"
         else
+            stty -echo
 	    printf "\nPlease enter your remot3.it password: \n"
 	    password=""
 	    read password
+	    stty echo
         fi
    fi
 #   echo $username $password $authhash
@@ -885,7 +887,7 @@ testLogin()
 	printf "\n\nYou have entered either an incorrect username or password.\n"
         sleep 1
 	printf "\nPlease try again.  Press the 'Enter' key to continue.\n"
-        read
+        read dummyValue
         printf "\n\nOne moment please...\n"
         sleep 4
 	loginFailed=""
@@ -898,7 +900,7 @@ testLogin()
         printf "Please correct the system date if needed and run the installer again.\n"
         printf "Run the command 'man date' for help resetting the date.\n\n"
         printf "If you are receiving this message and your system date is correct,\n"
-        printf "please contact remot3.it support at forum.weaved.com.\n"
+        printf "please contact remot3.it support at forum.connectd.com.\n"
         exit
     fi
 }
@@ -911,7 +913,7 @@ testLogin()
 
 checkForDeviceName()
 {
-    file="$WEAVED_DIR"/Weavedrmt365535.conf
+    file="$CONNECTD_DIR"/Connectdrmt365535.conf
     if [ -f "$file" ]; then
 #	echo "Found rmt3 conf file"
 	debug $file
@@ -941,7 +943,7 @@ checkForDeviceName()
 #	echo "Did not find rmt3 conf file"
         PROTOCOL=rmt3
         PORT=65535
-        WEAVED_PORT=Weaved"$PROTOCOL""$PORT"
+        CONNECTD_PORT=Connectd"$PROTOCOL""$PORT"
         configureConnection
 	debug $SerialID
 	# now iterate through existing conf files, skipping rmt3 one, and add HWID to others
@@ -954,11 +956,11 @@ checkForDeviceName()
 convertExistingUIDs()
 {
 # check to make sure there is an existing directory before trying to iterate.
-    if [ -d "$WEAVED_DIR" ]; then
+    if [ -d "$CONNECTD_DIR" ]; then
         logger "updating existing services to add HWID"
-    	for file in "$WEAVED_DIR"/*.conf; do
+    	for file in "$CONNECTD_DIR"/*.conf; do
 	    debug "$file"
-            if [ "$file" != Weavedrmt365535.conf ]; then
+            if [ "$file" != Connectdrmt365535.conf ]; then
 	# get service name from UID
                 uid="$(grep '^UID' "$file" | awk '{print $2}')"
 
@@ -969,9 +971,9 @@ convertExistingUIDs()
 	        addHWIDResult=$(jsonval "$result" "status")
 
 		echo "Updating $file"
-	        logger "weaved: Adding HWID $SerialID to $serviceName UID $uid - $addHWIDResult"
+	        logger "connectd: Adding HWID $SerialID to $serviceName UID $uid - $addHWIDResult"
 # now update start/stop script
-		WEAVED_PORT=$(basename "$file" ".conf")
+		CONNECTD_PORT=$(basename "$file" ".conf")
 		installStartStop
             fi
         done
@@ -980,22 +982,22 @@ convertExistingUIDs()
 
 ######### Install Enablement #########
 # we install .conf file temporarily in $TMP_DIR and add UID and secret
-# before copying it to $WEAVED_DIR
+# before copying it to $CONNECTD_DIR
 installEnablement()
 {
     printf "."
-    if [ ! -d "WEAVED_DIR" ]; then
-	mkdir -p "$WEAVED_DIR"
+    if [ ! -d "CONNECTD_DIR" ]; then
+	mkdir -p "$CONNECTD_DIR"
     fi
 
 #
 # if REGISTERSERVICE==1, then we copy the template enablement file to /tmp where further things happen
-# before it is copied into place.  Otherwise we copy the template file directly to WEAVED_DIR
+# before it is copied into place.  Otherwise we copy the template file directly to CONNECTD_DIR
 #
     if [ "$REGISTERSERVICE" = "1" ]; then
-        cat $WEAVED_LIB_DIR/conf/"$PROTOCOL"."$PLATFORM" > $TMP_DIR/"$WEAVED_PORT".conf
+        cat $CONNECTD_LIB_DIR/conf/"$PROTOCOL"."$PLATFORM" > $TMP_DIR/"$WEAVED_PORT".conf
     else
-        cat $WEAVED_LIB_DIR/conf/"$PROTOCOL"."$PLATFORM" > "$WEAVED_DIR"/"$WEAVED_PORT".conf
+        cat $CONNECTD_LIB_DIR/conf/"$PROTOCOL"."$PLATFORM" > "$WEAVED_DIR"/"$WEAVED_PORT".conf
     fi
 }
 ######### End Install Enablement #########
@@ -1004,9 +1006,9 @@ installEnablement()
 installNotifier()
 {
         printf "."
-    chmod +x $WEAVED_LIB_DIR/scripts/"$NOTIFIER"
+    chmod +x $CONNECTD_LIB_DIR/scripts/"$NOTIFIER"
     if [ ! -f "$BIN_DIR"/"$NOTIFIER" ]; then
-	cp $WEAVED_LIB_DIR/scripts/"$NOTIFIER" "$BIN_DIR"
+	cp $CONNECTD_LIB_DIR/scripts/"$NOTIFIER" "$BIN_DIR"
 	#   printf "Copied %s to %s \n" "$NOTIFIER" "$BIN_DIR"
     fi
 }
@@ -1016,10 +1018,10 @@ installNotifier()
 installSendNotification()
 {
         printf "."
-    sed s/REPLACE/"$WEAVED_PORT"/ < $WEAVED_LIB_DIR/scripts/send_notification.sh > $TMP_DIR/send_notification.sh
+    sed s/REPLACE/"$CONNECTD_PORT"/ < $WEAVED_LIB_DIR/scripts/send_notification.sh > $TMP_DIR/send_notification.sh
     chmod +x $TMP_DIR/send_notification.sh
-    mv $TMP_DIR/send_notification.sh "$BIN_DIR"/notify_$WEAVED_PORT.sh
-    #    printf "Copied notify_%s.sh to %s \n" "$WEAVED_PORT" "$BIN_DIR"
+    mv $TMP_DIR/send_notification.sh "$BIN_DIR"/notify_$CONNECTD_PORT.sh
+    #    printf "Copied notify_%s.sh to %s \n" "$CONNECTD_PORT" "$BIN_DIR"
 }
 ######### End Install Send Notification #########
 
@@ -1033,7 +1035,7 @@ cronAddLine()
 }
 ######### End add line to cron ######
 
-######### Disable Weaved services to start at reboot time ######
+######### Disable Connectd services to start at reboot time ######
 cronRemoveLine()
 {
     crontab -l | grep -v "$1" | cat > $TMP_DIR/.crontmp
@@ -1059,15 +1061,15 @@ installStartStop()
     printf "."
     # crontab approach
     if [ $startupScripts = 3 ]; then
-	sed s/WEAVED_PORT=/WEAVED_PORT="$WEAVED_PORT"/ < "$WEAVED_LIB_DIR"/scripts/launchweaved.sh > "$TMP_DIR"/"$WEAVED_PORT".sh
-	mv "$TMP_DIR"/"$WEAVED_PORT".sh "$BIN_DIR"/"$WEAVED_PORT".sh
-	chmod +x "$BIN_DIR"/"$WEAVED_PORT".sh
-	# backwards compatibility - move startweaved.sh to weavedstart.sh
-	if [ -f "$BIN_DIR"/startweaved.sh ]; then
-            mv "$BIN_DIR"/startweaved.sh "$BIN_DIR"/"$STARTEMUP"
+	sed s/CONNECTD_PORT=/WEAVED_PORT="$WEAVED_PORT"/ < "$WEAVED_LIB_DIR"/scripts/launchconnectd.sh > "$TMP_DIR"/"$WEAVED_PORT".sh
+	mv "$TMP_DIR"/"$CONNECTD_PORT".sh "$BIN_DIR"/"$WEAVED_PORT".sh
+	chmod +x "$BIN_DIR"/"$CONNECTD_PORT".sh
+	# backwards compatibility - move startconnectd.sh to weavedstart.sh
+	if [ -f "$BIN_DIR"/startconnectd.sh ]; then
+            mv "$BIN_DIR"/startconnectd.sh "$BIN_DIR"/"$STARTEMUP"
 	fi
 	if [ ! -f "$BIN_DIR"/$STARTEMUP ]; then
-            cp "$WEAVED_LIB_DIR"/scripts/$STARTEMUP "$BIN_DIR"
+            cp "$CONNECTD_LIB_DIR"/scripts/$STARTEMUP "$BIN_DIR"
 	    #      printf "$STARTEMUP copied to %s\n" "$BIN_DIR"
 	fi
 	checkCron=$(crontab -l 2> /dev/null | grep -c "$STARTEMUP" )
@@ -1079,18 +1081,18 @@ installStartStop()
 	    disableStartup
 	fi
 	# see if there is an entry to start the chosen service daemon already
-	checkStartWeaved=$(grep -c "$WEAVED_PORT.sh" "$BIN_DIR"/"$STARTEMUP" )
+	checkStartConnectd=$(grep -c "$CONNECTD_PORT.sh" "$BIN_DIR"/"$STARTEMUP" )
 	# if not, add it
-	if [ $checkStartWeaved = 0 ]; then
-	    sed s/REPLACE_TEXT/"$WEAVED_PORT"/ < $WEAVED_LIB_DIR/scripts/weavedstart.add > $TMP_DIR/weavedstart.add
-	    sh -c "cat $TMP_DIR/weavedstart.add >> $BIN_DIR/$STARTEMUP"
-            rm $TMP_DIR/weavedstart.add
+	if [ $checkStartConnectd = 0 ]; then
+	    sed s/REPLACE_TEXT/"$CONNECTD_PORT"/ < $WEAVED_LIB_DIR/scripts/connectdstart.add > $TMP_DIR/weavedstart.add
+	    sh -c "cat $TMP_DIR/connectdstart.add >> $BIN_DIR/$STARTEMUP"
+            rm $TMP_DIR/connectdstart.add
 	fi
 	# see if there is an entry to start the listener service daemon schannel.x already
-	checkStartSchannel=$(grep -c "weavedschannel" "$BIN_DIR"/"$STARTEMUP" )
+	checkStartSchannel=$(grep -c "connectdschannel" "$BIN_DIR"/"$STARTEMUP" )
 	# if not, add it
 	if [ $checkStartSchannel = 0 ]; then
-	    sh -c "echo '"/usr/bin/weavedschannel" start' >> $BIN_DIR/$STARTEMUP"
+	    sh -c "echo '"/usr/bin/connectdschannel" start' >> $BIN_DIR/$STARTEMUP"
 	fi
 	chmod +x "$BIN_DIR"/$STARTEMUP
     fi
@@ -1101,7 +1103,7 @@ installStartStop()
 fetchUID()
 {
     printf "."
-    "$BIN_DIR"/"$DAEMON"."$PLATFORM" -life -1 -f "$TMP_DIR"/"$WEAVED_PORT".conf > "$TMP_DIR"/.DeviceTypeString
+    "$BIN_DIR"/"$DAEMON"."$PLATFORM" -life -1 -f "$TMP_DIR"/"$CONNECTD_PORT".conf > "$TMP_DIR"/.DeviceTypeString
     DEVICETYPE="$(grep DeviceType "$TMP_DIR"/.DeviceTypeString | awk -F "=" '{print $2}')"
     rm "$TMP_DIR"/.DeviceTypeString
 }
@@ -1111,10 +1113,10 @@ fetchUID()
 checkUID()
 {
     printf "."
-    checkforUID="$(tail "$TMP_DIR"/"$WEAVED_PORT".conf | grep -c UID )"
+    checkforUID="$(tail "$TMP_DIR"/"$CONNECTD_PORT".conf | grep -c UID )"
     if [ $checkforUID = 2 ]; then
-	#    cp "$WEAVED_LIB_DIR"/"$WEAVED_PORT".conf /"$WEAVED_DIR"/
-	uid=$(tail "$TMP_DIR"/"$WEAVED_PORT".conf | grep UID | awk -F "UID" '{print $2}' | xargs echo)
+	#    cp "$CONNECTD_LIB_DIR"/"$WEAVED_PORT".conf /"$WEAVED_DIR"/
+	uid=$(tail "$TMP_DIR"/"$CONNECTD_PORT".conf | grep UID | awk -F "UID" '{print $2}' | xargs echo)
 	#   printf "\n\nYour device UID has been successfully provisioned as: %s. \n\n" "$uid"
     else
 	retryFetchUID
@@ -1129,18 +1131,18 @@ retryFetchUID()
     for run in $(seq 1 15)
     do
 	fetchUID
-	checkforUID="$(tail "$TMP_DIR"/"$WEAVED_PORT".conf | grep -c UID)"
+	checkforUID="$(tail "$TMP_DIR"/"$CONNECTD_PORT".conf | grep -c UID)"
 	if [ "$checkforUID" = 2 ]; then
-	    #        cp "$WEAVED_LIB_DIR"/"$WEAVED_PORT".conf /"$WEAVED_DIR"/
-	    uid="$(tail "$TMP_DIR"/"$WEAVED_PORT".conf | grep UID | awk -F "UID" '{print $2}' | xargs echo)"
+	    #        cp "$CONNECTD_LIB_DIR"/"$WEAVED_PORT".conf /"$WEAVED_DIR"/
+	    uid="$(tail "$TMP_DIR"/"$CONNECTD_PORT".conf | grep UID | awk -F "UID" '{print $2}' | xargs echo)"
 	    #       printf "\n\nYour device UID has been successfully provisioned as: %s. \n\n" "$uid"
 	    break
 	fi
     done
-    checkforUID="$(tail "$TMP_DIR"/"$WEAVED_PORT".conf | grep -c UID )"
+    checkforUID="$(tail "$TMP_DIR"/"$CONNECTD_PORT".conf | grep -c UID )"
     if [ "$checkforUID" != 2 ]; then
 	printf "We have unsuccessfully retried to obtain a UID.\n"
-        printf "Please contact remot3.it Support at http://forum.weaved.com for help.\n\n"
+        printf "Please contact remot3.it Support at http://forum.connectd.com for help.\n\n"
     fi
 }
 ######### Retry Fetch UID ##########
@@ -1167,11 +1169,11 @@ preregisterUID()
     elif [ "$test3" = 1 ]; then
 	printf "Sorry, the pre-registration of UID: %s is failing. You can finish registration\n" "$uid"
 	printf "manually using the following steps: \n\n"
-	printf "1) From the same network as your device, please log into https://weaved.com \n"
+	printf "1) From the same network as your device, please log into https://connectd.com \n"
 	printf "2) Once logged in, please visit the following URL:\n"
-        printf "https://developer.weaved.com/portal/members/registerDevice.php \n"
+        printf "https://developer.connectd.com/portal/members/registerDevice.php \n"
 	printf "3) Enter a name for your Service.\n"
-	printf "4) Please contact us at http://forum.weaved.com and let us know about this issue,\n" 
+	printf "4) Please contact us at http://forum.connectd.com and let us know about this issue,\n" 
         printf "including the version of installer, and whether manual registration\n"
 	printf "worked for you. Sorry for the inconvenience. \n\n"
 	overridePort
@@ -1210,11 +1212,11 @@ getSecret()
     	test3="$(echo "$secretCall" | grep -c "false" )"
     	if [ $test1 = 1 ]; then
 		secret="$(echo "$secretCall" | awk -F "," '{print $2}' | awk -F "\"" '{print $4}' | sed s/://g)"
-		echo "# password - erase this line to unregister the device" >> "$TMP_DIR"/"$WEAVED_PORT".conf
-		echo "password $secret" >> "$TMP_DIR"/"$WEAVED_PORT".conf
+		echo "# password - erase this line to unregister the device" >> "$TMP_DIR"/"$CONNECTD_PORT".conf
+		echo "password $secret" >> "$TMP_DIR"/"$CONNECTD_PORT".conf
 
-	#       finally copy valid assembled enablement file to $WEAVED_DIR
-		mv "$TMP_DIR"/"$WEAVED_PORT".conf "$WEAVED_DIR"/"$WEAVED_PORT".conf
+	#       finally copy valid assembled enablement file to $CONNECTD_DIR
+		mv "$TMP_DIR"/"$CONNECTD_PORT".conf "$WEAVED_DIR"/"$WEAVED_PORT".conf
     	elif [ $test2 = 1 ]; then
 		printf "For some reason, you were logged out and must log back in. \n"
 		userLogin
@@ -1255,7 +1257,7 @@ startService()
     printf "\n"
     logger "remot3.it Connection starting: $alias"
     echo "Registering $alias" ; sleep 1;printf ".";sleep 1;printf ".";sleep 1;printf ".";sleep 1;printf ".";sleep 1;printf ".";sleep 1;printf ".";sleep 1;printf ".";sleep 1; echo ; echo
-    "$BIN_DIR"/"$WEAVED_PORT".sh restart > /dev/null
+    "$BIN_DIR"/"$CONNECTD_PORT".sh restart > /dev/null
 }
 ######### End Start Service #########
 
@@ -1263,13 +1265,13 @@ startService()
 overridePort()
 {
     if [ "$CUSTOM" = 1 ]; then
-	cp "$WEAVED_DIR"/"$WEAVED_PORT".conf $TMP_DIR/
-	echo "proxy_dest_port $PORT" >> $TMP_DIR/"$WEAVED_PORT".conf
-	mv $TMP_DIR/"$WEAVED_PORT".conf "$WEAVED_DIR"/
+	cp "$CONNECTD_DIR"/"$WEAVED_PORT".conf $TMP_DIR/
+	echo "proxy_dest_port $PORT" >> $TMP_DIR/"$CONNECTD_PORT".conf
+	mv $TMP_DIR/"$CONNECTD_PORT".conf "$WEAVED_DIR"/
     elif [ "$CUSTOM" = 2 ]; then
-	cp "$WEAVED_DIR"/"$WEAVED_PORT".conf "$TMP_DIR"/
-	echo "proxy_dest_port $PORT" >> "$TMP_DIR"/"$WEAVED_PORT".conf
-	mv "$TMP_DIR"/"$WEAVED_PORT".conf "$WEAVED_DIR"/
+	cp "$CONNECTD_DIR"/"$WEAVED_PORT".conf "$TMP_DIR"/
+	echo "proxy_dest_port $PORT" >> "$TMP_DIR"/"$CONNECTD_PORT".conf
+	mv "$TMP_DIR"/"$CONNECTD_PORT".conf "$WEAVED_DIR"/
     fi
 }
 ######### End Port Override #########
@@ -1277,7 +1279,7 @@ overridePort()
 ######### Delete device #########
 deleteDevice()
 {
-    uid=$(tail "$WEAVED_DIR"/$WEAVED_PORT.conf | grep UID | awk -F "UID" '{print $2}' | xargs echo)
+    uid=$(tail "$CONNECTD_DIR"/$WEAVED_PORT.conf | grep UID | awk -F "UID" '{print $2}' | xargs echo)
     result=$(curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token")
     checkAPIResult "$deleteURL $uid" "$result"
 
@@ -1309,9 +1311,9 @@ makeConnection()
     PORT=$2
     alias=$3
     CUSTOM=2	# forces port to be written to conf file
-    WEAVED_PORT=Weaved"$PROTOCOL""$PORT"
-    debug "$WEAVED_PORT"
-    if [ -f "$WEAVED_DIR"/"$WEAVED_PORT".conf ]; then
+    CONNECTD_PORT=Connectd"$PROTOCOL""$PORT"
+    debug "$CONNECTD_PORT"
+    if [ -f "$CONNECTD_DIR"/"$WEAVED_PORT".conf ]; then
         echo "A $PROTOCOL service has already been configured on port $PORT."
         echo "Skipping $alias..."
     else
@@ -1340,7 +1342,7 @@ configureConnection()
     	    startService
 	    # there should only be one UDP listener startup regardless of the number of services
 	    # the startup script will only start one instance
-	    weavedschannel start > /dev/null
+	    connectdschannel start > /dev/null
 	fi
     fi
 }
@@ -1352,7 +1354,7 @@ interactiveInstall()
     displayVersion $1
     # bashCheck
     platformDetection
-    weavedCompatibility
+    connectdCompatibility
     askRegisterLogin
     checkForUpdate
     checkForDeviceName

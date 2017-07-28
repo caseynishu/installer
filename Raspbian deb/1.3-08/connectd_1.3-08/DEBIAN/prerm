@@ -1,16 +1,16 @@
 #!/bin/sh
-# postrm script for remot3it
+# postrm script for connectd
 #
 
 set -e
-logger "remot3it installer prerm $1"
+logger "connectd installer prerm $1"
 
 case "$1" in
 
     remove|purge|deconfigure)
 # remove serial number (HWID) file
-    if [ -e /etc/remot3it/serial.txt ]; then
-      rm /etc/remot3it/serial.txt
+    if [ -e /etc/connectd/serial.txt ]; then
+      rm /etc/connectd/serial.txt
     fi
   ;;
 

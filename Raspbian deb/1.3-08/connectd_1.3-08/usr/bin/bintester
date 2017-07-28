@@ -1,0 +1,388 @@
+#!/bin/bash
+#
+# This (1.1.3 at least) nearly works in /bin/sh but I changed to bash just because its easier
+#
+# Mike Smith did this, written as simple as possible to work on as many platforms as possible.
+# This tests a set of Weaved binaries in the directory containing this script.
+#
+# v1.0: Quick first version, just execute each binary with -n option to see if it runs
+# v1.1: Add more tests for each binary, add platform fingerprint tests
+#
+
+#
+# Add a timestamp and divider line as headers to the log file and console
+#
+PWD=$(pwd)
+echo "********************************************************" >> weavedBinaryTestLog.txt
+echo "Weaved platform and binary tester for current directory $PWD" >> weavedBinaryTestLog.txt
+date  >> weavedBinaryTestLog.txt
+echo "********************************************************" >> weavedBinaryTestLog.txt
+#
+echo "********************************************************"
+echo "Weaved platform and binary tester for current directory $PWD"
+date
+echo "********************************************************"
+
+#
+# Add a timestamp and divider line as headers to the log file and console
+#
+echo "========================================================" >> weavedBinaryTestLog.txt
+echo "Platform fingerprint tests" >> weavedBinaryTestLog.txt
+date  >> weavedBinaryTestLog.txt
+echo "========================================================" >> weavedBinaryTestLog.txt
+#
+echo "========================================================"
+echo "Platform fingerprint tests"
+date
+echo "========================================================"
+
+#
+# Platform fingerprint tests first
+#
+
+# uname -a
+# KERNEL-NAME NODENAME KERNEL-RELEASE KERNEL-VERSION
+# MACHINE PROCESSOR HARDWARE-PLATFORM OPERATING-SYSTEM
+#
+echo "Console output running uname -a:"
+echo "The order of output fields is:"
+echo "KERNEL-NAME NODENAME KERNEL-RELEASE KERNEL-VERSION"
+echo "MACHINE PROCESSOR HARDWARE-PLATFORM OPERATING-SYSTEM"
+echo $(uname -a)
+echo "--------------------------------------------------------"
+
+#
+# CPU info
+#
+echo "Console output running cat /proc/cpuinfo:"
+echo cat /proc/cpuinfo
+echo "--------------------------------------------------------"
+
+#
+# echo $BASH_VERSION to get possibility of silly problems out of the way
+#
+echo "Console output running echo \$BASH_VERSION:"
+echo $BASH_VERSION
+echo "--------------------------------------------------------"
+
+#
+# bash version to get possibility of silly problems out of the way
+# This command will give more information if /bin/bash is there
+#
+echo "Console output running /bin/bash --version:"
+echo $(/bin/bash --version)
+echo "--------------------------------------------------------"
+
+#
+# bash to get possibility of silly problems out of the way
+# This will catch any aliasing etc.
+#
+echo "Console output running file `which bash`:"
+echo $(file `which bash`)
+echo "--------------------------------------------------------"
+
+#
+# bash to get possibility of silly problems out of the way
+# This will catch any aliasing etc.
+# For example on a Raspberry Pi this will typically show sh aliased to dash
+#
+echo "Console output running file `which sh`:"
+echo $(file `which sh`)
+echo "--------------------------------------------------------"
+
+#
+# gcc --version to get compiler information, if it exists on this device
+#
+echo "Console output running gcc --version:"
+echo $(gcc --version)
+echo "--------------------------------------------------------"
+
+#
+# getconf GNU_LIBC_VERSION to get basic library information
+#
+echo "Console output running getconf GNU_LIBC_VERSION:"
+echo $(getconf GNU_LIBC_VERSION)
+echo "--------------------------------------------------------"
+
+#
+# ldd --version to get library information (Linux, not MacOS)
+#
+echo "Console output running ldd --version:"
+echo $(ldd --versio/Users/mike/Library/Preferences/com.apple.LaunchServices/com.apple.launchservices.secure.plistn)
+echo "--------------------------------------------------------"
+
+#
+# find /lib -executable -name "*libc.so*"
+# to find library path (Linux, not MacOS)
+#
+echo "Console output running find /lib -executable -name "*libc.so*":"
+find /lib -executable -name "*libc.so*"
+echo "--------------------------------------------------------"
+
+#
+# $(find /lib -executable -name "*libc.so*")
+# to get library information (Linux, not MacOS)
+# On Linux the library is executable
+#
+echo "Console output running find /lib -executable -name "*libc.so*":"
+$(find /lib -executable -name "*libc.so*")
+echo "--------------------------------------------------------"
+
+#
+# ldd $(which sh) | grep libc
+# to get library information (Linux, not MacOS)
+#
+# TBD: this doesnt quite work
+#
+#echo "Console output running echo ldd $(which sh) | grep libc:"
+#echo ldd $(which sh) | grep libc --version
+#echo "--------------------------------------------------------"
+
+#
+# Look for ulibc
+# TBD: a better method
+# See http://sgros.blogspot.com/2014/05/uclibc-versus-eglibc.html
+#
+echo "Look for ulibc library using ls /lib/libuClibc-*"
+echo $(ls /lib/libuClibc-*)
+echo "--------------------------------------------------------"
+
+#
+# Look for multiarch library
+#
+echo "Look for multiarch library using ls /lib/ld-linux-armhf.so.3"
+echo $(ls /lib/ld-linux-armhf.so.3)
+echo "--------------------------------------------------------"
+
+#
+# Look for multiarch library
+#
+echo "Look for multiarch library using ls /lib/ld-linux-armel.so.3"
+echo $(ls /lib/ld-linux-armel.so.3)
+echo "--------------------------------------------------------"
+
+#
+# Look for non-multiarch library
+#
+echo "Look for non-multiarch library using ls /lib/ld-linux.so.3"
+echo $(ls /lib/ld-linux.so.3)
+echo "--------------------------------------------------------"
+
+#
+# otool version (for MacOS)
+#
+echo "otool version (for MacOS) using otool --version:"
+echo $(otool --version)
+echo "--------------------------------------------------------"
+
+#
+# cat /proc/cpuinfo (Linux, not for MacOS)
+#
+echo "Console output for cat /proc/cpuinfo:"
+echo $(cat /proc/cpuinfo)
+echo "--------------------------------------------------------"
+
+#
+# getconf LONG_BIT
+#
+echo "Console output for getconf LONG_BIT (32-bit or 64-bit mode):"
+echo $(getconf LONG_BIT)
+echo "--------------------------------------------------------"
+
+
+
+#
+# Tests for endianess
+#
+# Tests 1, 2, 3, 4:
+# From http://serverfault.com/questions/163487/how-to-tell-if-a-linux-system-is-big-endian-or-little-endian
+# These tests create two byte octal numbers and analyze which byte comes first.
+#
+# echo I | tr -d [:space:] | od -to2 | head -n1 | awk '{print $2}' | cut -c6
+# echo -n I | hexdump -o | awk '{ print substr($2,6,1); exit}'
+# echo -n I | od -to2 | awk 'FNR==1{ print substr($2,6,1)}'
+# echo -n I | od -to2 | head -n1 | cut -f2 -d" " | cut -c6
+#
+# 1 = little-endian,  0 = big-endian
+#
+# For some reason (on MacOS) Test 2 and 3 work outside shell script, but not inside shell script
+#
+# Test 4
+# echo -n I | od -to2 | head -n1 | cut -f2 -d" " | cut -c6
+# does not work on MacOS
+#
+# Test 5
+# printf '\1' | od -dAn
+# From https://gist.github.com/javiermon/8685737
+#
+# On RPi all tests seem to work
+#
+# TBD: Note: have not tested on a big-endian device yet
+#
+
+
+echo "Test 1 for endianess, 1 = little-endian,  0 = big-endian, else error: "
+echo $(echo I | tr -d [:space:] | od -to2 | head -n1 | awk '{print $2}' | cut -c6)
+echo "Test 2 for endianess, 1 = little-endian,  0 = big-endian, else error: "
+echo $(echo -n I | hexdump -o | awk '{ print substr($2,6,1); exit}')
+echo "Test 3 for endianess, 1 = little-endian,  0 = big-endian, else error: "
+echo $(echo -n I | od -to2 | awk 'FNR==1{ print substr($2,6,1)}')
+echo "Test 4 for endianess, 1 = little-endian,  0 = big-endian, else error: "
+echo $(echo -n I | od -to2 | head -n1 | cut -f2 -d" " | cut -c6)
+echo "Test 5 for endianess, 1 = little-endian,  256 = big-endian, else error: "
+echo $(printf '\1' | od -dAn)
+echo "--------------------------------------------------------"
+
+#
+# Now loop through binaries, one test at a time
+#
+
+#
+# Add a timestamp and divider line as headers to the log file and console
+#
+echo "========================================================" >> weavedBinaryTestLog.txt
+echo "Testing all Weaved binaries in current directory $PWD" >> weavedBinaryTestLog.txt
+date  >> weavedBinaryTestLog.txt
+echo "========================================================" >> weavedBinaryTestLog.txt
+#
+echo "========================================================"
+echo "Testing all Weaved binaries in current directory $PWD"
+date
+echo "========================================================"
+
+#
+# Get md5sum for each binary $file
+# md5sum is md5 on MacOS
+# md5 -r is hidden option that gives similar format to md5sum
+# Could alias md5 on MacOS to md5sum but thats messing with someone's setup
+#
+
+for file in weavedConnectd.*; do
+#   VAR=$((your-command-including-redirect) 2>&1)
+RESULT="$((md5 -r ./$file) 2>&1)"
+# log command results to file
+echo "Console output running (for MacOS) md5 -r $file:"
+echo "$RESULT"
+# Same to console
+echo "Console output running (for MacOS) md5 -r $file:" >> weavedBinaryTestLog.txt
+echo "$RESULT" >> weavedBinaryTestLog.txt
+done
+
+echo "--------------------------------------------------------"
+echo "--------------------------------------------------------" >> weavedBinaryTestLog.txt
+
+#
+# Get md5sum for each binary $file
+#
+
+for file in weavedConnectd.*; do
+#   VAR=$((your-command-including-redirect) 2>&1)
+RESULT="$((md5sum ./$file) 2>&1)"
+# log command results to file
+echo "Console output running (for Linux) md5sum $file:"
+echo "$RESULT"
+# Same to console
+echo "Console output running (for Linux) md5sum $file:" >> weavedBinaryTestLog.txt
+echo "$RESULT" >> weavedBinaryTestLog.txt
+done
+
+echo "--------------------------------------------------------"
+echo "--------------------------------------------------------" >> weavedBinaryTestLog.txt
+
+#
+# Run ldd for Linux
+#
+
+for file in weavedConnectd.*; do
+#   VAR=$((your-command-including-redirect) 2>&1)
+RESULT="$((ldd ./$file) 2>&1)"
+# log command results to file
+echo "Console output running (for Linux) ldd $file:"
+echo "$RESULT"
+# Same to console
+echo "Console output running (for Linux) ldd $file:" >> weavedBinaryTestLog.txt
+echo "$RESULT" >> weavedBinaryTestLog.txt
+done
+
+echo "--------------------------------------------------------"
+echo "--------------------------------------------------------" >> weavedBinaryTestLog.txt
+
+#
+# Run otool -L for MacOS
+#
+for file in weavedConnectd.*; do
+#   VAR=$((your-command-including-redirect) 2>&1)
+RESULT="$((otool -L ./$file) 2>&1)"
+# log command results to file
+echo "Console output running (for MacOS) otool -L $file:"
+echo "$RESULT"
+# Same to console
+echo "Console output running (for MacOS) otool -L $file:" >> weavedBinaryTestLog.txt
+echo "$RESULT" >> weavedBinaryTestLog.txt
+done
+
+echo "--------------------------------------------------------"
+echo "--------------------------------------------------------" >> weavedBinaryTestLog.txt
+
+#
+# Run file on each binary $file
+#
+for file in weavedConnectd.*; do
+#   VAR=$((your-command-including-redirect) 2>&1)
+RESULT="$((file ./$file) 2>&1)"
+# log command results to file
+echo "Console output running file $file:"
+echo "$RESULT"
+# Same to console
+echo "Console output running file $file:" >> weavedBinaryTestLog.txt
+echo "$RESULT" >> weavedBinaryTestLog.txt
+done
+
+echo "--------------------------------------------------------"
+echo "--------------------------------------------------------" >> weavedBinaryTestLog.txt
+
+#
+# Find GCC version strings in binary
+#
+
+for file in weavedConnectd.*; do
+#   VAR=$((your-command-including-redirect) 2>&1)
+RESULT="$((strings ./$file | grep GCC | sort | uniq)  2>&1)"
+# log command results to file
+echo "Console output running strings ./$file | grep GCC | sort | uniq:"
+echo "$RESULT"
+echo "--------------------------------------------------------"
+# Same to console
+echo "Console output running strings ./$file | grep GCC | sort | uniq:" >> weavedBinaryTestLog.txt
+echo "$RESULT" >> weavedBinaryTestLog.txt
+echo "--------------------------------------------------------" >> weavedBinaryTestLog.txt
+done
+
+#
+# Run each binary with -n option (banner output and connection test)
+#
+
+for file in weavedConnectd.*; do
+#   VAR=$((your-command-including-redirect) 2>&1)
+    RESULT="$((./$file -n) 2>&1)"
+# log command results to file
+    echo "Console output running $file with -n:"
+    echo "$RESULT"
+    echo "--------------------------------------------------------"
+# Same to console
+    echo "Console output running $file with -n:" >> weavedBinaryTestLog.txt
+    echo "$RESULT" >> weavedBinaryTestLog.txt
+    echo "--------------------------------------------------------" >> weavedBinaryTestLog.txt
+done
+
+#
+# add divider line to the end of log file and console
+#
+echo "Finished testing all Weaved binaries in current directory $PWD" >> weavedBinaryTestLog.txt
+date  >> weavedBinaryTestLog.txt
+echo "========================================================" >> weavedBinaryTestLog.txt
+#
+echo "Finished testing all Weaved binaries in current directory $PWD"
+date
+echo "========================================================"
+# the_end

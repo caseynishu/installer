@@ -1,52 +1,52 @@
 #!/bin/sh
-# postrm script for remot3it
+# postrm script for connectd
 #
 
 TMP_DIR=/tmp
 
 set -e
-logger "remot3it installer postrm state $1"
+logger "connectd installer postrm state $1"
 case "$1" in
   purge)
 # remove global startup file
-    if [ -f /usr/bin/remot3itstart.sh ]; then
-      rm -f /usr/bin/remot3itstart.sh
+    if [ -f /usr/bin/connectdstart.sh ]; then
+      rm -f /usr/bin/connectdstart.sh
     fi
 # remove startup scripts	
-    for file in /usr/bin/remot3it*.sh ; do
+    for file in /usr/bin/connectd*.sh ; do
       rm -f $file
     done
 # remove notification scripts
-    if [ -f /usr/bin/remot3itnotify.sh ]; then
-      rm -f /usr/bin/remot3itnotify.sh
+    if [ -f /usr/bin/connectdnotify.sh ]; then
+      rm -f /usr/bin/connectdnotify.sh
     fi
-    for file in /usr/bin/notify_remot3it*.sh ; do
+    for file in /usr/bin/notify_connectd*.sh ; do
       rm -f $file
     done
 # remove configuration files
-    for file in /etc/remot3it/services/remot3it*.conf ; do
+    for file in /etc/connectd/services/connectd*.conf ; do
       rm -f $file
     done
 # remove PID files
-    for file in /var/run/remot3it*.pid ; do
+    for file in /var/run/connectd*.pid ; do
       rm -f $file
     done
 # remove installation template files
-    if [ -d /usr/share/remot3it ]; then
-      rm -r /usr/share/remot3it
+    if [ -d /usr/share/connectd ]; then
+      rm -r /usr/share/connectd
     fi
 # remove crontab entry
-    crontab -l | grep -v remot3itstart.sh | cat > $TMP_DIR/.crontmp
+    crontab -l | grep -v connectdstart.sh | cat > $TMP_DIR/.crontmp
     crontab $TMP_DIR/.crontmp
     echo
-    echo "If you uninstalled remot3it without deleting Services first,"
+    echo "If you uninstalled connectd without deleting Services first,"
     echo "there may be orphaned Services in your Service List.  Use the "
     echo "'Settings' link in the web portal Service List to delete these."
   ;;
 
   remove|failed-upgrade|abort-install|abort-upgrade|disappear)
-    if [ -d /usr/share/remot3it ]; then
-      rm -r /usr/share/remot3it
+    if [ -d /usr/share/connectd ]; then
+      rm -r /usr/share/connectd
     fi
   ;;
 
