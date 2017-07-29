@@ -19,11 +19,10 @@ DAEMON=connectd
 # folders and files
 # these folders are not the same as used by Bulk Registration
 CONNECTD_DIR=/etc/connectd/services
-CONNECTD_LIB_DIR=/usr/share/connectdconnectd
+CONNECTD_LIB_DIR=/usr/share/connectd
 SERIALNUMBERFILE=/etc/connectd/serial.txt
 BIN_DIR=/usr/bin
 TMP_DIR=/tmp
-NOTIFIER=connectdnotify.sh
 INIT_DIR=/etc/init.d
 PID_DIR=/var/run
 filename=$(basename "$0")
@@ -35,7 +34,7 @@ token=""
 # startupScripts = 0, ask; 1, init.d; 2, systemd; 3, crontab
 # only crontab currently supported.
 startupScripts=3
-STARTEMUP=connectdstart.sh
+STARTEMUP=connectd_start
 
 # ----------------------------------------
 # web API URLs
@@ -74,30 +73,35 @@ displayVersion()
 ##### End Version #####
 
 #### check for updated installer
+# as written this only works on Debian operating systems
+# CHECKFORDEB should be set in calling script
+
 checkForUpdate()
 {
-    echo
-    echo "-------------------"
-    echo    
-    currentlyInstalled=$(dpkg --status connectdconnectd | grep Version | awk '{ print $2 }')
-    echo "connectdconnectd version $currentlyInstalled is currently installed."
+    if [ "$CHECKFORDEB" = "1" ]; then
+        echo
+        echo "-------------------"
+        echo    
+        currentlyInstalled=$(dpkg --status connectd | grep Version | awk '{ print $2 }')
+        echo "connectd version $currentlyInstalled is currently installed."
 
-    # check to see if updated version exists
-    resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:$APIKEY"  -H "token:$token" "$versionURL")
-    checkAPIResult "$versionURL" "$resp"
-    package=$(jsonval "$resp" "component")
-    latestVer=$(jsonval "$resp" "version")
-    echo    
-    echo "$latestVer is the most recent version of $package available from the Raspbian repository."
-    if [ "$currentlyInstalled" < "$latestVer" ]; then
-    	downloadMsg=$(jsonval "$resp" "description")
-    	echo "A new installer is available at $downloadMsg"
-        if ask "Would you like to download and install this file now?"; then
-            cd /tmp
-            wget "$downloadMsg" -O "$TMP_DIR"/connectdconnectdpackage.deb
-            dpkg -i "$TMP_DIR"/connectdconnectdpackage.deb &
-            exit
-       fi
+        # check to see if updated version exists
+        resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:$APIKEY"  -H "token:$token" "$versionURL")
+        checkAPIResult "$versionURL" "$resp"
+        package=$(jsonval "$resp" "component")
+        latestVer=$(jsonval "$resp" "version")
+        echo    
+        echo "$latestVer is the most recent version of $package available from the Raspbian repository."
+        if [ "$currentlyInstalled" < "$latestVer" ]; then
+    	    downloadMsg=$(jsonval "$resp" "description")
+    	    echo "A new installer is available at $downloadMsg"
+            if ask "Would you like to download and install this file now?"; then
+                cd /tmp
+                wget "$downloadMsg" -O "$TMP_DIR"/connectdpackage.deb
+                dpkg -i "$TMP_DIR"/connectdpackage.deb &
+                exit
+           fi
+        fi
     fi
 }
 
@@ -129,7 +133,7 @@ connectdCompatibility()
 # value and write it there.  Otherwise read the value from then
 # file.
 # mac is also determined here as it is used for the SERVICEBASENAME
-# in connectdinstaller_OEM
+# in connectd_installer_OEM
 
 getSerialID()
 {
@@ -290,6 +294,7 @@ getNumRange()
         while [ "$validInput" = "n" ]; do
             echo "Please select from the above options ($1 - $2):"
             read num
+            echo
             if [ "$(validateInput "$num" '[:digit:]')" -ne 0 ]; then
 	        printf "\nSorry, enter numbers only.\n"
 	    else
@@ -484,11 +489,11 @@ protocolSelection()
                     testLogin
                     deleteDevice
                     if [ -f $PID_DIR/"$CONNECTD_PORT".pid ]; then
-                        if [ -f "$BIN_DIR"/"$CONNECTD_PORT".sh ]; then
-                            "$BIN_DIR"/"$CONNECTD_PORT".sh stop -q > /dev/null
+                        if [ -f "$BIN_DIR"/"$CONNECTD_PORT" ]; then
+                            "$BIN_DIR"/"$CONNECTD_PORT" stop -q > /dev/null
                         else
                             if ask "May we stop all remot3.it services to continue?"; then
-                                killall connectdConnectd
+                                killall connectd
                                 echo "Run $STARTEMUP to restart all installed remot3.it Services."
                             fi
                             if [ -f $PID_DIR/"$CONNECTD_PORT".pid ]; then
@@ -560,18 +565,15 @@ deleteConnection()
 #		echo $fileNameRoot
  		# if daemon pid exists, stop daemon and remove start/stop script
  		if [ -f "$PID_DIR"/"$fileNameRoot".pid ]; then
- 		    if [ -f "$BIN_DIR"/"$fileNameRoot".sh ]; then
- 			"$BIN_DIR"/"$fileNameRoot".sh stop -q
- 			rm "$BIN_DIR"/"$fileNameRoot".sh
+ 		    if [ -f "$BIN_DIR"/"$fileNameRoot" ]; then
+ 			"$BIN_DIR"/"$fileNameRoot" stop -q
+ 			rm "$BIN_DIR"/"$fileNameRoot"
 		    fi
 		fi
 		if [ -f "$file" ]; then
 		    rm "$file"
 		fi
-		if [ -f "$BIN_DIR"/notify_"$fileNameRoot".sh ]; then
-		    rm "$BIN_DIR"/notify_"$fileNameRoot".sh
-		fi
-            fi
+           fi
         fi
     done
     if [ "$deviceFound" -eq 0 ]; then
@@ -592,7 +594,7 @@ deleteAllConnections()
     # now iterate through all enablement files to find it
     # stop all daemons.  
 
-	connectdstop.sh
+	connectd_stop
 
     	for file in "$CONNECTD_DIR"/*.conf; do
 	# get service name from UID
@@ -609,21 +611,18 @@ deleteAllConnections()
 #		    echo $fileNameRoot
  	    # if daemon pid exists, stop daemon and remove start/stop script
  	    if [ -f $PID_DIR/$fileNameRoot.pid ]; then
- 	        if [ -f "$BIN_DIR"/$fileNameRoot.sh ]; then
- 		    "$BIN_DIR"/$fileNameRoot.sh stop -q
- 		    rm "$BIN_DIR"/$fileNameRoot.sh
+ 	        if [ -f "$BIN_DIR"/$fileNameRoot ]; then
+ 		    "$BIN_DIR"/$fileNameRoot stop -q
+ 		    rm "$BIN_DIR"/$fileNameRoot
 		fi
 	    fi
 	    if [ -f "$file" ]; then
 		rm $file
 	    fi
-	    if [ -f "$BIN_DIR"/notify_$fileNameRoot.sh ]; then
-		rm "$BIN_DIR"/notify_$fileNameRoot.sh
-   	    fi
-        done
+       done
         if [ -f "$BIN_DIR"/$STARTEMUP ]; then
 	    rm "$BIN_DIR"/$STARTEMUP
-            rm "$BIN_DIR"/Connectd*.sh
+            rm "$BIN_DIR"/Connectd*
    	fi
 # also should clear out crontab at this point
 	disableStartup
@@ -813,7 +812,7 @@ getNewPassword() {
 ######### Begin Portal Login #########
 userLogin () #Portal login function
 {
-#    echo "connectdlibrary Username = $USERNAME Password = $PASSWORD"
+#    echo "connectd_library Username = $USERNAME Password = $PASSWORD"
 
     if [ "$USERNAME" != "" ]; then 
 	username="$USERNAME"
@@ -995,35 +994,12 @@ installEnablement()
 # before it is copied into place.  Otherwise we copy the template file directly to CONNECTD_DIR
 #
     if [ "$REGISTERSERVICE" = "1" ]; then
-        cat $CONNECTD_LIB_DIR/conf/"$PROTOCOL"."$PLATFORM" > $TMP_DIR/"$WEAVED_PORT".conf
+        cat $CONNECTD_LIB_DIR/conf/"$PROTOCOL"."$PLATFORM" > $TMP_DIR/"$CONNECTD_PORT".conf
     else
-        cat $CONNECTD_LIB_DIR/conf/"$PROTOCOL"."$PLATFORM" > "$WEAVED_DIR"/"$WEAVED_PORT".conf
+        cat $CONNECTD_LIB_DIR/conf/"$PROTOCOL"."$PLATFORM" > "$CONNECTD_DIR"/"$CONNECTD_PORT".conf
     fi
 }
 ######### End Install Enablement #########
-
-######### Install Notifier #########
-installNotifier()
-{
-        printf "."
-    chmod +x $CONNECTD_LIB_DIR/scripts/"$NOTIFIER"
-    if [ ! -f "$BIN_DIR"/"$NOTIFIER" ]; then
-	cp $CONNECTD_LIB_DIR/scripts/"$NOTIFIER" "$BIN_DIR"
-	#   printf "Copied %s to %s \n" "$NOTIFIER" "$BIN_DIR"
-    fi
-}
-######### End Install Notifier #########
-
-######### Install Send Notification #########
-installSendNotification()
-{
-        printf "."
-    sed s/REPLACE/"$CONNECTD_PORT"/ < $WEAVED_LIB_DIR/scripts/send_notification.sh > $TMP_DIR/send_notification.sh
-    chmod +x $TMP_DIR/send_notification.sh
-    mv $TMP_DIR/send_notification.sh "$BIN_DIR"/notify_$CONNECTD_PORT.sh
-    #    printf "Copied notify_%s.sh to %s \n" "$CONNECTD_PORT" "$BIN_DIR"
-}
-######### End Install Send Notification #########
 
 ######### Add line to cron ######
 cronAddLine()
@@ -1061,12 +1037,12 @@ installStartStop()
     printf "."
     # crontab approach
     if [ $startupScripts = 3 ]; then
-	sed s/CONNECTD_PORT=/WEAVED_PORT="$WEAVED_PORT"/ < "$WEAVED_LIB_DIR"/scripts/launchconnectd.sh > "$TMP_DIR"/"$WEAVED_PORT".sh
-	mv "$TMP_DIR"/"$CONNECTD_PORT".sh "$BIN_DIR"/"$WEAVED_PORT".sh
-	chmod +x "$BIN_DIR"/"$CONNECTD_PORT".sh
-	# backwards compatibility - move startconnectd.sh to weavedstart.sh
-	if [ -f "$BIN_DIR"/startconnectd.sh ]; then
-            mv "$BIN_DIR"/startconnectd.sh "$BIN_DIR"/"$STARTEMUP"
+	sed s/CONNECTD_PORT=/CONNECTD_PORT="$CONNECTD_PORT"/ < "$CONNECTD_LIB_DIR"/scripts/launch_connectd > "$TMP_DIR"/"$CONNECTD_PORT"
+	mv "$TMP_DIR"/"$CONNECTD_PORT" "$BIN_DIR"/"$CONNECTD_PORT"
+	chmod +x "$BIN_DIR"/"$CONNECTD_PORT"
+	# backwards compatibility - move startconnectd to weavedstart
+	if [ -f "$BIN_DIR"/startconnectd ]; then
+            mv "$BIN_DIR"/startconnectd "$BIN_DIR"/"$STARTEMUP"
 	fi
 	if [ ! -f "$BIN_DIR"/$STARTEMUP ]; then
             cp "$CONNECTD_LIB_DIR"/scripts/$STARTEMUP "$BIN_DIR"
@@ -1081,18 +1057,18 @@ installStartStop()
 	    disableStartup
 	fi
 	# see if there is an entry to start the chosen service daemon already
-	checkStartConnectd=$(grep -c "$CONNECTD_PORT.sh" "$BIN_DIR"/"$STARTEMUP" )
+	checkStartConnectd=$(grep -c "$CONNECTD_PORT" "$BIN_DIR"/"$STARTEMUP" )
 	# if not, add it
 	if [ $checkStartConnectd = 0 ]; then
-	    sed s/REPLACE_TEXT/"$CONNECTD_PORT"/ < $WEAVED_LIB_DIR/scripts/connectdstart.add > $TMP_DIR/weavedstart.add
-	    sh -c "cat $TMP_DIR/connectdstart.add >> $BIN_DIR/$STARTEMUP"
-            rm $TMP_DIR/connectdstart.add
+	    sed s/REPLACE_TEXT/"$CONNECTD_PORT"/ < $CONNECTD_LIB_DIR/scripts/connectd_start.add > $TMP_DIR/connectd_start.add
+	    sh -c "cat $TMP_DIR/connectd_start.add >> $BIN_DIR/$STARTEMUP"
+            rm $TMP_DIR/connectd_start.add
 	fi
 	# see if there is an entry to start the listener service daemon schannel.x already
-	checkStartSchannel=$(grep -c "connectdschannel" "$BIN_DIR"/"$STARTEMUP" )
+	checkStartSchannel=$(grep -c "connectd_schannel" "$BIN_DIR"/"$STARTEMUP" )
 	# if not, add it
 	if [ $checkStartSchannel = 0 ]; then
-	    sh -c "echo '"/usr/bin/connectdschannel" start' >> $BIN_DIR/$STARTEMUP"
+	    sh -c "echo '"/usr/bin/connectd_schannel" start' >> $BIN_DIR/$STARTEMUP"
 	fi
 	chmod +x "$BIN_DIR"/$STARTEMUP
     fi
@@ -1115,7 +1091,7 @@ checkUID()
     printf "."
     checkforUID="$(tail "$TMP_DIR"/"$CONNECTD_PORT".conf | grep -c UID )"
     if [ $checkforUID = 2 ]; then
-	#    cp "$CONNECTD_LIB_DIR"/"$WEAVED_PORT".conf /"$WEAVED_DIR"/
+	#    cp "$CONNECTD_LIB_DIR"/"$CONNECTD_PORT".conf /"$CONNECTD_DIR"/
 	uid=$(tail "$TMP_DIR"/"$CONNECTD_PORT".conf | grep UID | awk -F "UID" '{print $2}' | xargs echo)
 	#   printf "\n\nYour device UID has been successfully provisioned as: %s. \n\n" "$uid"
     else
@@ -1133,7 +1109,7 @@ retryFetchUID()
 	fetchUID
 	checkforUID="$(tail "$TMP_DIR"/"$CONNECTD_PORT".conf | grep -c UID)"
 	if [ "$checkforUID" = 2 ]; then
-	    #        cp "$CONNECTD_LIB_DIR"/"$WEAVED_PORT".conf /"$WEAVED_DIR"/
+	    #        cp "$CONNECTD_LIB_DIR"/"$CONNECTD_PORT".conf /"$CONNECTD_DIR"/
 	    uid="$(tail "$TMP_DIR"/"$CONNECTD_PORT".conf | grep UID | awk -F "UID" '{print $2}' | xargs echo)"
 	    #       printf "\n\nYour device UID has been successfully provisioned as: %s. \n\n" "$uid"
 	    break
@@ -1169,7 +1145,7 @@ preregisterUID()
     elif [ "$test3" = 1 ]; then
 	printf "Sorry, the pre-registration of UID: %s is failing. You can finish registration\n" "$uid"
 	printf "manually using the following steps: \n\n"
-	printf "1) From the same network as your device, please log into https://connectd.com \n"
+	printf "1) From the same network as your device, please log into https://remot3.it \n"
 	printf "2) Once logged in, please visit the following URL:\n"
         printf "https://developer.connectd.com/portal/members/registerDevice.php \n"
 	printf "3) Enter a name for your Service.\n"
@@ -1216,7 +1192,7 @@ getSecret()
 		echo "password $secret" >> "$TMP_DIR"/"$CONNECTD_PORT".conf
 
 	#       finally copy valid assembled enablement file to $CONNECTD_DIR
-		mv "$TMP_DIR"/"$CONNECTD_PORT".conf "$WEAVED_DIR"/"$WEAVED_PORT".conf
+		mv "$TMP_DIR"/"$CONNECTD_PORT".conf "$CONNECTD_DIR"/"$CONNECTD_PORT".conf
     	elif [ $test2 = 1 ]; then
 		printf "For some reason, you were logged out and must log back in. \n"
 		userLogin
@@ -1257,7 +1233,7 @@ startService()
     printf "\n"
     logger "remot3.it Connection starting: $alias"
     echo "Registering $alias" ; sleep 1;printf ".";sleep 1;printf ".";sleep 1;printf ".";sleep 1;printf ".";sleep 1;printf ".";sleep 1;printf ".";sleep 1;printf ".";sleep 1; echo ; echo
-    "$BIN_DIR"/"$CONNECTD_PORT".sh restart > /dev/null
+    "$BIN_DIR"/"$CONNECTD_PORT" restart > /dev/null
 }
 ######### End Start Service #########
 
@@ -1265,13 +1241,13 @@ startService()
 overridePort()
 {
     if [ "$CUSTOM" = 1 ]; then
-	cp "$CONNECTD_DIR"/"$WEAVED_PORT".conf $TMP_DIR/
+	cp "$CONNECTD_DIR"/"$CONNECTD_PORT".conf $TMP_DIR/
 	echo "proxy_dest_port $PORT" >> $TMP_DIR/"$CONNECTD_PORT".conf
-	mv $TMP_DIR/"$CONNECTD_PORT".conf "$WEAVED_DIR"/
+	mv $TMP_DIR/"$CONNECTD_PORT".conf "$CONNECTD_DIR"/
     elif [ "$CUSTOM" = 2 ]; then
-	cp "$CONNECTD_DIR"/"$WEAVED_PORT".conf "$TMP_DIR"/
+	cp "$CONNECTD_DIR"/"$CONNECTD_PORT".conf "$TMP_DIR"/
 	echo "proxy_dest_port $PORT" >> "$TMP_DIR"/"$CONNECTD_PORT".conf
-	mv "$TMP_DIR"/"$CONNECTD_PORT".conf "$WEAVED_DIR"/
+	mv "$TMP_DIR"/"$CONNECTD_PORT".conf "$CONNECTD_DIR"/
     fi
 }
 ######### End Port Override #########
@@ -1279,7 +1255,7 @@ overridePort()
 ######### Delete device #########
 deleteDevice()
 {
-    uid=$(tail "$CONNECTD_DIR"/$WEAVED_PORT.conf | grep UID | awk -F "UID" '{print $2}' | xargs echo)
+    uid=$(tail "$CONNECTD_DIR"/$CONNECTD_PORT.conf | grep UID | awk -F "UID" '{print $2}' | xargs echo)
     result=$(curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token")
     checkAPIResult "$deleteURL $uid" "$result"
 
@@ -1313,7 +1289,7 @@ makeConnection()
     CUSTOM=2	# forces port to be written to conf file
     CONNECTD_PORT=Connectd"$PROTOCOL""$PORT"
     debug "$CONNECTD_PORT"
-    if [ -f "$CONNECTD_DIR"/"$WEAVED_PORT".conf ]; then
+    if [ -f "$CONNECTD_DIR"/"$CONNECTD_PORT".conf ]; then
         echo "A $PROTOCOL service has already been configured on port $PORT."
         echo "Skipping $alias..."
     else
@@ -1326,8 +1302,6 @@ makeConnection()
 configureConnection()
 {
     installEnablement
-    installNotifier
-    installSendNotification
     installStartStop
     # REGISTERSERVICE controls (in OEM installer) whether or not services are registered at the time of installation
     if [ "$REGISTERSERVICE" = "1" ]; then
@@ -1342,7 +1316,7 @@ configureConnection()
     	    startService
 	    # there should only be one UDP listener startup regardless of the number of services
 	    # the startup script will only start one instance
-	    connectdschannel start > /dev/null
+	    connectd_schannel start > /dev/null
 	fi
     fi
 }

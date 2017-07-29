@@ -1,6 +1,6 @@
 #!/bin/sh
 
-#  launch_connectd
+#  launch_connectd - template file for start/stop of individual services
 #  
 #
 #  remot3.it, Inc. Copyright 2017. All rights reserved.
@@ -24,9 +24,9 @@ displayVersion()
 {
     printf "Connectd daemon start/stop script Version: %s \n" "$VERSION"
     # check for root user at this point
-    if [[ $EUID -ne 0 ]]; then
-        echo "Running $CONNECTD_PORT.sh requires root access." 1>&2
-        echo "Please run sudo $CONNECTD_PORT.sh" 1>&2
+    if ! [ "$(id -u)" = 0 ]; then
+        echo "Running $CONNECTD_PORT requires root access." 1>&2
+        echo "Please run sudo $CONNECTD_PORT" 1>&2
 	exit 1
     fi
 }
@@ -52,30 +52,34 @@ isRunningCmd()
 	isRunning=0
 	while read p; do
   	    psPID=$(echo $p | awk '{ print $1 }')
-	    if [[ "$psPID" == "$runningPID" && "$isRunningps" != "0" ]]; then
+	    if [ "$psPID" = "$runningPID" ]; then
+                if [ "$isRunningps" != "0" ]; then
 #		echo "Matching PID! $psPID"
-		isRunning=1
-		return
-	    fi
+		    isRunning=1
+		    return
+	        fi
+            fi
 	done < /tmp/connectdps.txt
 }
 
 stopConnectd()
 {
 	isRunningCmd
-	if [[ $isRunning != 0 && $psPID == $runningPID ]]; then
+	if [ $isRunning != 0 ]; then
+            if [ $psPID = $runningPID ]; then
 		echo "Stopping $CONNECTD_PORT..."
 		kill $runningPID 2> /dev/null
 		rm $PIDPATH 2> /dev/null
-	else
+	    else
 		echo "$CONNECTD_PORT is not currently active. Nothing to stop."
-	fi
+	    fi
+        fi
 }
 
 startConnectd()
 {
 	isRunningCmd
-	if [ $isRunning == 0 ]; then
+	if [ $isRunning = 0 ]; then
 		echo "Starting $CONNECTD_PORT..."
 		$BIN_DIR/$DAEMON -f $CONNECTD_DIR/$CONNECTD_PORT.conf -d $PID_DIR/$CONNECTD_PORT.pid > $LOG_DIR/$CONNECTD_PORT.log
 		tail $LOG_DIR/$CONNECTD_PORT.log
