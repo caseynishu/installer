@@ -16,7 +16,7 @@ e460a2e05f1d1bb1593d6482d0c48bc1  ./usr/share/connectd/scripts/connectd_start.ad
 83a95e761c60e4782ca107f4bba86475  ./usr/share/connectd/scripts/connectd_start
 0cd786456055616bb71416379e0791e1  ./usr/share/connectd/scripts/launch_connectd
 aac19898ac66984d7a5dc8c654591b22  ./usr/bin/connectd_factoryreset
-29b55a7b24448bd4c277378d460247d8  ./usr/bin/connectd_stop
+af8f196287de909e29a51d6d6a12c050  ./usr/bin/connectd_stop
 3681bdd00deb1e00de1e03f7331121a9  ./usr/bin/connectd.pi
 3701d1dc028a276b380e327304e0c2cf  ./usr/bin/remot3it_wlib.sh
 5f7d5edadcc2271662503a5a24eaa90a  ./usr/bin/connectd_enable_bulk_reg

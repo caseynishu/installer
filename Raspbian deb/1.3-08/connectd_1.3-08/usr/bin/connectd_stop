@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/bin/sh
 
-# weavedStop.sh, stops all running Weaved services
+# connectd_stop, stops all running connectd services
 
-for f in /usr/bin/Weaved*.sh; do
+for f in /usr/bin/Connectd*.sh; do
 	$f stop
 done
-weavedschannel stop
+connectd_schannel stop

@@ -1,2 +1,0 @@
-X: remot3it: binary-file-built-without-LFS-support usr/bin/schannel.pi
-X: remot3it: binary-file-built-without-LFS-support usr/bin/weavedconnectd.pi
