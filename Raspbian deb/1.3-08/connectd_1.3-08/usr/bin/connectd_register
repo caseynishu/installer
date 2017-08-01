@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/bin/sh
 
-#  remot3it_register
+#  connectd_register
 #  for mfg line configuration of services, or preparation of a master image for cloning.
 #
-#  Run 'sudo remot3it_register' to install remot3it
+#  Run 'sudo connectd_register' to install remot3it
 #  attachment services for tcp listeners.
 #
 #  Edit the makeConnection lines towards the bottom of this file to specify
@@ -16,13 +16,13 @@
 #  http on port 80 (commented out)
 #  tcp on port 3389 (commented out)
 #
-#  remot3it, Inc. Copyright 2016. All rights reserved.
+#  remot3it, Inc. Copyright 2017. All rights reserved.
 #
 
 ##### Settings #####
-VERSION=v1.3-07
+VERSION=v1.3-08
 AUTHOR="Gary Worsham"
-MODIFIED="August 02, 2016"
+MODIFIED="July 30, 2017"
 DEBUG="0"
 #=======================================================================
 # remot3it recommends running this script (with real username/password) from /tmp folder.
@@ -59,14 +59,14 @@ STARTDAEMONSONREBOOT="1"
 
 #==========================================================================
 
-source /usr/bin/remot3it_library
+. /usr/bin/remot3it_library
 
 ######### Main Program #########
 main()
 {
     displayVersion
-# bashCheck can be commented out on known good platform
-    bashCheck
+#    bashCheck can be commented out on known good platform
+#    bashCheck
     platformDetection
     echo "Platform = " $PLATFORM 
 #-----------------------------------------------------------------------

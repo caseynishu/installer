@@ -295,7 +295,7 @@ getNumRange()
             echo "Please select from the above options ($1 - $2):"
             read num
             echo
-            if [ "$(validateInput "$num" '[:digit:]')" -ne 0 ]; then
+            if [ $(validateInput "$num" "0123456789") -ne 0 ]; then
 	        printf "\nSorry, enter numbers only.\n"
 	    else
 #		echo "You entered: $num"
@@ -776,7 +776,7 @@ getNewPassword() {
 #	read  -s password
 	read  password  # adjust for ash/dash
 
-        if [ $(validateInput "$password" '\$ \@ \! \- \_ \. [:alnum:] [:space:]') != 0 ]; then
+        if [ $(validateInput "$password" "\$ \@ \! \- \_ \. [a-zA-Z0-9]") != 0 ]; then
 	    printf "\nSorry, password contains one or more invalid characters.\n"
 	    password=""
 	    passwordOK=-1
@@ -1218,7 +1218,7 @@ registerDevice()
         fi    
         printf "Only letters, numbers, underscore, space and dash are allowed.\n\n"
         read alias
-        if [ "$(validateInput "$alias" '\- \_ \. [:alnum:] [:space:]')" != 0 ]; then
+        if [ $(validateInput "$alias" "\- \_ \. [a-zA-Z0-9]") != 0 ]; then
             printf "\nSorry, $alias contains one or more invalid characters.\n\n"
             alias=""
         fi
