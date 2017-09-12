@@ -881,8 +881,8 @@ echo
 # 404 is triggered when you enter some special character in e-mail.  this specific search may fail if API
 # server is moved
     	login404=$(echo "$resp" | grep "404 Page Not Found" | sed 's/"//g')
-        reason=$(jsonval "$resp" "reason")
-	echo "Login Error: $loginFailed $slimError $login404 $reason"
+    	apikeyerror=$(echo "$resp" | grep "The API application key is invalid" | sed 's/"//g')
+	echo "Login Error: $loginFailed $slimError $login404 $apikeyerror"
     fi
 set +x
     # invalid cert can happen if system date is set to before current date
@@ -894,9 +894,9 @@ set +x
 ######### Test Login #########
 testLogin()
 {
-    while [ "$loginFailed" != "" ] || [ "$slimError" != "" ] || [ "$login404" != "" ]; do
+    while [ "$loginFailed" != "" ] || [ "$slimError" != "" ] || [ "$login404" != "" ] || [ "$apikeyerror" != "" ]; do
 #	clear
-	printf "\n\nYou have entered either an incorrect username or password.\n"
+	printf "\n\nYou have entered either an incorrect username, password, or Developer API Key.\n"
         sleep 1
 	printf "\nPlease try again.  Press the 'Enter' key to continue.\n"
         read dummyValue

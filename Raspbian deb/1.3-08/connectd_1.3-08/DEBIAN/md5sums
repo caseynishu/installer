@@ -20,12 +20,12 @@ b4b7c33a5a92a00ea43e9620892e1137  ./usr/bin/connectd_stop
 3681bdd00deb1e00de1e03f7331121a9  ./usr/bin/connectd.pi
 3701d1dc028a276b380e327304e0c2cf  ./usr/bin/remot3it_wlib.sh
 5f7d5edadcc2271662503a5a24eaa90a  ./usr/bin/connectd_enable_bulk_reg
-2611f8cec2b67140648ebf62a9ee06df  ./usr/bin/connectd_control
-4be49114dd19935acc5f42b566508085  ./usr/bin/connectd_library
+4d5b9e971df6f8c61afba4948c96e9ec  ./usr/bin/connectd_control
+b4e19bda0401347d8a813da159b09529  ./usr/bin/connectd_library
 25bd606b0000e22528cd34d2cce22d0e  ./usr/bin/connectd_installer
 ec83852a971bcb66365f3f8db46726ed  ./usr/bin/connectd_migrate_from_weaved
 4487bfe07034fc11f4a97712df6d7ca9  ./usr/bin/connectd_schannel
 132607b720c74ca53190132e4ba11d2e  ./usr/bin/bintester
 d2ea9a4fed90f987ff847a607f8782e5  ./usr/bin/connectd_task_notify
-51eec932c74516a79f5b0dd703b662d5  ./usr/bin/connectd_register
+31076bc89980f84d103faa5a4e8b2250  ./usr/bin/connectd_register
 21212e70d9f47e72840225592f34ee18  ./usr/bin/schannel.pi

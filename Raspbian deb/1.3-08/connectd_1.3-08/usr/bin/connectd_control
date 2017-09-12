@@ -2,24 +2,24 @@
 #
 #  Remot3.it Control Script manages remot3.it devices on a platform
 #
-#  remot3it_control <flags> command 
+#  connectd_control <flags> command 
 #
 #  <optional>  -v = verbose -v -v =maximum verbosity
 #
 #  will store info in REMOT3IT_DIR
 #
 #
-#  remot3.it Inc : http://remot3.it
+#  remot3.it Inc : https://remot3.it
 #
 #
 
 # include shell script lib
-source /usr/bin/remot3it_wlib.sh
+. /usr/bin/remot3it_wlib.sh
 
 #set -x
 
 #### Settings #####
-VERSION=0.0.5
+VERSION=0.0.6
 MODIFIED="September 12, 2017"
 #
 # Config Dir
@@ -189,7 +189,7 @@ update_version()
             sversion=$(cat "$REMOT3IT_DIR/$1.ver")
         fi
         # Check if versions are the same
-        if [ "$version" == "$sversion" ]; then
+        if [ "$version" = "$sversion" ]; then
             echo "OK: package $1 version has not changed ($version)"
             return 0
         fi
@@ -212,7 +212,7 @@ update_version()
             status=$(jsonval "$(echo -n "$resp")" "status")
             #
             # check return code, if OK cache this new version
-            if [ "$status" == "true" ]; then
+            if [ "$status" = "true" ]; then
                 echo "$version" > "$REMOT3IT_DIR/$1.ver" 
                 echo "OK: new version $version updated to service for package $1"
             else
@@ -557,7 +557,7 @@ else
 
 #system status
 
-if [ "$1" == "all" ]; then
+if [ "$1" = "all" ]; then
     # return the status of all
     # walk through available
     echo "status on all devices"
@@ -712,7 +712,7 @@ bprovision()
         ret=3
         echo "ERROR: enable requires one parameter, either specific device name or all for all devices"
     else
-        if [ "$1" == "all" ] || [ -z "${@}" ]; then
+        if [ "$1" = "all" ] || [ -z "${@}" ]; then
             # to bulk provision must be in pfiles but not avaialble
             for f in $PROVISION_DEFAULT/*
             do
@@ -759,7 +759,7 @@ enable()
     if [ -z "${@}" ]; then
         echo "ERROR: enable requires one parameter, either specific device name or all for all devices"
     else
-        if [ "$1" == "all" ] || [ -z "${@}" ]; then
+        if [ "$1" = "all" ] || [ -z "${@}" ]; then
             echo "OK: enable all"
             #itterate through available files and symlink to active
             for f in $DEVICES_AVAILABLE/*
@@ -803,7 +803,7 @@ disable()
     if [ -z "${@}" ]; then
         echo "ERROR: disable requires one parameter, either specific device name or all for all devices"
     else
-        if [ "$1" == "all" ]; then
+        if [ "$1" = "all" ]; then
             echo "OK: disable all"
             for f in $DEVICES_AVAILABLE/*
             do
@@ -841,7 +841,7 @@ start()
     if [ -z "${@}" ]; then
         echo "ERROR: start requires one parameter, either specific device name or all for all devices"
     else
-        if [ "$1" == "all" ]; then
+        if [ "$1" = "all" ]; then
             #loop through all enabled but not active devices and start them
             for f in $DEVICES_ACTIVE/*
             do
@@ -881,7 +881,7 @@ stop()
     if [ -z "${@}" ]; then
         echo "ERROR: stop requires one parameter, either specific device name or all for all devices"
     else
-        if [ "$1" == "all" ]; then          
+        if [ "$1" = "all" ]; then          
             #loop through all running devices and stop them
             for f in $DEVICES_ACTIVE/*
             do
@@ -945,7 +945,7 @@ delete()
     if [ -z "${@}" ]; then
         echo "ERROR: delete requires one parameter, either specific device name or all for all devices"
     else
-        if [ "$1" == "all" ]; then
+        if [ "$1" = "all" ]; then
             #loop through all running devices and delete them
             echo "all"
         else
@@ -982,7 +982,7 @@ login()
         
         # check return value and exit if error
         retval=$?
-        if [ "$retval" == 0 ]; then
+        if [ "$retval" = 0 ]; then
             echo "ERROR: $loginerror"
             return 1 
         fi

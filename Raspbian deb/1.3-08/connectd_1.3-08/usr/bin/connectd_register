@@ -68,18 +68,10 @@ main()
     platformDetection
     echo "Platform = " $PLATFORM 
 #-----------------------------------------------------------------------
-#
-    if [ "$DEVELOPERKEY" == "" ]; then
-        echo "The DEVELOPERKEY variable is blank.  Please get your Developer API key from the 'My Account' page at remot3.it."
-	exit
-    else
-	developerkey="$DEVELOPERKEY"
-    fi
-#-----------------------------------------------------------------------
 #   connectdCompatibility can be commented out on known good network
 #   connectdCompatibility
 
-    if [ "$REGISTERSERVICE" == "1" ]; then
+    if [ "$REGISTERSERVICE" = "1" ]; then
     	if [ "$1" != "" ]; then
             USERNAME=$1
         fi
@@ -132,7 +124,7 @@ main()
 # =============================================  
 
     echo
-    if [ "$REGISTERSERVICE" == "0" ]; then
+    if [ "$REGISTERSERVICE" = "0" ]; then
 	echo "Installed the following service enablement files:"
 	ls -l $CONNECTD_DIR
     fi
