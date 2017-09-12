@@ -12,7 +12,7 @@
 ##### Settings #####
 LIBVERSION=lib_v1.3-08_Pi
 AUTHOR="Gary Worsham"
-LIBMODIFIED="July 29, 2017"
+LIBMODIFIED="September 09, 2017"
 DAEMON=connectd
 
 # ----------------------------------------
@@ -39,7 +39,7 @@ STARTEMUP=connectd_start
 # ----------------------------------------
 # web API URLs
 
-version=apv/v22.12
+version=apv/v23.5
 server=api.remot3.it
 
 loginURL=https://$server/$version/user/login
@@ -78,21 +78,29 @@ displayVersion()
 
 checkForUpdate()
 {
+# set -x
     if [ "$CHECKFORDEB" = "1" ]; then
         echo
         echo "-------------------"
-        echo    
-        currentlyInstalled=$(dpkg --status connectd | grep Version | awk '{ print $2 }')
-        echo "connectd version $currentlyInstalled is currently installed."
+        echo  
+        dpkg --status "$PACKAGE" 2> "$TMP_DIR"/pkgcheck 
+        isItInstalled="$?"
+        if [ "$isItInstalled" -eq 1 ]; then
+            echo "$PACKAGE is not yet installed."
+	    return
+        fi 
+#unset -x
+        currentlyInstalled=$(dpkg --status "$PACKAGE" | grep Version | awk '{ print $2 }')
+        echo "$PACKAGE version $currentlyInstalled is currently installed."
 
         # check to see if updated version exists
-        resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:$APIKEY"  -H "token:$token" "$versionURL")
+        resp=$(curl -s -S -X GET -H "content-type:application/json" -H "developerkey:$developerkey"  -H "token:$token" "$versionURL")
         checkAPIResult "$versionURL" "$resp"
         package=$(jsonval "$resp" "component")
         latestVer=$(jsonval "$resp" "version")
         echo    
         echo "$latestVer is the most recent version of $package available from the Raspbian repository."
-        if [ "$currentlyInstalled" < "$latestVer" ]; then
+        if [ "$currentlyInstalled" != "$latestVer" ]; then
     	    downloadMsg=$(jsonval "$resp" "description")
     	    echo "A new installer is available at $downloadMsg"
             if ask "Would you like to download and install this file now?"; then
@@ -205,7 +213,7 @@ checkforServices()
             yooareell="$deviceURL/$uid"
             debug "$yooareell"
 
-	    resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:$APIKEY"  -H "token:$token" "$yooareell")
+	    resp=$(curl -s -S -X GET -H "content-type:application/json" -H "developerkey:$developerkey"  -H "token:$token" "$yooareell")
             checkAPIResult "$yooareell" "$resp"
 
 	    # this next test checks to see if device is registered.  
@@ -546,7 +554,7 @@ deleteConnection()
         uid="$(grep '^UID' "$file" | awk '{print $2}')"
 	yooareell="$deviceURL/$uid"
 
-	resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:$APIKEY"  -H "token:$token" "$yooareell")
+	resp=$(curl -s -S -X GET -H "content-type:application/json" -H "developerkey:$developerkey"  -H "token:$token" "$yooareell")
 
         serviceName=$(jsonval "$resp" "name")
 
@@ -557,7 +565,7 @@ deleteConnection()
 	    deviceType=$(jsonval "$resp" "title")
 	    if ask "Are you sure you want to delete the remot3.it $deviceType attachment $serviceName?"; then
 		printf "Deleting $serviceName...\n"
-		result=$(curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token")
+		result=$(curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "developerkey:$developerkey" -H "token:$token")
 
                 checkAPIResult "$deleteURL" "$result"
 
@@ -599,12 +607,12 @@ deleteAllConnections()
     	for file in "$CONNECTD_DIR"/*.conf; do
 	# get service name from UID
             uid="$(grep '^UID' $file | awk '{print $2}')"
-	    resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:$APIKEY"  -H "token:$token" "$deviceURL/$uid")
+	    resp=$(curl -s -S -X GET -H "content-type:application/json" -H "developerkey:$developerkey"  -H "token:$token" "$deviceURL/$uid")
             serviceName="$(jsonval $resp name)"
 
 	    printf "\nDeleting %s...\n" "$serviceName"
 	
-	    result=$(curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token")
+	    result=$(curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "developerkey:$developerkey" -H "token:$token")
             checkAPIResult "$deleteURL" "$result"
 
 	    fileNameRoot=$(echo "$file" |xargs basename | awk -F "." '{print $1}')
@@ -667,8 +675,6 @@ askRegisterLogin()
         printf "     4) Exit                                          \n"
         printf "                                                      \n"
         printf "********************************************************\n\n"
-        printf "       Use your Connectd account with remot3.it! \n"
-        printf "********************************************************\n\n"
 
         getNumRange 1 4    
         get_num=$?
@@ -714,7 +720,7 @@ getEmail()
 registerUser()
 {
     getEmail
-    resp=$(curl -s $regAccountURL -X POST -d "{\"email\":\"$username\"}" -H "content-type:application/json" -H "apikey:$APIKEY" 2> $TMP_DIR/.curlerr)
+    resp=$(curl -s $regAccountURL -X POST -d "{\"email\":\"$username\"}" -H "content-type:application/json" -H "developerkey:$developerkey" 2> $TMP_DIR/.curlerr)
 
     debug $resp
     value=$(jsonval "$resp" "status") 
@@ -744,7 +750,7 @@ enterVerificationCode()
     	getNewPassword
     done
 
-     resp=$(curl -s $regAccountURLVerified -X POST -d "{\"email\":\"$username\", \"password\":\"$password\", \"shortcode\":\"$registrationCode\"}" -H "content-type:application/json" -H "apikey:$APIKEY" 2> $TMP_DIR/.curlerr)
+     resp=$(curl -s $regAccountURLVerified -X POST -d "{\"email\":\"$username\", \"password\":\"$password\", \"shortcode\":\"$registrationCode\"}" -H "content-type:application/json" -H "developerkey:$developerkey" 2> $TMP_DIR/.curlerr)
 
     debug $resp
     value=$(jsonval "$resp" "status") 
@@ -833,6 +839,12 @@ userLogin () #Portal login function
 	    stty echo
         fi
    fi
+   if [ "$developerkey" != "" ]; then 
+       developerkey="$developerkey"
+   else        
+        printf "Please enter your remot3.it Developer API key: \n"
+	read developerkey
+    fi
 #   echo $username $password $authhash
    signInAPI
 }
@@ -841,13 +853,13 @@ userLogin () #Portal login function
 ####### SignInAPI ###################
 signInAPI()
 {
-    debug "U:$username P:$password A:$authhash"
- set +x
+    debug "U:$username P:$password A:$authhash D:$developerkey"
+# set +x
     # if AUTHHASH is REPLACE_AUTHHASH it means user just wants to use password
     if [ "$AUTHHASH" = "REPLACE_AUTHHASH" ]; then
-          resp=$(curl -s -S -X POST -H "apikey: $APIKEY" -H "Content-Type:application/json" -H "Cache-Control:no-cache" -d "{ \"username\" : \"$username\", \"password\" : \"$password\" }" "$loginURL" 2> $TMP_DIR/.curlerr)
+          resp=$(curl -s -S -X POST -H "developerkey:$developerkey" -H "Content-Type:application/json" -H "Cache-Control:no-cache" -d "{ \"username\" : \"$username\", \"password\" : \"$password\" }" "$loginURL" 2> $TMP_DIR/.curlerr)
     else
-             resp=$(curl -s -S -X POST -H "apikey: $APIKEY" -H "Content-Type:application/json" -H "Cache-Control:no-cache" -d "{ \"username\" : \"$username\", \"authhash\" : \"$AUTHHASH\" }" "$loginAuthURL" 2> $TMP_DIR/.curlerr)
+             resp=$(curl -s -S -X POST -H "developerkey:$developerkey" -H "Content-Type:application/json" -H "Cache-Control:no-cache" -d "{ \"username\" : \"$username\", \"authhash\" : \"$AUTHHASH\" }" "$loginAuthURL" 2> $TMP_DIR/.curlerr)
     fi
     checkAPIResult 'login' "$resp"
 
@@ -869,7 +881,8 @@ echo
 # 404 is triggered when you enter some special character in e-mail.  this specific search may fail if API
 # server is moved
     	login404=$(echo "$resp" | grep "404 Page Not Found" | sed 's/"//g')
-	echo "Error" $loginFailed $slimError $login404
+        reason=$(jsonval "$resp" "reason")
+	echo "Login Error: $loginFailed $slimError $login404 $reason"
     fi
 set +x
     # invalid cert can happen if system date is set to before current date
@@ -923,7 +936,7 @@ checkForDeviceName()
             port="$(grep '^port' "$file" | awk '{print $2}')"
 	    yooareell=$(echo  "$deviceURL/$uid")
 
-	    resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:$APIKEY"  -H "token:$token" "$yooareell")
+	    resp=$(curl -s -S -X GET -H "content-type:application/json" -H "developerkey:$developerkey"  -H "token:$token" "$yooareell")
             checkAPIResult "$yooareell" "$resp"
 
 	    # this next test checks to see if device is registered.  
@@ -963,7 +976,7 @@ convertExistingUIDs()
 	# get service name from UID
                 uid="$(grep '^UID' "$file" | awk '{print $2}')"
 
-                result=$(curl -s $deviceHWIDURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"hardwareid\":\"$SerialID\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token" 2> /$TMP_DIR/.curlerr)
+                result=$(curl -s $deviceHWIDURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"hardwareid\":\"$SerialID\"}" -H "Content-Type:application/json" -H "developerkey:$developerkey" -H "token:$token" 2> /$TMP_DIR/.curlerr)
 
                 checkAPIResult "$deviceHWID" "$result"
 
@@ -1128,7 +1141,7 @@ retryFetchUID()
 preregisterUID()
 {
     printf "."
-    preregUID="$(curl -s $preregdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicetype\":\"$DEVICETYPE\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token")"
+    preregUID="$(curl -s $preregdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicetype\":\"$DEVICETYPE\"}" -H "Content-Type:application/json" -H "developerkey:$developerkey" -H "token:$token")"
     checkAPIResult "$preregdeviceURL" "$preregUID"
 
     test1="$(echo "$preregUID" | grep -c "true" )"
@@ -1165,11 +1178,11 @@ getSecret()
     printf "."
 
     if [ "$PROTOCOL" = "rmt3" ]; then
-        secretCall="$(curl -s $regdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$SerialID\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token")"    
+        secretCall="$(curl -s $regdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$SerialID\"}" -H "Content-Type:application/json" -H "developerkey:$developerkey" -H "token:$token")"    
 
     else
 
-        secretCall="$(curl -s $regdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$SerialID\", \"skipemail\":\"true\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token")"
+        secretCall="$(curl -s $regdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$SerialID\", \"skipemail\":\"true\"}" -H "Content-Type:application/json" -H "developerkey:$developerkey" -H "token:$token")"
     
     fi
 
@@ -1256,7 +1269,7 @@ overridePort()
 deleteDevice()
 {
     uid=$(tail "$CONNECTD_DIR"/$CONNECTD_PORT.conf | grep UID | awk -F "UID" '{print $2}' | xargs echo)
-    result=$(curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token")
+    result=$(curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "developerkey:$developerkey" -H "token:$token")
     checkAPIResult "$deleteURL $uid" "$result"
 
     #    printf "\n\n"
@@ -1267,7 +1280,7 @@ deleteDevice()
 deleteDeviceByUid()
 {
     uid="$1"
-    resp=$(url -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token")
+    resp=$(url -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "developerkey:$developerkey" -H "token:$token")
     checkAPIResult "$deleteURL $uid" "$resp"
 }
 ######### End Delete device by UID #########

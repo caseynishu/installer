@@ -3,26 +3,26 @@
 #  connectd_register
 #  for mfg line configuration of services, or preparation of a master image for cloning.
 #
-#  Run 'sudo connectd_register' to install remot3it
+#  Run 'sudo connectd_register' to install remot3it connectd
 #  attachment services for tcp listeners.
 #
 #  Edit the makeConnection lines towards the bottom of this file to specify
-#  which remot3it services you wish to install.
+#  which remot3it connectd services you wish to install.
 #
-#  Installs these remot3it services:
+#  Installs these remot3it connectd services:
 #
 #  rmt3
 #  ssh on port 22 (commented out)
 #  http on port 80 (commented out)
 #  tcp on port 3389 (commented out)
 #
-#  remot3it, Inc. Copyright 2017. All rights reserved.
+#  remot3.it, Inc. Copyright 2017. All rights reserved.
 #
 
 ##### Settings #####
 VERSION=v1.3-08
 AUTHOR="Gary Worsham"
-MODIFIED="July 30, 2017"
+MODIFIED="September 12, 2017"
 DEBUG="0"
 #=======================================================================
 # remot3it recommends running this script (with real username/password) from /tmp folder.
@@ -34,7 +34,7 @@ DEBUG="0"
 USERNAME=""
 PASSWORD=""
 AUTHHASH="REPLACE_AUTHHASH"
-APIKEY="WeavedDeveloperToolsWy98ayxR"
+DEVELOPERKEY=""
 
 #==============================================================================
 # If REGISTERSERVICE is set to 1, then account credentials need to be supplied, either above,
@@ -46,12 +46,12 @@ APIKEY="WeavedDeveloperToolsWy98ayxR"
 # if REGISTERSERVICE is 1, then it means that we need the account credentials to register the
 # services at the time of running this script.
 # if REGISTERSERVICE is 0, then all we do is to install the daemon, scripts and initialized enablement files
-# in anticipation of either bulk registration or registering via developer.weaved.com.
+# in anticipation of either bulk registration or registering via https://remot3.it.
 
 REGISTERSERVICE="1"
 
 #==================================================================================
-# If STARTDAEMONSONREBOOT is set to "1", then following the execution of the weavedinstaller_OEM script,
+# If STARTDAEMONSONREBOOT is set to "1", then following the execution of the connectd_register script,
 # the next time the device is rebooted, the daemons will be started.
 # If it is preferred that the daemons not autostart on the next reboot, set STARTDAEMONSONREBOOT to "0".
 
@@ -59,26 +59,25 @@ STARTDAEMONSONREBOOT="1"
 
 #==========================================================================
 
-. /usr/bin/remot3it_library
+. /usr/bin/connectd_library
 
 ######### Main Program #########
 main()
 {
     displayVersion
-#    bashCheck can be commented out on known good platform
-#    bashCheck
     platformDetection
     echo "Platform = " $PLATFORM 
 #-----------------------------------------------------------------------
-#   each OEM should obtain an APIKEY from remot3it applications engineering
 #
-    if [ "$APIKEY" == "" ]; then
-        echo "APIKEY is blank.  Please contact remot3it applications engineering for an API key."
+    if [ "$DEVELOPERKEY" == "" ]; then
+        echo "The DEVELOPERKEY variable is blank.  Please get your Developer API key from the 'My Account' page at remot3.it."
 	exit
+    else
+	developerkey="$DEVELOPERKEY"
     fi
 #-----------------------------------------------------------------------
-#   weavedCompatibility can be commented out on known good network
-#   weavedCompatibility
+#   connectdCompatibility can be commented out on known good network
+#   connectdCompatibility
 
     if [ "$REGISTERSERVICE" == "1" ]; then
     	if [ "$1" != "" ]; then
@@ -91,11 +90,11 @@ main()
         testLogin
 # =============================================    
 # $SERVICEBASENAME is the base name of all installed services installed
-# with weavedinstaller_OEM
+# with connectd_register
 # $SerialID equates to a random number concatenated with 
 # the Ethernet MAC address
 # this is the HWID for all services registered from a given device.
-# This function is defined in /usr/bin/weavedinstallerlib.
+# This function is defined in /usr/bin/connectd_library.
 #
 # By default, we are setting SERVICEBASENAME to $mac
 # This forms the first part of the displayed service name.
@@ -127,7 +126,7 @@ main()
 # =============================================    
     makeConnection rmt3 65535 "$SERVICEBASENAME-rmt3"
 
-#    makeConnection ssh 22 "$SERVICEBASENAME-ssh-22"
+    makeConnection ssh 22 "$SERVICEBASENAME-ssh-22"
 #    makeConnection web 80 "$SERVICEBASENAME-web-80"
 #    makeConnection tcp 3389 "$SERVICEBASENAME-tcp-3389"
 # =============================================  
@@ -135,7 +134,7 @@ main()
     echo
     if [ "$REGISTERSERVICE" == "0" ]; then
 	echo "Installed the following service enablement files:"
-	ls -l $WEAVED_DIR
+	ls -l $CONNECTD_DIR
     fi
     echo
 }

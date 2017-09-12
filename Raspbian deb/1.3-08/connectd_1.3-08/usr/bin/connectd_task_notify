@@ -1,27 +1,27 @@
 #!/bin/sh
 #
-# Copyright (C) 2016 Weaved Inc
+# Copyright (C) 2017 remot3.it, Inc.
 #
 # This is a notification plugin for for bulk managment.  
 #
 # The calling formats are as follows:
 #
-# task_notify.sh [cmd] [taskid] [api] [status]
+# connectd_task_notify.sh [cmd] [taskid] [api] [status]
 #
-# task_notify.sh 0 [taskid] [api] [status]
+# connectd_task_notify.sh 0 [taskid] [api] [status]
 #       returns 200 OK for   
 #
-# task_notify.sh 1
+# connectd_task_notify.sh 1
 #       returns 200 OK for 
 #
-# Usage:  task_notify.sh <cmd> <taskid> <api> <status>
+# Usage:  connectd_task_notify.sh <cmd> <taskid> <api> <status>
 # 
-# task_notify.sh [0/1/2/3] <$taskid> <api> <$status>
+# connectd_task_notify.sh [0/1/2/3] <$taskid> <api> <$status>
 #
 
 #### Settings #####
-VERSION=0.3
-MODIFIED="June 02, 2016"
+VERSION=0.4
+MODIFIED="September 12, 2017"
 #
 # Log to system log if set to 1
 LOGGING=1
@@ -41,7 +41,7 @@ CURL_OPS=" -s"
 DEBUG=1
 #SRC=$1
 #DST=$2
-OUTPUT="$TMP/weaved_task_notify"
+OUTPUT="$TMP/connectd_task_notify_result"
 
 #
 # Build API URLS GET API's                                                                                                          
@@ -146,7 +146,7 @@ return_code()
 usage()
 {
         if [ $LOGGING -gt 0 ]; then 
-            logger "[task_notify.sh Called with bad format or -h]" 
+            logger "[connectd_task_notify Called with bad format or -h]" 
         fi
 
         echo "Usage: $0 [-v (verbose)] [-v (maximum verbosity)] [-h (this message)] <CMD> <TASKID> <API> <STATUS>" >&2

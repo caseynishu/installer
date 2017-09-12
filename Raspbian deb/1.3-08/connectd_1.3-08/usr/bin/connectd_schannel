@@ -6,10 +6,10 @@
 #  remot3.it, Inc. Copyright 2017. All rights reserved.
 #
 
-VERSION="v1.4"
+VERSION="v1.5"
 AUTHOR="Gary Worsham"
-MODIFIED="August 01, 2017"
-DAEMON=connectd_schannel.pi
+MODIFIED="September 11, 2017"
+DAEMON=schannel.pi
 BIN_DIR=/usr/bin
 PID_DIR=/var/run
 BIN_PATH=$BIN_DIR/$DAEMON
@@ -17,7 +17,7 @@ CONF_FILE=/etc/connectd/schannel.conf
 PIDPATH=$PID_DIR/$DAEMON.pid
 LOG_FILE=/dev/null
 LOG_DIR=/var/log
-PSFLAGS=""
+PSFLAGS="ax"
 
 
 ##### Version #####

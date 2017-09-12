@@ -8,7 +8,7 @@
 
 VERSION="v1.5"
 AUTHOR="Gary Worsham"
-MODIFIED="August 01, 2017"
+MODIFIED="September 11, 2017"
 CONNECTD_PORT=
 DAEMON=connectd.pi
 CONNECTD_DIR=/etc/connectd/services
@@ -18,7 +18,7 @@ BIN_PATH=$BIN_DIR/$DAEMON
 PIDPATH=$PID_DIR/$CONNECTD_PORT.pid
 LOG_FILE=/dev/null
 LOG_DIR=/var/log
-PSFLAGS=""
+PSFLAGS="ax"
 
 ##### Version #####
 displayVersion()

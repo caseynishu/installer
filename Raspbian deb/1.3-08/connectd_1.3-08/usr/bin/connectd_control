@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 #
-#  Remot3it Control Script manages remot3it devices on a platform
+#  Remot3.it Control Script manages remot3.it devices on a platform
 #
 #  remot3it_control <flags> command 
 #
@@ -9,7 +9,7 @@
 #  will store info in REMOT3IT_DIR
 #
 #
-#  remot3it Inc : http://remot3it
+#  remot3.it Inc : http://remot3.it
 #
 #
 
@@ -20,11 +20,11 @@ source /usr/bin/remot3it_wlib.sh
 
 #### Settings #####
 VERSION=0.0.5
-MODIFIED="August 2, 2016"
+MODIFIED="September 12, 2017"
 #
 # Config Dir
 #
-REMOT3IT_DIR="/etc/remot3it"
+REMOT3IT_DIR="/etc/connectd"
 #Installed Provisioning files go here (unprovisioned only)
 PROVISION_DEFAULT="$REMOT3IT_DIR/pfiles"
 #created devices are in availabe
@@ -44,7 +44,7 @@ LOG_DIR=/var/log
 #
 #
 BIN_DIR=/usr/bin
-DAEMON=remot3itconnectd.i686
+DAEMON=connectd.i686
 #
 # Save Auth in homedir
 #

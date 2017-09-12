@@ -1,0 +1,9 @@
+#!/bin/sh
+ar x $1
+rm control.tar.gz
+tar xvf data.tar.xz
+rm data.tar.xz
+tar cvzf $1.gz usr etc
+rm -r usr
+rm -r etc
+
