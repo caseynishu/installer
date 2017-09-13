@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #  remot3it_factoryreset
 #  Restores any installed services to a fresh condition.
@@ -18,7 +18,7 @@ DEBUG="1"
 
 #==========================================================================
 
-source /usr/bin/remot3it_library
+. /usr/bin/remot3it_library
 
 ######### Main Program #########
 main()

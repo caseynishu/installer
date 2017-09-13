@@ -22,7 +22,7 @@
 ##### Settings #####
 VERSION=v1.3-08
 AUTHOR="Gary Worsham"
-MODIFIED="September 12, 2017"
+MODIFIED="September 13, 2017"
 DEBUG="0"
 #=======================================================================
 # remot3it recommends running this script (with real username/password) from /tmp folder.
@@ -36,7 +36,21 @@ PASSWORD=""
 AUTHHASH="REPLACE_AUTHHASH"
 DEVELOPERKEY=""
 
+#==========================================================================
+# get global options such as NETIF, BASEDIR and PLATFORM
+# path to OEM_OPTIONS has to be hardwired here
+# ----------------------------------------
+. /usr/bin/OEM_OPTIONS
+BIN_DIR="$BASEDIR"/usr/bin
+. "$BIN_DIR"/connectd_library
+# ----------------------------------------
+
+#============
+# If ENFORCEROOT is 1, then we check for root user (id = 0)
+# print warning and exit if not
 #==============================================================================
+ENFORCEROOT="1"
+
 # If REGISTERSERVICE is set to 1, then account credentials need to be supplied, either above,
 # or if those are left at default values, then the script asks for username and password.
 # If REGISTERSERVICE is 0, then the enablement files, binaries, installation and startup scripts
@@ -57,9 +71,6 @@ REGISTERSERVICE="1"
 
 STARTDAEMONSONREBOOT="1"
 
-#==========================================================================
-
-. /usr/bin/connectd_library
 
 ######### Main Program #########
 main()
@@ -73,27 +84,32 @@ main()
 
     if [ "$REGISTERSERVICE" = "1" ]; then
     	if [ "$1" != "" ]; then
-            USERNAME=$1
+            USERNAME="$1"
         fi
         if [ "$2" != "" ]; then
-            PASSWORD=$2
+            PASSWORD="$2"
         fi
+        if [ "$3" != "" ]; then
+            developerkey="$3"
+        fi
+
         userLogin
         testLogin
 # =============================================    
 # $SERVICEBASENAME is the base name of all installed services installed
 # with connectd_register
-# $SerialID equates to a random number concatenated with 
-# the Ethernet MAC address
+# $HardwareID equates to a random number concatenated with 
+# the MAC address of the interface specified by NETIF
+#
 # this is the HWID for all services registered from a given device.
 # This function is defined in /usr/bin/connectd_library.
 #
 # By default, we are setting SERVICEBASENAME to $mac
 # This forms the first part of the displayed service name.
-# OEM can supply some other expression for getSerialID or SERVICEBASENAME here
+# OEM can supply some other expression for getHardwareID or SERVICEBASENAME here
 # 
-        getSerialID
-        echo "Serial =" $SerialID
+        getHardwareID
+        echo "Hardware ID = $HardwareID"
         SERVICEBASENAME="$mac"
         echo "SERVICEBASENAME = $SERVICEBASENAME"
 	echo
@@ -126,10 +142,11 @@ main()
     echo
     if [ "$REGISTERSERVICE" = "0" ]; then
 	echo "Installed the following service enablement files:"
-	ls -l $CONNECTD_DIR
+	ls -l "$CONNECTD_DIR"
     fi
     echo
 }
 ######### End Main Program #########
+
 # you can optionally call this script with username and authhash as cmd line parameters
-main $1 $2
+main $1 $2 $3

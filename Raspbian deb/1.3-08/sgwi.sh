@@ -1,10 +1,10 @@
 #!/bin/sh
 # sgwi.sh
-# allows quick editing of the Weaved installer script on Ubuntu
+# allows quick editing of the remot3.it connectd installer script on Ubuntu
 # system and removing backup file to avoid warning/error
 BINDIR=/usr/bin
-packageName=weavedconnectd_1.3-08
+packageName=connectd_1.3-08
 
-sudo gedit "$packageName"$BINDIR/remot3it_installer "$packageName"$BINDIR/remot3it_register "$packageName"$BINDIR/remot3it_library "$packageName"$BINDIR/remot3it_factoryreset "$packageName"$BINDIR/remot3it_control.sh "$packageName"$BINDIR/remot3it_enable_bulk_reg.sh "$packageName"$BINDIR/remot3it_migrate_from_weaved
+sudo gedit "$packageName"$BINDIR/connectd_installer "$packageName"$BINDIR/connectd_register "$packageName"$BINDIR/connectd_library "$packageName"$BINDIR/connectd_factoryreset "$packageName"$BINDIR/connectd_control "$packageName"$BINDIR/connectd_enable_bulk_reg
 sudo rm "$packageName"$BINDIR/*~
 

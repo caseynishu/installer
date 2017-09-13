@@ -2,16 +2,16 @@
 
 #  connectd_installer
 #
-#  Run 'sudo connectd_itinstaller' to install, configure or remove remot3.it
+#  Run 'sudo connectd_installer' to interactively install, configure or remove remot3.it
 #  connectd attachment services for tcp listeners.
 #
-#  remot3.it, Inc. Copyright 2016. All rights reserved.
+#  remot3.it, Inc. Copyright 2017. All rights reserved.
 #
 
 ##### Settings #####
 VERSION=v1.3-08_Pi
 AUTHOR="Gary Worsham"
-MODIFIED="September 11, 2017"
+MODIFIED="September 13, 2017"
 
 USERNAME=""
 PASSWORD=""
@@ -20,8 +20,17 @@ DEVELOPERKEY=""
 REGISTERSERVICE="1"
 CHECKFORDEB="1"
 DEBUG="0"
-PACKAGE="rt3connectd"
+PACKAGE="connectd"
 MAXSEL=6
+
+#==========================================================================
+# get global options such as NETIF, BASEDIR and PLATFORM
+# path to OEM_OPTIONS has to be hardwired here and edited if needed
+# ----------------------------------------
+. /usr/bin/OEM_OPTIONS
+BIN_DIR="$BASEDIR"/usr/bin
+. "$BIN_DIR"/connectd_library
+# ----------------------------------------
 
 #==================================================================================
 # If STARTDAEMONSONREBOOT is set to "1", then following the execution of the remot3itinstaller_OEM script,
@@ -30,14 +39,10 @@ MAXSEL=6
 
 STARTDAEMONSONREBOOT="1"
 
-# include the library which has all of the functions really required
-
-. /usr/bin/connectd_library
-
 ######### Main Program #########
 main()
 {
-    getSerialID
+    getHardwareID
     # interactive installer defaults RMT3 service base name to MAC.
     # OEM installer allows OEM to use a different function to set the auto-assigned
     # service names.
@@ -45,4 +50,4 @@ main()
     interactiveInstall $1
 }
 ######### End Main Program #########
-main $1 $2
+main $1 $2 $3

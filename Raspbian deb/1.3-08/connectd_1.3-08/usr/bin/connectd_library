@@ -10,20 +10,22 @@
 #  Copyright 2017. All rights reserved.
 
 ##### Settings #####
-LIBVERSION=lib_v1.3-08_Pi
+LIBVERSION=lib_v1.3-08
 AUTHOR="Gary Worsham"
-LIBMODIFIED="September 09, 2017"
+LIBMODIFIED="September 13, 2017"
 DAEMON=connectd
+GREPFLAGS=
+CURL_OPTS="-k -s -S -X"
 
 # ----------------------------------------
 # folders and files
 # these folders are not the same as used by Bulk Registration
-CONNECTD_DIR=/etc/connectd/services
-CONNECTD_LIB_DIR=/usr/share/connectd
-SERIALNUMBERFILE=/etc/connectd/serial.txt
-BIN_DIR=/usr/bin
+# BASEDIR=
+CONNECTD_DIR="$BASEDIR"/etc/connectd/services
+CONNECTD_LIB_DIR="$BASEDIR"/usr/share/connectd
+HARDWAREIDFILE="$BASEDIR"/etc/connectd/serial.txt
 TMP_DIR=/tmp
-INIT_DIR=/etc/init.d
+INIT_DIR="$BASEDIR"/etc/init.d
 PID_DIR=/var/run
 filename=$(basename "$0")
 
@@ -63,10 +65,16 @@ displayVersion()
 {
     printf "remot3.it connection installer Version: %s %s \n" "$VERSION" "$LIBVERSION"
     printf "Modified: %s (library) %s \n" "$MODIFIED" "$LIBMODIFIED"
+}
+##### End Version #####
+
+##### checkForRoot #####
+checkForRoot()
+{
     # check for su user at this point
     if ! [ "$(id -u)" = 0 ]; then
-        echo "Running remot3it_installer requires root access." 1>&2
-        echo "Please run sudo remot3it_installer instead of remot3it_installer." 1>&2
+        echo "Running this program requires root access." 1>&2
+        echo "Please run sudo $0 instead of $0." 1>&2
 	exit 1
     fi
 }
@@ -94,7 +102,7 @@ checkForUpdate()
         echo "$PACKAGE version $currentlyInstalled is currently installed."
 
         # check to see if updated version exists
-        resp=$(curl -s -S -X GET -H "content-type:application/json" -H "developerkey:$developerkey"  -H "token:$token" "$versionURL")
+        resp=$(curl ${CURL_OPTS} GET -H "content-type:application/json" -H "developerkey:$developerkey"  -H "token:$token" "$versionURL")
         checkAPIResult "$versionURL" "$resp"
         package=$(jsonval "$resp" "component")
         latestVer=$(jsonval "$resp" "version")
@@ -114,6 +122,14 @@ checkForUpdate()
 }
 
 ##### end of check for update
+
+################### mv utility (some platforms don't support it)
+
+mv()
+{
+	cp $1 $2
+	rm $1
+}
 
 
 ##### Compatibility checker #####
@@ -135,31 +151,31 @@ connectdCompatibility()
 }
 ##### End Compatibility checker #####
 
-##### get SerialID address #####
-# SerialID is a UUID concatenated with eth0 MAC address
+##### get HardwareID address #####
+# HardwareID is a UUID concatenated with eth0 MAC address
 # if the file /etc/connectd/serial.txt does not exist, create the
 # value and write it there.  Otherwise read the value from then
 # file.
 # mac is also determined here as it is used for the SERVICEBASENAME
-# in connectd_installer_OEM
-
-getSerialID()
+# in connectd_register
+getHardwareID()
 {
-    mac=$(ifconfig eth0 | grep HWaddr | awk '{ print $5 }')
-    if [ -f "$SERIALNUMBERFILE" ]; then
-	SerialID=$(cat $SERIALNUMBERFILE)
+    mac=$(ifconfig "$NETIF" | grep HWaddr | awk '{ print $5 }')
+    if [ -f "$HARDWAREIDFILE" ]; then
+	HardwareID=$(cat $HARDWAREIDFILE)
     else
     	num=20
     	random=$(tr -dc A-Za-z0-9 < /dev/urandom | dd bs=$num count=1 2> /dev/null)
-	SerialID="$mac-$random"
+	HardwareID="$mac-$random"
 
-	echo "$SerialID" > "$SERIALNUMBERFILE"
-	chmod -w "$SERIALNUMBERFILE"
+	echo "$HardwareID" > "$HARDWAREIDFILE"
+	chmod -w "$HARDWAREIDFILE"
     fi
-    logger "remot3.it SerialID is $SerialID"
+    debug "remot3.it HardwareID is $HardwareID"
+    logger "remot3.it HardwareID is $HardwareID"
 }
 
-##### end get SerialID address #####
+##### end get HardwareID address #####
 
 
 ##### factory reset - doesn't actually do anything at present
@@ -213,7 +229,7 @@ checkforServices()
             yooareell="$deviceURL/$uid"
             debug "$yooareell"
 
-	    resp=$(curl -s -S -X GET -H "content-type:application/json" -H "developerkey:$developerkey"  -H "token:$token" "$yooareell")
+	    resp=$(curl ${CURL_OPTS} GET -H "content-type:application/json" -H "developerkey:$developerkey"  -H "token:$token" "$yooareell")
             checkAPIResult "$yooareell" "$resp"
 
 	    # this next test checks to see if device is registered.  
@@ -259,7 +275,7 @@ checkforServices()
 
 	        # get service process name which is using that tcp port, if any
 
-                service=$(netstat -apn | grep -w tcp | grep -w "0.0.0.0:$port" | grep LISTEN | awk -F"/" '{print $2}')
+                service=$(netstat -apn | grep ${GREPFLAGS} tcp | grep ${GREPFLAGS} "0.0.0.0:$port" | grep LISTEN | awk -F"/" '{print $2}')
 
 	        # if no service, show warning
                 if [ "$service" = "" ]; then
@@ -490,7 +506,7 @@ protocolSelection()
             	printf "\nPort #: %s\n" "$PORT"
 	    fi
             
-	    alreadyThere=$(grep -w "$CONNECTD_PORT" "$TMP_DIR/.legacy_instances")
+	    alreadyThere=$(grep $GREPFLAGS "$CONNECTD_PORT" "$TMP_DIR/.legacy_instances")
             if [ "$alreadyThere"  != "" ]; then
                 printf "remot3.it is already attached to this Service.\n" 
                 if ask "Do you wish to overwrite your previous settings?"; then
@@ -526,16 +542,22 @@ protocolSelection()
 ############ checkAPIResult ############
 # checks return value of API calls.  
 # if status = true, just returns silently
-# if status = false, reason is displayed and script exits
+# if status = false, reason is displayed and script pauses
 # first parameter is something to display, usually the URL
 # second parameter is full JSON response
 
 checkAPIResult()
 {
 # set -x
-# echo "checkAPIResult $1 $2"; echo
     result=$(jsonval "$2" 'status')
-    debug "API result: $result"
+    if [ "$result" = "true" ]; then
+        return
+    else
+        echo "API call to $1 failed!"
+        reason=$(jsonval "$2" 'reason')
+        echo "$reason"
+	read key
+    fi
 }
 
 ###### End of checkAPIResult #######
@@ -554,7 +576,7 @@ deleteConnection()
         uid="$(grep '^UID' "$file" | awk '{print $2}')"
 	yooareell="$deviceURL/$uid"
 
-	resp=$(curl -s -S -X GET -H "content-type:application/json" -H "developerkey:$developerkey"  -H "token:$token" "$yooareell")
+	resp=$(curl ${CURL_OPTS} GET -H "content-type:application/json" -H "developerkey:$developerkey"  -H "token:$token" "$yooareell")
 
         serviceName=$(jsonval "$resp" "name")
 
@@ -565,11 +587,11 @@ deleteConnection()
 	    deviceType=$(jsonval "$resp" "title")
 	    if ask "Are you sure you want to delete the remot3.it $deviceType attachment $serviceName?"; then
 		printf "Deleting $serviceName...\n"
-		result=$(curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "developerkey:$developerkey" -H "token:$token")
+		result=$(curl ${CURL_OPTS} 'POST' $deleteURL -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "developerkey:$developerkey" -H "token:$token")
 
                 checkAPIResult "$deleteURL" "$result"
 
- 		fileNameRoot=$(echo "$file" | xargs basename | awk -F "." '{print $1}')
+ 		fileNameRoot=$(echo "$file" | awk -F "." '{print $1}')
 #		echo $fileNameRoot
  		# if daemon pid exists, stop daemon and remove start/stop script
  		if [ -f "$PID_DIR"/"$fileNameRoot".pid ]; then
@@ -602,20 +624,20 @@ deleteAllConnections()
     # now iterate through all enablement files to find it
     # stop all daemons.  
 
-	connectd_stop
+	"$BIN_DIR"/connectd_stop
 
     	for file in "$CONNECTD_DIR"/*.conf; do
 	# get service name from UID
             uid="$(grep '^UID' $file | awk '{print $2}')"
-	    resp=$(curl -s -S -X GET -H "content-type:application/json" -H "developerkey:$developerkey"  -H "token:$token" "$deviceURL/$uid")
+	    resp=$(curl ${CURL_OPTS} GET -H "content-type:application/json" -H "developerkey:$developerkey"  -H "token:$token" "$deviceURL/$uid")
             serviceName="$(jsonval $resp name)"
 
 	    printf "\nDeleting %s...\n" "$serviceName"
 	
-	    result=$(curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "developerkey:$developerkey" -H "token:$token")
+	    result=$(curl ${CURL_OPTS} 'POST' $deleteURL -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "developerkey:$developerkey" -H "token:$token")
             checkAPIResult "$deleteURL" "$result"
 
-	    fileNameRoot=$(echo "$file" |xargs basename | awk -F "." '{print $1}')
+	    fileNameRoot=$(echo "$file" | awk -F "." '{print $1}')
 #		    echo $fileNameRoot
  	    # if daemon pid exists, stop daemon and remove start/stop script
  	    if [ -f $PID_DIR/$fileNameRoot.pid ]; then
@@ -635,8 +657,8 @@ deleteAllConnections()
 # also should clear out crontab at this point
 	disableStartup
 # remove serial.txt
-        if [ -f $SERIALNUMBERFILE ]; then
-	    rm $SERIALNUMBERFILE
+        if [ -f $HARDWAREIDFILE ]; then
+	    rm $HARDWAREIDFILE
    	fi
     fi
     exit
@@ -720,7 +742,7 @@ getEmail()
 registerUser()
 {
     getEmail
-    resp=$(curl -s $regAccountURL -X POST -d "{\"email\":\"$username\"}" -H "content-type:application/json" -H "developerkey:$developerkey" 2> $TMP_DIR/.curlerr)
+    resp=$(curl ${CURL_OPTS} 'POST' $regAccountURL -d "{\"email\":\"$username\"}" -H "content-type:application/json" -H "developerkey:$developerkey" 2> $TMP_DIR/.curlerr)
 
     debug $resp
     value=$(jsonval "$resp" "status") 
@@ -750,7 +772,7 @@ enterVerificationCode()
     	getNewPassword
     done
 
-     resp=$(curl -s $regAccountURLVerified -X POST -d "{\"email\":\"$username\", \"password\":\"$password\", \"shortcode\":\"$registrationCode\"}" -H "content-type:application/json" -H "developerkey:$developerkey" 2> $TMP_DIR/.curlerr)
+     resp=$(curl ${CURL_OPTS} 'POST' $regAccountURLVerified -d "{\"email\":\"$username\", \"password\":\"$password\", \"shortcode\":\"$registrationCode\"}" -H "content-type:application/json" -H "developerkey:$DEVKEY" 2> $TMP_DIR/.curlerr)
 
     debug $resp
     value=$(jsonval "$resp" "status") 
@@ -857,9 +879,9 @@ signInAPI()
 # set +x
     # if AUTHHASH is REPLACE_AUTHHASH it means user just wants to use password
     if [ "$AUTHHASH" = "REPLACE_AUTHHASH" ]; then
-          resp=$(curl -s -S -X POST -H "developerkey:$developerkey" -H "Content-Type:application/json" -H "Cache-Control:no-cache" -d "{ \"username\" : \"$username\", \"password\" : \"$password\" }" "$loginURL" 2> $TMP_DIR/.curlerr)
+          resp=$(curl ${CURL_OPTS} 'POST' -H "developerkey: $developerkey" -H "Content-Type:application/json" -H "Cache-Control:no-cache" -d "{ \"username\" : \"$username\", \"password\" : \"$password\" }" "$loginURL" 2> $TMP_DIR/.curlerr)
     else
-             resp=$(curl -s -S -X POST -H "developerkey:$developerkey" -H "Content-Type:application/json" -H "Cache-Control:no-cache" -d "{ \"username\" : \"$username\", \"authhash\" : \"$AUTHHASH\" }" "$loginAuthURL" 2> $TMP_DIR/.curlerr)
+             resp=$(curl ${CURL_OPTS} 'POST' -H "developerkey: $developerkey" -H "Content-Type:application/json" -H "Cache-Control:no-cache" -d "{ \"username\" : \"$username\", \"authhash\" : \"$AUTHHASH\" }" "$loginAuthURL" 2> $TMP_DIR/.curlerr)
     fi
     checkAPIResult 'login' "$resp"
 
@@ -936,7 +958,7 @@ checkForDeviceName()
             port="$(grep '^port' "$file" | awk '{print $2}')"
 	    yooareell=$(echo  "$deviceURL/$uid")
 
-	    resp=$(curl -s -S -X GET -H "content-type:application/json" -H "developerkey:$developerkey"  -H "token:$token" "$yooareell")
+	    resp=$(curl ${CURL_OPTS} GET -H "content-type:application/json" -H "developerkey:$developerkey"  -H "token:$token" "$yooareell")
             checkAPIResult "$yooareell" "$resp"
 
 	    # this next test checks to see if device is registered.  
@@ -976,14 +998,14 @@ convertExistingUIDs()
 	# get service name from UID
                 uid="$(grep '^UID' "$file" | awk '{print $2}')"
 
-                result=$(curl -s $deviceHWIDURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"hardwareid\":\"$SerialID\"}" -H "Content-Type:application/json" -H "developerkey:$developerkey" -H "token:$token" 2> /$TMP_DIR/.curlerr)
+                result=$(curl ${CURL_OPTS} 'POST' $deviceHWIDURL -d "{\"deviceaddress\":\"$uid\", \"hardwareid\":\"$HardwareID\"}" -H "Content-Type:application/json" -H "developerkey:$DEVKEY" -H "token:$token" 2> /$TMP_DIR/.curlerr)
 
                 checkAPIResult "$deviceHWID" "$result"
 
 	        addHWIDResult=$(jsonval "$result" "status")
 
 		echo "Updating $file"
-	        logger "connectd: Adding HWID $SerialID to $serviceName UID $uid - $addHWIDResult"
+	        logger "connectd: Adding HWID $HardwareID to $serviceName UID $uid - $addHWIDResult"
 # now update start/stop script
 		CONNECTD_PORT=$(basename "$file" ".conf")
 		installStartStop
@@ -1048,19 +1070,15 @@ disableStartup()
 installStartStop()
 {
     printf "."
+    sed s/CONNECTD_PORT=/CONNECTD_PORT="$CONNECTD_PORT"/ < "$CONNECTD_LIB_DIR"/scripts/launch_connectd > "$TMP_DIR"/"$CONNECTD_PORT"
+    mv "$TMP_DIR"/"$CONNECTD_PORT" "$BIN_DIR"/"$CONNECTD_PORT"
+    chmod +x "$BIN_DIR"/"$CONNECTD_PORT"
+    if [ ! -f "$BIN_DIR"/$STARTEMUP ]; then
+        cp "$CONNECTD_LIB_DIR"/scripts/$STARTEMUP "$BIN_DIR"
+      printf "$STARTEMUP copied to %s\n" "$BIN_DIR"
+    fi
     # crontab approach
     if [ $startupScripts = 3 ]; then
-	sed s/CONNECTD_PORT=/CONNECTD_PORT="$CONNECTD_PORT"/ < "$CONNECTD_LIB_DIR"/scripts/launch_connectd > "$TMP_DIR"/"$CONNECTD_PORT"
-	mv "$TMP_DIR"/"$CONNECTD_PORT" "$BIN_DIR"/"$CONNECTD_PORT"
-	chmod +x "$BIN_DIR"/"$CONNECTD_PORT"
-	# backwards compatibility - move startconnectd to weavedstart
-	if [ -f "$BIN_DIR"/startconnectd ]; then
-            mv "$BIN_DIR"/startconnectd "$BIN_DIR"/"$STARTEMUP"
-	fi
-	if [ ! -f "$BIN_DIR"/$STARTEMUP ]; then
-            cp "$CONNECTD_LIB_DIR"/scripts/$STARTEMUP "$BIN_DIR"
-	    #      printf "$STARTEMUP copied to %s\n" "$BIN_DIR"
-	fi
 	checkCron=$(crontab -l 2> /dev/null | grep -c "$STARTEMUP" )
 	debug "CheckCron: $checkCron\n"
 	if [ "$checkCron" = 0 ] && [ "$STARTDAEMONSONREBOOT" = "1" ]; then
@@ -1069,6 +1087,7 @@ installStartStop()
 	if [ "$checkCron" -gt 0 ] && [ "$STARTDAEMONSONREBOOT" = "0" ]; then
 	    disableStartup
 	fi
+    fi
 	# see if there is an entry to start the chosen service daemon already
 	checkStartConnectd=$(grep -c "$CONNECTD_PORT" "$BIN_DIR"/"$STARTEMUP" )
 	# if not, add it
@@ -1081,10 +1100,9 @@ installStartStop()
 	checkStartSchannel=$(grep -c "connectd_schannel" "$BIN_DIR"/"$STARTEMUP" )
 	# if not, add it
 	if [ $checkStartSchannel = 0 ]; then
-	    sh -c "echo '"/usr/bin/connectd_schannel" start' >> $BIN_DIR/$STARTEMUP"
+	    sh -c "echo '"$BIN_DIR/connectd_schannel" start' >> $BIN_DIR/$STARTEMUP"
 	fi
 	chmod +x "$BIN_DIR"/$STARTEMUP
-    fi
 }
 ######### End Start/Stop Scripts #########
 
@@ -1105,8 +1123,8 @@ checkUID()
     checkforUID="$(tail "$TMP_DIR"/"$CONNECTD_PORT".conf | grep -c UID )"
     if [ $checkforUID = 2 ]; then
 	#    cp "$CONNECTD_LIB_DIR"/"$CONNECTD_PORT".conf /"$CONNECTD_DIR"/
-	uid=$(tail "$TMP_DIR"/"$CONNECTD_PORT".conf | grep UID | awk -F "UID" '{print $2}' | xargs echo)
-	#   printf "\n\nYour device UID has been successfully provisioned as: %s. \n\n" "$uid"
+	uid=$(grep ^UID "$TMP_DIR"/"$CONNECTD_PORT".conf | awk '{print $2}' )
+	printf "\n\nUID: %s. \n\n" "$uid"
     else
 	retryFetchUID
     fi
@@ -1123,8 +1141,9 @@ retryFetchUID()
 	checkforUID="$(tail "$TMP_DIR"/"$CONNECTD_PORT".conf | grep -c UID)"
 	if [ "$checkforUID" = 2 ]; then
 	    #        cp "$CONNECTD_LIB_DIR"/"$CONNECTD_PORT".conf /"$CONNECTD_DIR"/
-	    uid="$(tail "$TMP_DIR"/"$CONNECTD_PORT".conf | grep UID | awk -F "UID" '{print $2}' | xargs echo)"
-	    #       printf "\n\nYour device UID has been successfully provisioned as: %s. \n\n" "$uid"
+#	    uid="$(tail "$TMP_DIR"/"$CONNECTD_PORT".conf | grep UID | awk '{print $2}' | xargs echo)"
+	    uid="$(grep ^UID "$TMP_DIR"/"$CONNECTD_PORT".conf | awk '{print $2}' )"
+	    #       printf "\n\nUID: %s. \n\n" "$uid"
 	    break
 	fi
     done
@@ -1141,12 +1160,15 @@ retryFetchUID()
 preregisterUID()
 {
     printf "."
-    preregUID="$(curl -s $preregdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicetype\":\"$DEVICETYPE\"}" -H "Content-Type:application/json" -H "developerkey:$developerkey" -H "token:$token")"
+echo "devicetype = $DEVICETYPE"
+
+    preregUID="$(curl ${CURL_OPTS} 'POST' $preregdeviceURL -d "{\"deviceaddress\":\"$uid\", \"devicetype\":\"$DEVICETYPE\"}" -H "Content-Type:application/json" -H "developerkey:$developerkey" -H "token:$token")"
     checkAPIResult "$preregdeviceURL" "$preregUID"
 
     test1="$(echo "$preregUID" | grep -c "true" )"
     debug "$preregUID"
-    test2="$(echo "$preregUID" | grep -c -E "missing api token|api token missing")"
+#    test2="$(echo "$preregUID" | grep -c -E "missing api token|api token missing")"
+    test2="$(echo "$preregUID" | grep -c "api token")"
     test3="$(echo "$preregUID" | grep -c "false")"
     if [ "$test1" = 1 ]; then
 	printf "Pre-registration of UID: %s successful. \n\n" "$uid" > /dev/null
@@ -1178,39 +1200,51 @@ getSecret()
     printf "."
 
     if [ "$PROTOCOL" = "rmt3" ]; then
-        secretCall="$(curl -s $regdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$SerialID\"}" -H "Content-Type:application/json" -H "developerkey:$developerkey" -H "token:$token")"    
-
+        secretCall="$(curl ${CURL_OPTS} 'POST' $regdeviceURL -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$HardwareID\"}" -H "Content-Type:application/json" -H "developerkey:$developerkey" -H "token:$token")"    
     else
-
-        secretCall="$(curl -s $regdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$SerialID\", \"skipemail\":\"true\"}" -H "Content-Type:application/json" -H "developerkey:$developerkey" -H "token:$token")"
-    
+        secretCall="$(curl ${CURL_OPTS} 'POST' $regdeviceURL -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$HardwareID\", \"skipemail\":\"true\"}" -H "Content-Type:application/json" -H "developerkey:$developerkey" -H "token:$token")"
     fi
 
     checkAPIResult "$regdeviceURL" "$secretCall"
 
-    error=$(jsonval "$secretCall" "Error")
-    debug $error
-    if [ "$error" = "DuplicateName:" ]; then
-        echo
-	echo "There is already a Service registered to your account as $alias."
-	echo "Hit any key to continue."
-	read AnyKey
+    error="$(jsonval "$secretCall" "Error")"
+    debug "Errors=$error"
+    
+    result="$(jsonval "$secretCall" "status")"
+    if [ "$result" = "false" ]; then
+        if [ "$error" = "DuplicateName:" ]; then
+            echo
+	    echo "There is already a Service registered to your account as $alias."
+	    echo "Hit any key to continue."
+	    read AnyKey
+        elif [ "$error" = "DuplicateAddress:" ]; then
+            echo
+	    echo "Duplicate Address error while attempting to register $alias."
+	    echo "Hit any key to continue."
+	    read AnyKey
+        else
+            reason=$(jsonval "$secretCall" "reason")
+            echo "$regdeviceURL call failed."  
+            echo "Reason was: $reason"
+        fi
     else
     	test1="$(echo "$secretCall" | grep -c "true" )"
-    	test2="$(echo "$secretCall" | grep -c -E "missing api token|api token missing" )"
+#    	test2="$(echo "$secretCall" | grep -c -E "missing api token|api token missing" )"
+    	test2="$(echo "$secretCall" | grep -c "api token" )"
     	test3="$(echo "$secretCall" | grep -c "false" )"
     	if [ $test1 = 1 ]; then
-		secret="$(echo "$secretCall" | awk -F "," '{print $2}' | awk -F "\"" '{print $4}' | sed s/://g)"
-		echo "# password - erase this line to unregister the device" >> "$TMP_DIR"/"$CONNECTD_PORT".conf
-		echo "password $secret" >> "$TMP_DIR"/"$CONNECTD_PORT".conf
-
+# set -x
+            secret="$(getJSONSecret "$secretCall" "secret")"
+echo "secret = $secret"
+    	    echo "# password - erase this line to unregister the device" >> "$TMP_DIR"/"$CONNECTD_PORT".conf
+	    echo "password $secret" >> "$TMP_DIR"/"$CONNECTD_PORT".conf
 	#       finally copy valid assembled enablement file to $CONNECTD_DIR
-		mv "$TMP_DIR"/"$CONNECTD_PORT".conf "$CONNECTD_DIR"/"$CONNECTD_PORT".conf
+	    mv "$TMP_DIR"/"$CONNECTD_PORT".conf "$CONNECTD_DIR"/"$CONNECTD_PORT".conf
     	elif [ $test2 = 1 ]; then
-		printf "For some reason, you were logged out and must log back in. \n"
-		userLogin
-		testLogin
-		getSecret
+            printf "Invalid or missing login token. Trying again.\n"
+	    userLogin
+	    testLogin
+	    getSecret
     	fi
     fi
 }
@@ -1268,8 +1302,8 @@ overridePort()
 ######### Delete device #########
 deleteDevice()
 {
-    uid=$(tail "$CONNECTD_DIR"/$CONNECTD_PORT.conf | grep UID | awk -F "UID" '{print $2}' | xargs echo)
-    result=$(curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "developerkey:$developerkey" -H "token:$token")
+    uid=$(grep ^UID "$CONNECTD_DIR"/$CONNECTD_PORT.conf | awk '{print $2}' )
+    result=$(curl ${CURL_OPTS} 'POST' $deleteURL -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "developerkey:$developerkey" -H "token:$token")
     checkAPIResult "$deleteURL $uid" "$result"
 
     #    printf "\n\n"
@@ -1280,7 +1314,7 @@ deleteDevice()
 deleteDeviceByUid()
 {
     uid="$1"
-    resp=$(url -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "developerkey:$developerkey" -H "token:$token")
+    resp=$(curl ${CURL_OPTS} 'POST' $deleteURL -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "developerkey:$developerkey" -H "token:$token")
     checkAPIResult "$deleteURL $uid" "$resp"
 }
 ######### End Delete device by UID #########
@@ -1316,7 +1350,7 @@ configureConnection()
 {
     installEnablement
     installStartStop
-    # REGISTERSERVICE controls (in OEM installer) whether or not services are registered at the time of installation
+    # REGISTERSERVICE controls (in batch installer connectd_register) whether or not services are registered at the time of installation
     if [ "$REGISTERSERVICE" = "1" ]; then
     	fetchUID
     	checkUID
@@ -1329,7 +1363,7 @@ configureConnection()
     	    startService
 	    # there should only be one UDP listener startup regardless of the number of services
 	    # the startup script will only start one instance
-	    connectd_schannel start > /dev/null
+	    "$BIN_DIR"/connectd_schannel start > /dev/null
 	fi
     fi
 }
@@ -1338,6 +1372,7 @@ configureConnection()
 interactiveInstall()
 {
     echo
+    checkForRoot
     displayVersion $1
     # bashCheck
     platformDetection
@@ -1362,21 +1397,26 @@ interactiveInstall()
 #                                                   
 jsonval()                                              
 {
-#    echo "jsonval $1 $2"
-# echo
 # set -x
-#     temp=$(echo "$1" | sed -e 's/[{}\"]//g' | sed -e 's/,/\'$'\n''/g' | grep -w $2 | cut -d"[" -f2- | cut -d":" -f2-)
-    temp=$(echo "$1" | sed -e 's/[{}\"]//g' | sed -e 's/,/\n/g' | grep -w $2 | cut -d"[" -f2- | cut -d":" -f2-)
-    #echo ${temp}                                                
+    temp=$(echo "$1" | sed -e 's/[{}\"]//g' | sed -e 's/,/\n/g' | grep -w ${GREPFLAGS} $2 | cut -d"[" -f2- | cut -d":" -f2-)
     echo ${temp##*|}         
 }                                                   
 
 #----------------------------------------------------------
 jsonvalx()
 {
-    temp=$(echo $1 | sed -e 's/[{}"]//g' -e "s/,/\\$liblf/g" | grep -w $2 | cut -d":" -f2-)
-    #echo ${temp##*|}
+    temp=$(echo $1 | sed -e 's/[{}"]//g' -e "s/,/\\$liblf/g" | grep ${GREPFLAGS} $2 | cut -d":" -f2-)
     echo ${temp}    
+}
+
+#----------------------------------------------------------
+getJSONSecret()
+{
+# set -x
+# strip out all colons, break at commas, get rid of brackets and quotes
+
+    temp=$(echo "$1" | sed -e 's/,/\'\n'/g' | sed -e 's/[{}"]//g' | grep -m 1 "$2" | awk -F "$2:" '{print $2}' | sed 's/://g')
+    echo ${temp}
 }
 
 ######### Ask Function #########

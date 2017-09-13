@@ -1,0 +1,8 @@
+# BASEDIR is root on many systems, if so, leave it blank
+BASEDIR=
+# PLATFORM is the extension for the binaries, depends on CPU architecture
+# and details of shared libraries
+PLATFORM=pi
+# NETIF is the network interface to use for MAC for auto-naming of services
+NETIF="eth0"
+
