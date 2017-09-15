@@ -17,16 +17,6 @@ DAEMON=connectd
 GREPFLAGS=
 CURL_OPTS="-k -s -S -X"
 
-# ----------------------------------------
-# folders and files
-# these folders are not the same as used by Bulk Registration
-# BASEDIR=
-CONNECTD_DIR="$BASEDIR"/etc/connectd/services
-CONNECTD_LIB_DIR="$BASEDIR"/usr/share/connectd
-HARDWAREIDFILE="$BASEDIR"/etc/connectd/serial.txt
-TMP_DIR=/tmp
-INIT_DIR="$BASEDIR"/etc/init.d
-PID_DIR=/var/run
 filename=$(basename "$0")
 
 #-------------- Global Variables

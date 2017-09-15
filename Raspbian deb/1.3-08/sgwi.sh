@@ -5,6 +5,6 @@
 BINDIR=/usr/bin
 packageName=connectd_1.3-08
 
-sudo gedit "$packageName"$BINDIR/connectd_installer "$packageName"$BINDIR/connectd_register "$packageName"$BINDIR/connectd_library "$packageName"$BINDIR/connectd_factoryreset "$packageName"$BINDIR/connectd_control "$packageName"$BINDIR/connectd_enable_bulk_reg
+sudo gedit "$packageName"$BINDIR/connectd_installer "$packageName"$BINDIR/connectd_register "$packageName"$BINDIR/connectd_library "$packageName"$BINDIR/connectd_factoryreset "$packageName"$BINDIR/connectd_control "$packageName"$BINDIR/connectd_enable_bulk_reg "$packagename"$BIN_DIR/OEM_OPTIONS
 sudo rm "$packageName"$BINDIR/*~
 

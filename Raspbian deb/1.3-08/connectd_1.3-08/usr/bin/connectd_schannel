@@ -9,7 +9,7 @@
 VERSION="v1.5"
 AUTHOR="Gary Worsham"
 MODIFIED="September 11, 2017"
-DAEMON=schannel.pi
+DAEMON=connectd_schannel.pi
 BIN_DIR=/usr/bin
 PID_DIR=/var/run
 BIN_PATH=$BIN_DIR/$DAEMON

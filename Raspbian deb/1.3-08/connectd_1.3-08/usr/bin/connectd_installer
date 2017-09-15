@@ -9,18 +9,14 @@
 #
 
 ##### Settings #####
-VERSION=v1.3-08_Pi
+VERSION=v1.3-08
 AUTHOR="Gary Worsham"
-MODIFIED="September 13, 2017"
+MODIFIED="September 15, 2017"
 
 USERNAME=""
 PASSWORD=""
 AUTHHASH="REPLACE_AUTHHASH"
 DEVELOPERKEY=""
-REGISTERSERVICE="1"
-CHECKFORDEB="1"
-DEBUG="0"
-PACKAGE="connectd"
 MAXSEL=6
 
 #==========================================================================
@@ -28,7 +24,6 @@ MAXSEL=6
 # path to OEM_OPTIONS has to be hardwired here and edited if needed
 # ----------------------------------------
 . /usr/bin/OEM_OPTIONS
-BIN_DIR="$BASEDIR"/usr/bin
 . "$BIN_DIR"/connectd_library
 # ----------------------------------------
 

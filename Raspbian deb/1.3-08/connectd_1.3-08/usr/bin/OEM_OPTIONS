@@ -1,8 +1,70 @@
-# BASEDIR is root on many systems, if so, leave it blank
+#===================================
+MODIFIED="September 15, 2017"
+#===================================
+# BASEDIR is root on many systems. If so, leave it blank.
 BASEDIR=
+#===================================
+# BIN_DIR is default path for executables.  We install connectd scripts and binaries here.
+BIN_DIR="$BASEDIR"/usr/bin
+#===================================
+# ----------------------------------------
+# folders and files
+# these folders are not the same as used by Bulk Registration
+#===================================
+# CONNECTD_DIR is where we store configured provisioning files per connection
+CONNECTD_DIR="$BASEDIR"/etc/connectd/services
+#===================================
+# CONNECTD_LIB_DIR is the location of template files and script fragments used in installation.
+CONNECTD_LIB_DIR="$BASEDIR"/usr/share/connectd
+#===================================
+# HARDWAREIDFILE holds the Hardware ID that groups services together at remot3.it
+HARDWAREIDFILE="$BASEDIR"/etc/connectd/serial.txt
+#===================================
+# /tmp is used for temporary files
+TMP_DIR=/tmp
+#===================================
+INIT_DIR="$BASEDIR"/etc/init.d
+#===================================
+# folder to keep pids per connectd process
+PID_DIR=/var/run
+#===================================
 # PLATFORM is the extension for the binaries, depends on CPU architecture
-# and details of shared libraries
+# and shared libraries
 PLATFORM=pi
-# NETIF is the network interface to use for MAC for auto-naming of services
+#===================================
+# NETIF is the network interface to use for MAC for auto-naming of services (used in connectd_register).
 NETIF="eth0"
+#===================================
+# If REGISTERSERVICE is set to 1, then account credentials need to be supplied, either above,
+# or if those are left at default values, then the script asks for username, password and developer key.
+# If REGISTERSERVICE is 0, then the enablement files, binaries, installation and startup scripts
+# are installed, but the services are not registered.  In this state they are "ready to register"
+# by the end user.
+
+# if REGISTERSERVICE is 1, then it means that we need the account credentials to register the
+# services at the time of running this script.
+# if REGISTERSERVICE is 0, then all we do is to install the daemon, scripts and initialized enablement files
+# in anticipation of either bulk registration or registering via https://remot3.it.
+REGISTERSERVICE="1"
+#===================================
+# If ENFORCEROOT is 1, then we check for root user (id = 0)
+# print warning and exit if not
+ENFORCEROOT="1"
+#==================================================================================
+# If STARTDAEMONSONREBOOT is set to "1", then following the execution of the connectd_register script,
+# the next time the device is rebooted, the daemons will be started.
+# If it is preferred that the daemons not autostart on the next reboot, set STARTDAEMONSONREBOOT to "0".
+
+STARTDAEMONSONREBOOT="1"
+#==============================================================================
+# CHECKFORDEB looks to see if there is a Debian package newer than what is installed.
+CHECKFORDEB="1"
+#==============================================================================
+# The PACKAGE variable sets the Debian package name.  Only relevant if CHECKFORDEB is set to 1.
+PACKAGE="connectd"
+#===================================
+# set DEBUG to 1 to enable debugging messages
+DEBUG="0"
+#===================================
+
 

@@ -17,8 +17,8 @@ MODIFIED="August 02, 2016"
 DEBUG="1"
 
 #==========================================================================
-
-. /usr/bin/remot3it_library
+. /usr/bin/OEM_OPTIONS
+. "$BIN_DIR"/connectd_library
 
 ######### Main Program #########
 main()
