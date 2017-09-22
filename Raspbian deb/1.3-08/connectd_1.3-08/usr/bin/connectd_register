@@ -22,8 +22,8 @@
 ##### Settings #####
 VERSION=v1.3-08
 AUTHOR="Gary Worsham"
-MODIFIED="September 13, 2017"
-DEBUG="0"
+MODIFIED="September 15, 2017"
+
 #=======================================================================
 # remot3it recommends running this script (with real username/password) from /tmp folder.
 # e.g. use wget to copy master script to /tmp from a local web server, then run it.
@@ -38,9 +38,9 @@ DEVELOPERKEY=""
 
 #==========================================================================
 # get global options such as NETIF, BASEDIR and PLATFORM
-# path to OEM_OPTIONS has to be hardwired here
+# path to connectd_options has to be hardwired here and edited if needed
 # ----------------------------------------
-. /usr/bin/OEM_OPTIONS
+. /usr/bin/connectd_options
 . "$BIN_DIR"/connectd_library
 # ----------------------------------------
 

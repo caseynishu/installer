@@ -14,7 +14,7 @@
 #
 
 # include shell script lib
-. /usr/bin/remot3it_wlib.sh
+. /usr/bin/connectd_wlib
 
 #set -x
 

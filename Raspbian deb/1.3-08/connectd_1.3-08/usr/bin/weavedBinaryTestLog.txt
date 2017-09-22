@@ -1,0 +1,36 @@
+********************************************************
+Weaved platform and binary tester for current directory /home/gary/Github/installer/Raspbian deb/1.3-08/connectd_1.3-08/usr/bin
+Fri Sep 15 12:54:02 PDT 2017
+********************************************************
+========================================================
+Platform fingerprint tests
+Fri Sep 15 12:54:02 PDT 2017
+========================================================
+========================================================
+Testing all Weaved binaries in current directory /home/gary/Github/installer/Raspbian deb/1.3-08/connectd_1.3-08/usr/bin
+Fri Sep 15 12:54:03 PDT 2017
+========================================================
+Console output running (for MacOS) md5 -r weavedConnectd.*:
+./bintester: line 262: md5: command not found
+--------------------------------------------------------
+Console output running (for Linux) md5sum weavedConnectd.*:
+md5sum: './weavedConnectd.*': No such file or directory
+--------------------------------------------------------
+Console output running (for Linux) ldd weavedConnectd.*:
+ldd: ./weavedConnectd.*: No such file or directory
+--------------------------------------------------------
+Console output running (for MacOS) otool -L weavedConnectd.*:
+./bintester: line 315: otool: command not found
+--------------------------------------------------------
+Console output running file weavedConnectd.*:
+./weavedConnectd.*: cannot open `./weavedConnectd.*' (No such file or directory)
+--------------------------------------------------------
+Console output running strings ./weavedConnectd.* | grep GCC | sort | uniq:
+strings: './weavedConnectd.*': No such file
+--------------------------------------------------------
+Console output running weavedConnectd.* with -n:
+./bintester: line 367: ./weavedConnectd.*: No such file or directory
+--------------------------------------------------------
+Finished testing all Weaved binaries in current directory /home/gary/Github/installer/Raspbian deb/1.3-08/connectd_1.3-08/usr/bin
+Fri Sep 15 12:54:03 PDT 2017
+========================================================

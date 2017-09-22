@@ -1,4 +1,6 @@
 #===================================
+# remot3.it connectd package options
+#===================================
 MODIFIED="September 15, 2017"
 #===================================
 # BASEDIR is root on many systems. If so, leave it blank.
@@ -54,7 +56,6 @@ ENFORCEROOT="1"
 # If STARTDAEMONSONREBOOT is set to "1", then following the execution of the connectd_register script,
 # the next time the device is rebooted, the daemons will be started.
 # If it is preferred that the daemons not autostart on the next reboot, set STARTDAEMONSONREBOOT to "0".
-
 STARTDAEMONSONREBOOT="1"
 #==============================================================================
 # CHECKFORDEB looks to see if there is a Debian package newer than what is installed.

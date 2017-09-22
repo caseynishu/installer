@@ -21,9 +21,9 @@ MAXSEL=6
 
 #==========================================================================
 # get global options such as NETIF, BASEDIR and PLATFORM
-# path to OEM_OPTIONS has to be hardwired here and edited if needed
+# path to connectd_options has to be hardwired here and edited if needed
 # ----------------------------------------
-. /usr/bin/OEM_OPTIONS
+. /usr/bin/connectd_options
 . "$BIN_DIR"/connectd_library
 # ----------------------------------------
 
