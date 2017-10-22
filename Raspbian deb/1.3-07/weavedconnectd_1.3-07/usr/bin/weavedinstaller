@@ -12,7 +12,7 @@
 ##### Settings #####
 VERSION=v1.3-07_Pi
 AUTHOR="Gary Worsham"
-MODIFIED="August 22, 2016"
+MODIFIED="June 24, 2017"
 
 USERNAME=""
 PASSWORD=""
@@ -38,8 +38,8 @@ main()
     # interactive installer defaults RMT3 service base name to MAC.
     # OEM installer allows OEM to use a different function to set the auto-assigned
     # service names.
-    SERVICEBASENAME=$MAC
-    interactiveInstall $1
+    SERVICEBASENAME="$MAC"
+    interactiveInstall "$1"
 }
 ######### End Main Program #########
-main $1 $2
+main "$1" "$2"

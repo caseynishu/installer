@@ -12,7 +12,7 @@
 ##### Settings #####
 LIBVERSION=lib_v1.3-07_Pi
 AUTHOR="Gary Worsham"
-LIBMODIFIED="March 07, 2017"
+LIBMODIFIED="October 22, 2017"
 DAEMON=weavedconnectd
 
 # ----------------------------------------
@@ -933,6 +933,11 @@ checkForDeviceName()
         fi
     else	# register the device using an RMT3 service
 #	echo "Did not find rmt3 conf file"
+#   look for an existing serial.txt and delete it if found
+        if [ -f /etc/weaved/serial.txt ]; then
+            rm /etc/weaved/serial.txt
+        fi
+
         PROTOCOL=rmt3
         PORT=65535
         WEAVED_PORT=Weaved"$PROTOCOL""$PORT"

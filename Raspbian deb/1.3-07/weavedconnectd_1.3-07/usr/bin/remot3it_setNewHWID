@@ -1,0 +1,81 @@
+#!/bin/bash
+
+#  remot3it_setNewHWID
+#
+#  Run 'sudo remot3it_setNewHWID' to update the Hardware ID on all installed services.
+#
+#  remot3.it, Inc. Copyright 2017. All rights reserved.
+#
+
+##### Settings #####
+VERSION=v1.3-07_x86
+AUTHOR="Gary Worsham"
+MODIFIED="October 21, 2017"
+DEBUG="0"
+#=======================================================================
+#
+USERNAME=""
+PASSWORD=""
+AUTHHASH="REPLACE_AUTHHASH"
+APIKEY="WeavedDeveloperToolsWy98ayxR"
+
+#==========================================================================
+
+source /usr/bin/weavedlibrary
+
+######### Main Program #########
+main()
+{
+    displayVersion
+# bashCheck can be commented out on known good platform
+    bashCheck
+#-----------------------------------------------------------------------
+#
+    if [ "$APIKEY" == "" ]; then
+        echo "APIKEY is blank.  Please contact remot3.it applications engineering for an API key."
+	exit
+    fi
+#-----------------------------------------------------------------------
+
+    if [ "$1" != "" ]; then
+            USERNAME=$1
+    fi
+    if [ "$2" != "" ]; then
+       PASSWORD=$2
+    fi
+    userLogin
+    testLogin
+
+# =============================================    
+# $SERVICEBASENAME is the base name of all installed services installed
+# with weavedinstaller_OEM
+# $SerialID equates to a random number concatenated with 
+# the Ethernet MAC address
+# this is the HWID for all services registered from a given device.
+# This function is defined in /usr/bin/weavedinstallerlib.
+#
+# By default, we are setting SERVICEBASENAME to $mac
+# This forms the first part of the displayed service name.
+# OEM can supply some other expression for getSerialID or SERVICEBASENAME here
+#
+#   look for an existing serial.txt and delete it if found
+    if [ -f /etc/weaved/serial.txt ]; then
+        rm /etc/weaved/serial.txt
+    fi
+ 
+    getSerialID
+    echo "Serial =" $SerialID
+    SERVICEBASENAME="$mac"
+    echo "SERVICEBASENAME = $SERVICEBASENAME"
+    echo
+# =============================================    
+#
+# =============================================  
+# this line is only used to automate conversion of pre-remot3.it devices to remot3.it
+    convertExistingUIDs
+
+    echo
+}
+######### End Main Program #########
+# you can optionally call this script with username and password as cmd line parameters
+main $1 $2

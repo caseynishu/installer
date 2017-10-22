@@ -102,6 +102,10 @@ main()
 # This forms the first part of the displayed service name.
 # OEM can supply some other expression for getSerialID or SERVICEBASENAME here
 # 
+#   look for an existing serial.txt and delete it if found
+        if [ -f /etc/weaved/serial.txt ]; then
+            rm /etc/weaved/serial.txt
+        fi
         getSerialID
         echo "Serial =" $SerialID
         SERVICEBASENAME="$mac"
