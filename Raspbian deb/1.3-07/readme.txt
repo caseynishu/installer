@@ -1,8 +1,28 @@
 To install Weaved to your ARM Debian system:
-1) Copy the deb file to your system.  We now have both armhf and armel versions.
-2) Run "sudo dpkg -i <deb file name>"
-3) Now run "sudo weavedinstaller" to install remot3.it services individually from the on-screen menus.
-4) Or alternatively, you may edit and run /usr/bin/remot3_register for a table-based installation script suitable for mass production.
+1) Choose the latest deb file for your platform.  We now have both armhf (which should be used for Raspberry Pi, BeagleBone Black, and WandBoard) and armel versions.
+
+2) Click on the link and then the "Download" button to download the file.  Right-click on the "Download" button to copy the link to use with wget on the command line, e.g.
+
+pi@raspberrypi:~ $ wget https://github.com/weaved/installer/raw/master/Raspbian%20deb/1.3-07/weavedconnectd_1.3-07v_armhf.deb
+--2017-11-17 09:01:24--  https://github.com/weaved/installer/raw/master/Raspbian%20deb/1.3-07/weavedconnectd_1.3-07v_armhf.deb
+Resolving github.com (github.com)... 192.30.253.112, 192.30.253.113
+Connecting to github.com (github.com)|192.30.253.112|:443... connected.
+HTTP request sent, awaiting response... 302 Found
+Location: https://raw.githubusercontent.com/weaved/installer/master/Raspbian%20deb/1.3-07/weavedconnectd_1.3-07v_armhf.deb [following]
+--2017-11-17 09:01:25--  https://raw.githubusercontent.com/weaved/installer/master/Raspbian%20deb/1.3-07/weavedconnectd_1.3-07v_armhf.deb
+Resolving raw.githubusercontent.com (raw.githubusercontent.com)... 151.101.40.133
+Connecting to raw.githubusercontent.com (raw.githubusercontent.com)|151.101.40.133|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 110112 (108K) [application/octet-stream]
+Saving to: ‘weavedconnectd_1.3-07v_armhf.deb’
+
+weavedconnectd_1.3-07v_armh 100%[============================================>] 107.53K  51.7KB/s   in 2.1s   
+
+2017-11-17 09:01:28 (51.7 KB/s) - ‘weavedconnectd_1.3-07v_armhf.deb’ saved [110112/110112]
+
+3) Run "sudo dpkg -i <deb file name>"
+4) Now run "sudo weavedinstaller" to install remot3.it services individually from the on-screen menus.
+5) Or alternatively, you may edit and run /usr/bin/remot3_register for a table-based installation script suitable for mass production.
 =============================================================
 The weavedconnectd_1.3-07 folder contains the source files for the Debian package creation process.
 
