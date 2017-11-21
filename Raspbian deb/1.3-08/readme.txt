@@ -1,4 +1,5 @@
-NOTE: connectd_1.3-08 is currently in EVALUATION phase. We expect there to be minor issues running it on various platforms.  We will change this announcement when it is released.
+NOTE: connectd_1.3-08 is currently in EVALUATION phase. We expect there to be minor issues running it on various platforms.  
+We will change this announcement when it is released.
 
 To install remot3.it connectd services to your Debian system:
 1) Copy the appropriate deb file to your system.
