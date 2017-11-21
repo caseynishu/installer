@@ -1,7 +1,10 @@
 #===================================
 # remot3.it connectd package options
 #===================================
-MODIFIED="September 15, 2017"
+MODIFIED="September 28, 2017"
+#===================================
+# set DEBUG to 1 to enable debugging messages
+DEBUG="0"
 #===================================
 # BASEDIR is root on many systems. If so, leave it blank.
 BASEDIR=
@@ -32,10 +35,20 @@ PID_DIR=/var/run
 #===================================
 # PLATFORM is the extension for the binaries, depends on CPU architecture
 # and shared libraries
-PLATFORM=pi
+PLATFORM=x86
+#===================================
+# PROVISION is the extension for the template provisioning files
+PROVISION=pi
 #===================================
 # NETIF is the network interface to use for MAC for auto-naming of services (used in connectd_register).
-NETIF="eth0"
+NETIF=$(sudo route | grep default | awk '{ print $8 }')
+#===================================
+# PSFLAGS is the option to be sent to the "ps" command to find the running daemons
+# For systems with root login and busybox implementation of ps, this should probably be: 
+# PSFLAGS=
+# For Ubuntu/Raspberry Pi/etc. running bash and standalone ps binary, it should be:
+# PSFLAGS="ax"
+PSFLAGS="ax"
 #===================================
 # If REGISTERSERVICE is set to 1, then account credentials need to be supplied, either above,
 # or if those are left at default values, then the script asks for username, password and developer key.
@@ -59,13 +72,10 @@ ENFORCEROOT="1"
 STARTDAEMONSONREBOOT="1"
 #==============================================================================
 # CHECKFORDEB looks to see if there is a Debian package newer than what is installed.
-CHECKFORDEB="1"
+CHECKFORDEB="0"
 #==============================================================================
 # The PACKAGE variable sets the Debian package name.  Only relevant if CHECKFORDEB is set to 1.
 PACKAGE="connectd"
-#===================================
-# set DEBUG to 1 to enable debugging messages
-DEBUG="0"
 #===================================
 
 

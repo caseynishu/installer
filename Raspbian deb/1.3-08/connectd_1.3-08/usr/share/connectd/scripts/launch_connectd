@@ -6,19 +6,17 @@
 #  remot3.it, Inc. Copyright 2017. All rights reserved.
 #
 
-VERSION="v1.5"
+VERSION="v1.6"
 AUTHOR="Gary Worsham"
-MODIFIED="September 11, 2017"
+MODIFIED="October 16, 2017"
+# BASEDIR is used to allow the package to be installed relative to any folder location
+# this variable will be overwritten by the installer script connectd_installer or connectd_register
+BASEDIR=
+. "$BASEDIR"/usr/bin/connectd_options
+
 CONNECTD_PORT=
-DAEMON=connectd.pi
-CONNECTD_DIR=/etc/connectd/services
-BIN_DIR=/usr/bin
-PID_DIR=/var/run
-BIN_PATH=$BIN_DIR/$DAEMON
-PIDPATH=$PID_DIR/$CONNECTD_PORT.pid
-LOG_FILE=/dev/null
-LOG_DIR=/var/log
-PSFLAGS="ax"
+DAEMON=connectd."$PLATFORM"
+PIDPATH="$PID_DIR"/"$CONNECTD_PORT".pid
 
 ##### Version #####
 displayVersion()
@@ -36,7 +34,7 @@ displayVersion()
 
 isRunningCmd()
 {
-	if [ -f $PIDPATH ]; then
+	if [ -f "$PIDPATH" ]; then
 		runningPID="$(cat $PIDPATH)"
 	fi
 	# see if there is ANY matching line with connectd and $CONNECTD_PORT.conf

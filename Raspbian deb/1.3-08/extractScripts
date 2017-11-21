@@ -1,8 +1,15 @@
 #!/bin/sh
+#set BINPATH to put executables somewhere other than /usr/bin.
+# e.g. for Mac OS/X, set BINPATH=/usr/local/bin
+BINPATH=
+
 ar x $1
 rm control.tar.gz
 tar xvf data.tar.xz
 rm data.tar.xz
+if [ "$BINPATH" != "" ]; then
+    mv usr/bin/* ./"$BINPATH"
+fi
 tar cvzf $1.gz usr etc
 rm -r usr
 rm -r etc

@@ -1,0 +1,507 @@
+#!/bin/bash
+#
+# remot3_script_lib is a collection of useful functions
+# for use in remot3 scripts
+#
+
+VERSION="1.1.0"
+MODIFIED="December 12, 2016"
+
+TOOL_DIR="/usr/bin"
+DEBUG_DIR="/tmp"
+TMP_DIR="/tmp"
+# turn on debug, set to 1 and will write to DEBUG_DIR/scriptname.log
+DEBUG_ON=0
+SHOW_STATUS=0
+
+HOUR=$(expr 60 \* 60)
+DAY=$(expr $HOUR \* 24)
+WEEK=$(expr $DAY \* 7)
+TASK_LIFE=$WEEK # default task life is 1 week, expressed in seconds
+START=$(date +%s)
+
+#
+# API for short code
+#
+apiMethod="https://"
+apiURI="/tiny/lookup/"
+
+########################################
+# Support Functions                    #
+########################################
+
+#----------------------------------------------------------
+#
+# Check to see if task has expired
+#
+Has_Task_Expired()
+{
+	now=$(date +%s)
+	delta=$((now-START))
+	
+	if [ $delta -gt $TASK_LIFE ]; then
+		# exit the script since task has expired
+		exit 1
+	else
+		return 0
+	fi
+}
+
+#----------------------------------------------------------
+#
+# Check to see if API is available
+#
+Internet_Available()
+{
+	ret=0
+    nc -z api.weaved.com 80  >/dev/null 2>&1
+    online=$?
+    if [ $online -eq 0 ]; then
+        Log "$0 Internet Available"
+        ret=1
+    else
+        Log "$0 Internet Not Available"
+    fi
+    return $ret
+}
+
+#----------------------------------------------------------
+#
+# Waits until API is available
+#
+Wait_For_Internet()
+{
+	while [ 1 ]
+	do
+		Has_Task_Expired
+	
+		# task has not expired
+		if [ $? -eq 0 ]; then
+	
+			# check to see if internet is available
+			Internet_Available
+		
+			if [ $? -eq 1 ]; then
+				# internet is available, return
+				sleep 2
+				return 0
+			fi 
+		
+			# wait for 15 seconds and recheck internet 
+			sleep 15
+			logger "$0 Looping while internet not available"
+		fi
+	done
+}
+
+#----------------------------------------------------------
+#
+# Print Usage
+#
+usage()
+{
+    echo "Usage: $0 <jobid> <api server> <shortcode>" >&2
+    echo "Version $VERSION Build $MODIFIED" >&2
+    return 0
+}
+
+#----------------------------------------------------------
+#
+# Log if DEBUG_ON is set to /tmp
+#
+Log()
+{
+    if [ $DEBUG_ON -eq 1 ]; then
+        ts=$(date)
+        echo "$ts $1" >> ${DEBUG_DIR}/$(basename $0).log
+    fi
+}
+
+#----------------------------------------------------------
+#
+# Task Update
+#
+Task_Update()
+{
+    if [ $SHOW_STATUS -eq 1 ]; then
+		retry=1
+		
+		while [ $retry -eq 1 ]
+		do
+			Wait_For_Internet
+			ret=$(${TOOL_DIR}/task_notify.sh 0 $jobid $api_server "$1")
+			
+			if [[ "$ret" == *"200"* ]]; then
+				retry=0
+			else
+				if [[ "$ret" == *"403"* ]]; then
+					exit 1
+				else
+					sleep 60
+				fi
+			fi
+		done
+	fi
+}
+
+#----------------------------------------------------------
+#
+# Send Task Complete notification to server
+#
+Task_Complete()
+{
+	retry=1
+	
+	while [ $retry -eq 1 ]
+	do
+		Wait_For_Internet
+		ret=$(${TOOL_DIR}/task_notify.sh 1 $jobid $api_server "$1")
+		
+		if [[ "$ret" == *"200"* ]]; then
+			retry=0
+		else
+			if [[ "$ret" == *"403"* ]]; then
+				exit 1
+			else
+				sleep 60
+			fi
+		fi
+	done
+}
+
+#----------------------------------------------------------
+#
+# Send Task Failed notificationto server
+# takes 1 parameter which is the message to send.
+#
+
+Task_Failed()
+{
+	retry=1
+	
+	while [ $retry -eq 1 ]
+	do
+		Wait_For_Internet
+		ret=$(${TOOL_DIR}/task_notify.sh 2 $jobid $api_server "$1")
+		
+		if [[ "$ret" == *"200"* ]]; then
+			retry=0
+		else
+			if [[ "$ret" == *"403"* ]]; then
+				exit 1
+			else
+				sleep 60
+			fi
+		fi
+	done	
+}
+
+#----------------------------------------------------------
+#
+# Update Status column A
+#
+Status_A()
+{
+    if [ $SHOW_STATUS -eq 1 ]; then
+		retry=1
+		
+		while [ $retry -eq 1 ]
+		do
+			Wait_For_Internet
+			ret=$(${TOOL_DIR}/task_notify.sh a $jobid $api_server "$1")
+			
+			if [[ "$ret" == *"200"* ]]; then
+				retry=0
+			else
+				if [[ "$ret" == *"403"* ]]; then
+					exit 1
+				else
+					sleep 60
+				fi
+			fi
+		done
+	fi
+}
+
+#----------------------------------------------------------
+#
+# Update Status column B
+#
+Status_B()
+{
+    if [ $SHOW_STATUS -eq 1 ]; then
+		retry=1
+		
+		while [ $retry -eq 1 ]
+		do
+			Wait_For_Internet
+			ret=$(${TOOL_DIR}/task_notify.sh b $jobid $api_server "$1")
+			
+			if [[ "$ret" == *"200"* ]]; then
+				retry=0
+			else
+				if [[ "$ret" == *"403"* ]]; then
+					exit 1
+				else
+					sleep 60
+				fi
+			fi
+		done
+	fi
+}
+
+#----------------------------------------------------------
+#
+# Update Status column C
+#
+Status_C()
+{
+    if [ $SHOW_STATUS -eq 1 ]; then
+		retry=1
+		
+		while [ $retry -eq 1 ]
+		do
+			Wait_For_Internet
+			ret=$(${TOOL_DIR}/task_notify.sh c $jobid $api_server "$1")
+			
+			if [[ "$ret" == *"200"* ]]; then
+				retry=0
+			else
+				if [[ "$ret" == *"403"* ]]; then
+					exit 1
+				else
+					sleep 60
+				fi
+			fi
+		done
+	fi
+}
+
+#----------------------------------------------------------
+#
+# Update Status column D
+#
+Status_D()
+{
+    if [ $SHOW_STATUS -eq 1 ]; then
+		retry=1
+		
+		while [ $retry -eq 1 ]
+		do
+			Wait_For_Internet
+			ret=$(${TOOL_DIR}/task_notify.sh d $jobid $api_server "$1")
+			
+			if [[ "$ret" == *"200"* ]]; then
+				retry=0
+			else
+				if [[ "$ret" == *"403"* ]]; then
+					exit 1
+				else
+					sleep 60
+				fi
+			fi
+		done
+	fi
+}
+
+#----------------------------------------------------------
+#
+# Update Status column E
+#
+Status_E()
+{
+    if [ $SHOW_STATUS -eq 1 ]; then
+		retry=1
+		
+		while [ $retry -eq 1 ]
+		do
+			Wait_For_Internet
+			ret=$(${TOOL_DIR}/task_notify.sh e $jobid $api_server "$1")
+			
+			if [[ "$ret" == *"200"* ]]; then
+				retry=0
+			else
+				if [[ "$ret" == *"403"* ]]; then
+					exit 1
+				else
+					sleep 60
+				fi
+			fi
+		done
+	fi
+}
+
+#----------------------------------------------------------
+#
+# JSON parse (very simplistic):  get value frome key $2 in buffer $1,  values or keys must not have the characters {}[", 
+#   and the key must not have : in it
+#
+#  Example:
+#   value=$(JSONval "$json_buffer" "$key") 
+#                                                   
+JSONval()                                              
+{
+    temp=`echo "$1" | sed -e 's/[{}\"]//g' | sed -e 's/,/\'$'\n''/g' | grep -w $2 | cut -d"[" -f2- | cut -d":" -f2-`       
+    echo ${temp}                                                
+}                                                   
+
+#----------------------------------------------------------
+#
+# translate short code
+#
+Translate()
+{
+    ret=0
+    # make api call
+    translate_url=${apiMethod}${api_server}${apiURI}${short_code}
+
+    Log "Translate URL call using URL $translate_url"
+
+    resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:WeavedDeveloperToolsWy98ayxR" "$translate_url")
+    
+    status=$(JSONval "$resp" "status")
+
+    Log "return status $status"
+
+    if [ "$status" == "true" ]; then
+        item=$(JSONval "$resp" "item")
+        #
+        # Convert from base64
+        decode=$(echo "$item" | base64 --decode)
+       
+        Log "item $item -> $decode"
+   
+        echo -n "$decode"
+    else
+        printf "Fail"
+        ret=1
+    fi
+
+    return $ret
+}
+
+#----------------------------------------------------------
+#
+# Remove cron job
+#
+Cron_Remove_Line()
+{
+	crontab -l | grep -v "$1" | cat > $TMP_DIR/.crontmp
+	crontab $TMP_DIR/.crontmp
+}
+
+#----------------------------------------------------------
+#
+# Add cron job
+#
+Cron_Add_Line()
+{
+	crontab -l 2>/dev/null 1> "$TMP_DIR"/.crontab_old
+	echo "$1" >> "$TMP_DIR"/.crontab_old
+	logger "Cron_Add_Line $1"
+	crontab "$TMP_DIR"/.crontab_old
+}
+
+
+#----------------------------------------------------------
+#
+# Create script to run after reboot
+#
+# Parameters passed
+# $1 - jobid
+# $2 - api_server
+# $3 - TASK_LIFE
+# $4 - START
+# $5 - Status_B message
+# $6 - Task_Complete message
+# $7 - DEBUG_ON
+# $8 - SHOW_STATUS
+#
+Save_State()
+{
+ 
+    if [ ! -d "/root/.remot3.it" ]; then
+        mkdir "/root/.remot3.it"
+    fi
+
+# save command and parameters for pass of uncompleted command through reboots
+# cron reboot task needs to be in place to scan and execute commands left in the file above
+	REBOOTFILE=/root/.remot3.it/weaved-reboot.sh
+	
+	# clear old cronjob in case last one didn't get executed possibly due to task expiration
+    Cron_Remove_Line "@reboot bash -x $REBOOTFILE >> /tmp/rebootlog"
+
+	echo "#!/bin/bash" > $REBOOTFILE
+	echo "#" >> $REBOOTFILE
+    echo "# Update status and task after reboot" >> $REBOOTFILE
+	echo "#" >> $REBOOTFILE
+	echo "# $(date)" >> $REBOOTFILE
+	echo "#" >> $REBOOTFILE	
+	echo " " >> $REBOOTFILE
+    echo "source /usr/bin/remot3_script_lib-1.1" >> $REBOOTFILE
+	echo " " >> $REBOOTFILE
+	echo "DEBUG_ON=$7" >> $REBOOTFILE
+	echo "SHOW_STATUS=$8" >> $REBOOTFILE
+	echo " " >> $REBOOTFILE
+	echo "jobid=$1" >> $REBOOTFILE
+	echo "api_server=$2" >> $REBOOTFILE
+	echo "TASK_LIFE=$3" >> $REBOOTFILE
+	echo "START=$4" >> $REBOOTFILE
+	echo " " >> $REBOOTFILE
+    echo "Wait_For_Internet" >> $REBOOTFILE
+    echo "sleep 5" >> $REBOOTFILE
+    echo "Status_B \"Success\"" >> $REBOOTFILE
+    echo "Status_C \"$5\"" >> $REBOOTFILE
+    echo "Task_Complete \"$6\"" >> $REBOOTFILE
+    echo "Cron_Remove_Line '@reboot bash -x $REBOOTFILE >> /tmp/rebootlog'" >> $REBOOTFILE
+
+    chmod +x $REBOOTFILE
+    Cron_Add_Line "@reboot bash -x $REBOOTFILE >> /tmp/rebootlog"
+    sync
+    sleep 2
+}
+
+#----------------------------------------------------------
+#
+# Download package and retry when connecitivity issue occur
+# 
+READTIMEOUT=120
+READRETRIES=5
+Download_With_Retry()
+{
+    filename=$(echo "$1" | awk '{ print $3 }')
+
+    # remove any possible existing file of same name we are about to download
+    if [ -e "$filename" ]; then
+        rm "$filename"
+    fi
+
+	if [ -z $2 ]; then
+		LIMITRATE="100k"
+	else 
+		LIMITRATE=$2
+	fi
+	
+	# while task has not expired
+    while Has_Task_Expired; do    	
+		wget_o=$(wget -c --limit-rate="$LIMITRATE" --read-timeout="$READTIMEOUT" -t $READRETRIES --no-check-certificate $1 )
+		retval=$?
+			
+		# download was successful
+		if [ $retval -eq 0 ]; then
+			return 0
+		else
+			# wget returned error, check for connectivity issue
+			if [ $retval -eq 4 ]; then
+				Task_Update "Download interrupted, retry in 5 sec."
+				sleep 5
+			else
+				# other wget error code, update task status
+				Status_B "Download Error"
+				Status_C "wget returned $retval"
+				Task_Failed "Error - wget download returned $retval"
+				exit 1 
+			fi
+		fi
+    done
+}

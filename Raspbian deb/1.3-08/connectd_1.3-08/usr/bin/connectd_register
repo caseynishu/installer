@@ -12,8 +12,8 @@
 #  Installs these remot3it connectd services:
 #
 #  rmt3
-#  ssh on port 22 (commented out)
-#  http on port 80 (commented out)
+#  ssh on port 22 
+#  http on port 80 
 #  tcp on port 3389 (commented out)
 #
 #  remot3.it, Inc. Copyright 2017. All rights reserved.
@@ -22,7 +22,7 @@
 ##### Settings #####
 VERSION=v1.3-08
 AUTHOR="Gary Worsham"
-MODIFIED="September 15, 2017"
+MODIFIED="October 16, 2017"
 
 #=======================================================================
 # remot3it recommends running this script (with real username/password) from /tmp folder.
@@ -40,7 +40,8 @@ DEVELOPERKEY=""
 # get global options such as NETIF, BASEDIR and PLATFORM
 # path to connectd_options has to be hardwired here and edited if needed
 # ----------------------------------------
-. /usr/bin/connectd_options
+INSTALLPATH=/usr/bin
+. "$INSTALLPATH"/connectd_options
 . "$BIN_DIR"/connectd_library
 # ----------------------------------------
 
@@ -81,6 +82,12 @@ main()
 # This forms the first part of the displayed service name.
 # OEM can supply some other expression for getHardwareID or SERVICEBASENAME here
 # 
+#   look for an existing serial.txt and delete it if found
+
+        if [ -f "$HARDWAREIDFILE" ]; then
+            rm "$HARDWAREIDFILE"
+        fi
+
         getHardwareID
         echo "Hardware ID = $HardwareID"
         SERVICEBASENAME="$mac"
@@ -108,7 +115,8 @@ main()
     makeConnection rmt3 65535 "$SERVICEBASENAME-rmt3"
 
     makeConnection ssh 22 "$SERVICEBASENAME-ssh-22"
-#    makeConnection web 80 "$SERVICEBASENAME-web-80"
+    makeConnection web 80 "$SERVICEBASENAME-web-80"
+#    makeConnection vnc 5900 "$SERVICEBASENAME-vnc-5900"
 #    makeConnection tcp 3389 "$SERVICEBASENAME-tcp-3389"
 # =============================================  
 
