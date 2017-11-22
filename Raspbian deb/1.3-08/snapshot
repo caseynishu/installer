@@ -1,0 +1,7 @@
+#!/bin/sh
+filename="installer_snapshot_$(date | tr '[:space:]' '_' | tr ':' '-')1.3-08.tar"
+echo $filename
+# read anykey
+tar cvf "$filename" connectd_1.3-08 daemons extractScripts lintpkg.sh
+mv "$filename" /media/gary/Data/snapshots
+ls -l /media/gary/Data/snapshots

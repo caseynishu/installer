@@ -1,4 +1,4 @@
-0bcbeb632e27db4585cd792b19b849b5  ./etc/connectd/schannel.conf
+f9d834fb7d977ec238f68819098623ec  ./etc/connectd/schannel.conf
 3dee231c575da41fe336d1b8a7dd9ad0  ./usr/share/doc/connectd/copyright.Debian
 a1dd2a55ea12c442d3411d4994b3f3de  ./usr/share/doc/connectd/copyright
 ab9d8e951d1d020b383cbfa3165853ef  ./usr/share/doc/connectd/changelog.Debian.gz
@@ -29,7 +29,7 @@ e2921d021ca8b78047b868578219a820  ./usr/bin/connectd.x86
 3701d1dc028a276b380e327304e0c2cf  ./usr/bin/connectd_wlib
 5f7d5edadcc2271662503a5a24eaa90a  ./usr/bin/connectd_enable_bulk_reg
 23b23554c2c8d51e04a03dfcb8ad0c45  ./usr/bin/connectd_control
-abf9e0bec170955107e5dccbd6734226  ./usr/bin/connectd_library
+e2a069d33c278baafd909c501a292a36  ./usr/bin/connectd_library
 cbb1939afac64d25845d4d1ae4b2e3ac  ./usr/bin/connectd_installer
 ec83852a971bcb66365f3f8db46726ed  ./usr/bin/connectd_migrate_from_weaved
 3fe774f7f878ebd462e595d6d6b38235  ./usr/bin/connectd_script_lib-1.1

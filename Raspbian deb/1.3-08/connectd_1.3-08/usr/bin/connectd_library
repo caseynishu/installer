@@ -74,7 +74,6 @@ checkForRoot()
 
 checkForUpdate()
 {
-# set -x
     if [ "$CHECKFORDEB" = "1" ]; then
         echo
         echo "-------------------"
@@ -85,7 +84,6 @@ checkForUpdate()
             echo "$PACKAGE is not yet installed."
 	    return
         fi 
-#unset -x
         currentlyInstalled=$(dpkg --status "$PACKAGE" | grep Version | awk '{ print $2 }')
         echo "$PACKAGE version $currentlyInstalled is currently installed."
 
@@ -302,7 +300,6 @@ checkforServices()
 getNumRange()
 {
      validInput="n"
-#     set -x
         while [ "$validInput" = "n" ]; do
             echo "Please select from the above options ($1 - $2):"
             read num
@@ -539,7 +536,6 @@ protocolSelection()
 
 checkAPIResult()
 {
-# set -x
     result=$(jsonval "$2" 'status')
     if [ "$result" = "true" ]; then
         return
@@ -763,7 +759,7 @@ enterVerificationCode()
     	getNewPassword
     done
 
-     resp=$(curl ${CURL_OPTS} 'POST' $regAccountURLVerified -d "{\"email\":\"$username\", \"password\":\"$password\", \"shortcode\":\"$registrationCode\"}" -H "content-type:application/json" -H "developerkey:$DEVKEY" 2> "$TMP_DIR"/.curlerr)
+     resp=$(curl ${CURL_OPTS} 'POST' $regAccountURLVerified -d "{\"email\":\"$username\", \"password\":\"$password\", \"shortcode\":\"$registrationCode\"}" -H "content-type:application/json" -H "developerkey:$developerkey" 2> "$TMP_DIR"/.curlerr)
 
     debug "$resp"
     value=$(jsonval "$resp" "status") 
@@ -867,7 +863,6 @@ userLogin () #Portal login function
 signInAPI()
 {
     debug "U:$username P:$password A:$authhash D:$developerkey"
-# set +x
     # if AUTHHASH is REPLACE_AUTHHASH it means user just wants to use password
     if [ "$AUTHHASH" = "REPLACE_AUTHHASH" ]; then
           resp=$(curl ${CURL_OPTS} 'POST' -H "developerkey: $developerkey" -H "Content-Type:application/json" -H "Cache-Control:no-cache" -d "{ \"username\" : \"$username\", \"password\" : \"$password\" }" "$loginURL" 2> "$TMP_DIR"/.curlerr)
@@ -898,7 +893,6 @@ echo
         devkeyerror=$(echo "$resp" | grep "api key failed validation" | sed 's/"//g')
 	echo "Login Error: $loginFailed $slimError $login404 $apikeyerror $devkeyerror" 
     fi
-set +x
     # invalid cert can happen if system date is set to before current date
     invalidCert=$(grep "SSL certificate problem" "$TMP_DIR"/.curlerr)
     date +"%s" > "$TMP_DIR"/.lastlogin
@@ -994,7 +988,7 @@ convertExistingUIDs()
 	# get service name from UID
                 uid="$(grep '^UID' "$file" | awk '{print $2}')"
 
-                result=$(curl ${CURL_OPTS} 'POST' $deviceHWIDURL -d "{\"deviceaddress\":\"$uid\", \"hardwareid\":\"$HardwareID\"}" -H "Content-Type:application/json" -H "developerkey:$DEVKEY" -H "token:$token" 2> /"$TMP_DIR"/.curlerr)
+                result=$(curl ${CURL_OPTS} 'POST' $deviceHWIDURL -d "{\"deviceaddress\":\"$uid\", \"hardwareid\":\"$HardwareID\"}" -H "Content-Type:application/json" -H "developerkey:$developerkey" -H "token:$token" 2> /"$TMP_DIR"/.curlerr)
 
                 checkAPIResult "$deviceHWID" "$result"
 
@@ -1068,13 +1062,11 @@ disableStartup()
 
 setBASEDIR()
 {
-# set -x
 # echo "setBASEDIR for $1"
     # have to escape slashes / in path to send string to sed
     BASEDIRSTRING=$(echo "$BASEDIR" | sed 's/\//\\\//g')
     cat "$1" | sed "/BASEDIR=/c\BASEDIR=$BASEDIRSTRING/" > "$TMP_DIR"/setBASEDIR.tmp 
     cp "$TMP_DIR"/setBASEDIR.tmp "$1" 
-set +x
 }
 
 #----------  end of setBASEDIR --------------
@@ -1084,10 +1076,8 @@ installStartStop()
 {
     printf "."
     sed s/CONNECTD_PORT=/CONNECTD_PORT="$CONNECTD_PORT"/ < "$CONNECTD_LIB_DIR"/scripts/launch_connectd > "$TMP_DIR"/"$CONNECTD_PORT"
-# set -x
     cat "$TMP_DIR"/"$CONNECTD_PORT" > "$BIN_DIR"/"$CONNECTD_PORT"
     setBASEDIR "$BIN_DIR"/"$CONNECTD_PORT"
-# set +x
     chmod +x "$BIN_DIR"/"$CONNECTD_PORT"
 # create the startup file if it does not exist.
     if [ ! -f "$BIN_DIR"/$STARTEMUP ]; then
@@ -1251,7 +1241,6 @@ getSecret()
     	test2="$(echo "$secretCall" | grep -c "api token" )"
     	test3="$(echo "$secretCall" | grep -c "false" )"
     	if [ "$test1" = 1 ]; then
-# set -x
             secret="$(getJSONSecret "$secretCall" "secret")"
 # echo "secret = $secret"
     	    echo "# password - erase this line to unregister the device" >> "$TMP_DIR"/"$CONNECTD_PORT".conf
@@ -1415,7 +1404,6 @@ interactiveInstall()
 #                                                   
 jsonval()                                              
 {
-# set -x
     temp=$(echo "$1" | sed -e 's/[{}\"]//g' | sed -e 's/,/\n/g' | grep -w ${GREPFLAGS} "$2" | cut -d"[" -f2- | cut -d":" -f2-)
     echo "${temp##*|}"         
 }                                                   
@@ -1430,7 +1418,6 @@ jsonvalx()
 #----------------------------------------------------------
 getJSONSecret()
 {
-# set -x
 # strip out all colons, break at commas, get rid of brackets and quotes
 
     temp=$(echo "$1" | sed -e 's/,/\'\n'/g' | sed -e 's/[{}"]//g' | grep -m 1 "$2" | awk -F "$2:" '{print $2}' | sed 's/://g')
