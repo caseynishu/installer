@@ -9,9 +9,20 @@ pkgFolder="$pkg"_"$ver"
 # set architecture
 controlFile="$pkgFolder"/DEBIAN/control
 
+#-------------------------------------------------
+# setOption() is specifically to change settings in the connectd_options file
+
+setOption()
+{
+    sed -i '/'"^$1"'/c\'"$1=$2"'' "$pkgFolder"/usr/bin/connectd_options
+   # sed -i '/"$1"/c\"$1=$2"' "$pkgFolder"/usr/bin/connectd_options
+}
+
+#-------------------------------------------------
 setEnvironment()
 {
     sed -i "/Architecture:/c\Architecture: $1" "$controlFile"
+    setOption "Architecture" "$1"
     if [ -e "$pkgFolder"/usr/bin/connectd.* ]; then
         rm "$pkgFolder"/usr/bin/connectd.*
     fi
@@ -21,7 +32,8 @@ setEnvironment()
     cp daemons/connectd."$2" "$pkgFolder"/usr/bin
     cp daemons/connectd_schannel."$2" "$pkgFolder"/usr/bin
 
-    sed -i "/PLATFORM=/c\PLATFORM=$2" "$pkgFolder"/usr/bin/connectd_options
+    setOption "PLATFORM" "$2"
+#    sed -i "/PLATFORM=/c\PLATFORM=$2" "$pkgFolder"/usr/bin/connectd_options
 }
 
 
@@ -29,25 +41,49 @@ gzip -9 "$pkgFolder"/usr/share/doc/$pkg/*.man
 sudo chown root:root "$pkgFolder"/usr/share/doc/$pkg/*.gz
 
 echo "Menu - select desired architecture below"
-echo "1) armhf"
-echo "2) armel"
-echo "3) i386 (32 bit)"
-echo "4) amd64 (64 bit)"
+echo "1) armhf Debian - Raspbian"
+echo "2) armel Debian"
+echo "3) i386 (32 bit) Debian"
+echo "4) amd64 (64 bit) Debian"
+echo "5) Liverock modem (Pi daemon)"
+echo "6) MIPS OpenWRT (Linino)"
+echo "7) MIPS Broadcom 5354"
+echo "8) MIPS gcc 342"
 read archMenu
 
 
+buildDeb=0
+
 if [ $archMenu -eq 1 ]; then
+    setOption "PSFLAGS" "ax"
     arch="armhf"
     PLATFORM=pi
+    buildDeb=1
 elif [ $archMenu -eq 2 ]; then
+    setOption "PSFLAGS" "ax"
     arch="armel"
     PLATFORM=pi
+    buildDeb=1
 elif [ $archMenu -eq 3 ]; then
+    setOption "PSFLAGS" "ax"
     arch="i386"
     PLATFORM=x86
+    buildDeb=1
 elif [ $archMenu -eq 4 ]; then
     arch="amd64"
     PLATFORM=i686
+    buildDeb=1
+    setOption "PSFLAGS" "ax"
+elif [ $archMenu -eq 5 ]; then
+    arch="armhf"
+    PLATFORM=pi
+elif [ $archMenu -eq 6 ]; then
+    arch="mips-msb"
+    PLATFORM=mips-msb-uClib
+    setOption "PSFLAGS" "w"
+else
+    echo "Menu setting not defined!"
+    exit
 fi
 
 setEnvironment "$arch" "$PLATFORM"
@@ -62,6 +98,8 @@ sudo mv md5sums DEBIAN
 sudo chmod 644 DEBIAN/md5sums
 sudo chown root:root DEBIAN/md5sums
 cd ..
+
+if [ "$buildDeb" = 1 ]; then
 
 echo "Building Debian package for architecture: $arch"
 
@@ -82,6 +120,16 @@ grep W: lintian-result.txt > lintian-W.txt
 grep I: lintian-result.txt > lintian-I.txt
 grep X: lintian-result.txt > lintian-X.txt
 rm lintian-result.txt
-ls -l *.txt
+ls -l lintian*.txt
 cat lintian-E.txt
 
+else
+echo "Building reference deb"
+# build reference DEB file
+dpkg-deb --build "$pkgFolder"
+version=$(grep -i version "$controlFile" | awk '{ print $2 }')
+
+./extractScripts "$pkgFolder".deb
+mv "$pkgFolder".deb.gz "$pkgFolder"_"$PLATFORM".gz
+
+fi

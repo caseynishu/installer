@@ -35,20 +35,20 @@ PID_DIR=/var/run
 #===================================
 # PLATFORM is the extension for the binaries, depends on CPU architecture
 # and shared libraries
-PLATFORM=x86
+PLATFORM=mips-msb-uClib
 #===================================
 # PROVISION is the extension for the template provisioning files
 PROVISION=pi
 #===================================
 # NETIF is the network interface to use for MAC for auto-naming of services (used in connectd_register).
-NETIF=$(sudo route | grep default | awk '{ print $8 }')
+NETIF=$(route | grep default | awk '{ print $8 }')
 #===================================
 # PSFLAGS is the option to be sent to the "ps" command to find the running daemons
 # For systems with root login and busybox implementation of ps, this should probably be: 
 # PSFLAGS=
 # For Ubuntu/Raspberry Pi/etc. running bash and standalone ps binary, it should be:
 # PSFLAGS="ax"
-PSFLAGS="ax"
+PSFLAGS=w
 #===================================
 # If REGISTERSERVICE is set to 1, then account credentials need to be supplied, either above,
 # or if those are left at default values, then the script asks for username, password and developer key.

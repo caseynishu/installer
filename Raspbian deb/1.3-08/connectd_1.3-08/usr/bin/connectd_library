@@ -146,7 +146,8 @@ connectdCompatibility()
 # in connectd_register
 getHardwareID()
 {
-    mac=$(ifconfig "$NETIF" | grep HWaddr | awk '{ print $5 }')
+    mac=$(ip addr | grep ether | tail -n 1 | awk '{ print $2 }')
+#     mac=$(ifconfig "$NETIF" | grep HWaddr | awk '{ print $5 }')
     if [ -f "$HARDWAREIDFILE" ]; then
 	HardwareID=$(cat "$HARDWAREIDFILE")
     else
@@ -938,6 +939,9 @@ testLogin()
 
 checkForDeviceName()
 {
+# look for provisioning file corresponding to an existing Bulk Service
+# (which is used to represent the Device Name)
+
     file="$CONNECTD_DIR"/Connectdrmt365535.conf
     if [ -f "$file" ]; then
 #	echo "Found rmt3 conf file"
@@ -1371,7 +1375,9 @@ configureConnection()
 	    # there should only be one UDP listener startup regardless of the number of services
 	    # the startup script will only start one instance
 	    "$BIN_DIR"/connectd_schannel start > /dev/null
-	fi
+	else
+            echo "Duplicate Name!"
+        fi
     fi
 }
 

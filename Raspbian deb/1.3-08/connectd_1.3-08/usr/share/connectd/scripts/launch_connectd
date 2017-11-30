@@ -17,6 +17,7 @@ BASEDIR=
 CONNECTD_PORT=
 DAEMON=connectd."$PLATFORM"
 PIDPATH="$PID_DIR"/"$CONNECTD_PORT".pid
+LOG_DIR=/tmp
 
 ##### Version #####
 displayVersion()
