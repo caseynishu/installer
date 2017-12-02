@@ -92,6 +92,8 @@ else
 fi
 
 setEnvironment "$arch" "$PLATFORM"
+# put build date into connected_options
+setOption "BUILDDATE" "\"$(date)\""
 
 # clean up and recreate md5sums file
 cd "$pkgFolder"
@@ -104,9 +106,20 @@ sudo chmod 644 DEBIAN/md5sums
 sudo chown root:root DEBIAN/md5sums
 cd ..
 
+
 if [ "$buildDeb" = 1 ]; then
 
 echo "Building Debian package for architecture: $arch"
+
+#--------------------------------------------------------
+# for Deb pkg build, remove builddate.txt file
+# builddate.txt is used by generic tar.gz installers
+file="$pkgFolder"/etc/connectd/builddate.txt
+
+if [ -e "$file" ]; then
+    rm "$pkgFolder"/etc/connectd/builddate.txt
+fi
+#--------------------------------------------------------
 
 # su gary
 

@@ -10,6 +10,9 @@ rm data.tar.xz
 if [ "$BINPATH" != "" ]; then
     mv usr/bin/* ./"$BINPATH"
 fi
+
+# this overwrites the builddate.txt file created and included in Deb pkg
+# however it also appends the file list which can be used by a "delete" script
 FILELOG=etc/connectd/builddate.txt
 echo "Build date: $(date)" > "$FILELOG"
 ls -lR usr >> "$FILELOG"
