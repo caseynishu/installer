@@ -49,6 +49,7 @@ echo "5) Liverock modem (Pi daemon)"
 echo "6) MIPS OpenWRT (Linino)"
 echo "7) MIPS Broadcom 5354"
 echo "8) MIPS gcc 342"
+echo "9) ARM uClibc static"
 read archMenu
 
 
@@ -80,6 +81,10 @@ elif [ $archMenu -eq 5 ]; then
 elif [ $archMenu -eq 6 ]; then
     arch="mips-msb"
     PLATFORM=mips-msb-uClib
+    setOption "PSFLAGS" "w"
+elif [ $archMenu -eq 9 ]; then
+    arch="arm-uclib-static"
+    PLATFORM=arm-uclib-static
     setOption "PSFLAGS" "w"
 else
     echo "Menu setting not defined!"

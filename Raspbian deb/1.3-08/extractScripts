@@ -10,6 +10,10 @@ rm data.tar.xz
 if [ "$BINPATH" != "" ]; then
     mv usr/bin/* ./"$BINPATH"
 fi
+FILELOG=etc/connectd/builddate.txt
+echo "Build date: $(date)" > "$FILELOG"
+ls -lR usr >> "$FILELOG"
+ls -lR etc >> "$FILELOG"
 tar cvzf $1.gz usr etc
 rm -r usr
 rm -r etc

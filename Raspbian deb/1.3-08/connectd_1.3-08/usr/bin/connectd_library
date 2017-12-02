@@ -21,9 +21,6 @@ filename=$(basename "$0")
 token=""
 
 # ----------------------------------------
-# startupScripts = 0, ask; 1, init.d; 2, systemd; 3, crontab
-# only crontab currently supported.
-startupScripts=3
 STARTEMUP=connectd_start
 
 # ----------------------------------------
@@ -1050,14 +1047,22 @@ cronRemoveLine()
 ######### Enable remot3.it services to start at reboot time ######
 enableStartup()
 {
-    cronAddLine "@reboot $BIN_DIR/$STARTEMUP"
+    if [ $startupScripts = 3 ]; then
+        cronAddLine "@reboot $BIN_DIR/$STARTEMUP"
+    elif [ $startupScripts = 1 ]; then
+        echo "need to add startup link to /etc/init.d"
+    fi
 }
 ######### End Enable remot3.it services to start at reboot time ######
 
 ######### Disable remot3.it services to start at reboot time ######
 disableStartup()
 {
-    cronRemoveLine "@reboot $BIN_DIR/$STARTEMUP"
+    if [ $startupScripts = 3 ]; then
+        cronRemoveLine "@reboot $BIN_DIR/$STARTEMUP"
+    elif [ $startupScripts = 1 ]; then
+        echo "need to remove startup link from /etc/init.d"
+    fi
 }
 
 #----------  setBASEDIR --------------
@@ -1098,6 +1103,8 @@ installStartStop()
 	if [ "$checkCron" -gt 0 ] && [ "$STARTDAEMONSONREBOOT" = "0" ]; then
 	    disableStartup
 	fi
+ #   elif [ $startupScripts = 1 ]; then
+ #       ln -s /usr/bin/connectd_start /etc/init.d/connectd
     fi
 	# see if there is an entry to start the chosen service daemon already
 	checkStartConnectd=$(grep -c "$CONNECTD_PORT" "$BIN_DIR"/"$STARTEMUP" )
@@ -1117,9 +1124,11 @@ installStartStop()
 	setBASEDIR "$BIN_DIR"/"$STARTEMUP"
 	# copy the template connectd_stop then update the BASEDIR variable
 	cp "$CONNECTD_LIB_DIR"/scripts/connectd_stop "$BIN_DIR"
+	chmod +x "$BIN_DIR"/connectd_stop
 	setBASEDIR "$BIN_DIR"/connectd_stop
 	# copy the template connectd_schannel then update the BASEDIR variable
 	cp "$CONNECTD_LIB_DIR"/scripts/connectd_schannel "$BIN_DIR"
+	chmod +x "$BIN_DIR"/connectd_schannel
 	setBASEDIR "$BIN_DIR"/connectd_schannel
 }
 ######### End Start/Stop Scripts #########

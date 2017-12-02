@@ -35,7 +35,10 @@ PID_DIR=/var/run
 #===================================
 # PLATFORM is the extension for the binaries, depends on CPU architecture
 # and shared libraries
-PLATFORM=mips-msb-uClib
+PLATFORM=i686
+#===================================
+# startupScripts = 0, ask; 1, init.d; 2, systemd; 3, crontab
+startupScripts=3
 #===================================
 # PROVISION is the extension for the template provisioning files
 PROVISION=pi
@@ -48,7 +51,7 @@ NETIF=$(route | grep default | awk '{ print $8 }')
 # PSFLAGS=
 # For Ubuntu/Raspberry Pi/etc. running bash and standalone ps binary, it should be:
 # PSFLAGS="ax"
-PSFLAGS=w
+PSFLAGS=ax
 #===================================
 # If REGISTERSERVICE is set to 1, then account credentials need to be supplied, either above,
 # or if those are left at default values, then the script asks for username, password and developer key.
