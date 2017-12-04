@@ -19,8 +19,8 @@
 #set -x
 
 #### Settings #####
-VERSION=0.0.6
-MODIFIED="September 12, 2017"
+VERSION=0.0.7
+MODIFIED="December 4, 2017"
 #
 # Config Dir
 #
@@ -59,7 +59,9 @@ authtype=0
 #
 REG_DEBUG=0
 REG_ID_ADAPTER="wlan0"
+#REG_ID_ADAPTER="enp5s0"
 REG_KEY_ADAPTER="eth0"
+#REG_KEY_ADAPTER="enp5s0"
 
 BULK_REG_DEVICE_FILE="$DEVICES_ACTIVE/rmt3.i686"
 #
@@ -73,6 +75,7 @@ DEBUG=0
 PID=0;
 TIMEIT=0
 FAILTIME=10
+BULK_RETRY_TIME=10
 #
 # API's
 #
@@ -653,45 +656,59 @@ bprovisionit()
             printf "Call API with project_id %s with hwid and reg key.\n" $project_id
         fi
 
-        # make curl call
-        data='{"project_id":"'$project_id'","hardware_id" : "'$hardware_id'", "registration_key" : "'$registration_key'"}'
-        resp=$(curl -s -S -X POST -H "content-type:application/json" --data "$data" $BulkRegisterURL )
-        
-        status=$(jsonval "$(echo -n "$resp")" "status")
-      
-        case "$status" in
-        "true")
-            # got a 200 lets do it
-            uid=$(jsonval "$resp" "uid")
-            secret=$(jsonval "$resp" "secret")
-            # we have reg stuff lets create it
-            cp "$PROVISION_DEFAULT/$1" "$DEVICES_AVAILABLE/$1"
-            echo "UID $uid" >> "$DEVICES_AVAILABLE/$1"
-            echo "password $secret" >> "$DEVICES_AVAILABLE/$1"
-            #
-            echo "OK: $1 is provisioned"
-            #
-            # Activate it
-            enable $1
-            # start it
-            start $1
-        ;;
-        "false")
-            reason=$(jsonval "$(echo -n "$resp")" "reason")
-            if [ $VERBOSE -gt 0 ]; then
-                printf "Server Said = %s\n" "$reason"
-            fi
-            printf "FAIL: %s: %s\n" "$1" "$reason"
-            return 1
-        ;;
-        *)
-            if [ $VERBOSE -gt 0 ]; then
-                printf "Curl Call failed with error. output= %s\n" $status
-            fi
-            echo "FAIL: error talking to server"
-            return 1
-        ;;
-        esac 
+		while : 
+		do
+        	# make curl call
+        	data='{"project_id":"'$project_id'","hardware_id" : "'$hardware_id'", "registration_key" : "'$registration_key'"}'
+
+        	resp=$(curl -s -S -X POST -H "content-type:application/json" --data "$data" $BulkRegisterURL )
+
+        	#status=$(jsonval "$(echo -n "$resp")" "status")
+        	status=$(jsonval "$resp" "status")
+
+        	case "$status" in
+        	"true")
+            	# got a 200 lets do it
+            	uid=$(jsonval "$resp" "uid")
+            	secret=$(jsonval "$resp" "secret")
+            	# we have reg stuff lets create it
+            	cp "$PROVISION_DEFAULT/$1" "$DEVICES_AVAILABLE/$1"
+            	echo "UID $uid" >> "$DEVICES_AVAILABLE/$1"
+            	echo "password $secret" >> "$DEVICES_AVAILABLE/$1"
+            	#
+            	echo "OK: $1 is provisioned"
+            	#
+            	# Activate it
+            	enable $1
+            	# start it
+            	start $1
+        	;;
+        	"pending")
+            	if [ $VERBOSE -gt 0 ]; then
+                	printf "server said pending\n" 
+            	fi
+            	echo "RETRY: $1: $status"
+        		sleep $BULK_RETRY_TIME 
+				continue
+			;;
+        	"false")
+            	reason=$(jsonval "$(echo -n "$resp")" "reason")
+            	if [ $VERBOSE -gt 0 ]; then
+                	printf "Server Said = %s\n" "$reason"
+            	fi
+            	printf "FAIL: %s: %s\n" "$1" "$reason"
+            	return 1
+        	;;
+        	*)
+            	if [ $VERBOSE -gt 0 ]; then
+                	printf "Curl Call failed with error. output= %s\n" $status
+            	fi
+            	echo "FAIL: error talking to server (${status})"
+            	return 1
+        	;;
+        	esac 
+			break
+		done
 
 
     else

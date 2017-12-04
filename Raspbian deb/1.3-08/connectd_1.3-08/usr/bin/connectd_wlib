@@ -14,6 +14,8 @@
 #${var%%SubStr*} # will drop part of string from first occur of `SubStr` to the end
 
 
+GREPFLAGS=
+
 #produces a unix timestamp to the output                                                                                           
 utime()                                                                                                                            
 {                                                                                                                                  
@@ -69,10 +71,13 @@ xmlval()
 jsonval()                                              
 {
     #temp=`echo "$1" | sed -e 's/[{}\"]//g' | sed -e 's/,/\'$'\n''/g' | grep -w $2 | cut -d"[" -f2- | cut -d":" -f2-`
-    temp=`echo "$1" | sed -e 's/[{}\"]//g' | sed -e 's/,/\'$'\n''/g' | grep -w $2 | cut -d":" -f2-`
+    #temp=`echo "$1" | sed -e 's/[{}\"]//g' | sed -e 's/,/\'$'\n''/g' | grep -w $2 | cut -d":" -f2-`
     #temp=`echo "$1" | sed -e 's/{}\"//g' | sed -e 's/,/\'$'\n''/g' | grep -w $2 | cut -d"[" -f2- | cut -d":" -f2-`
-    #echo ${temp##*|}         
-    echo ${temp}                                                
+    #echo ${temp##*|}
+    #echo ${temp}
+    temp=$(echo "$1" | sed -e 's/[{}\"]//g' | sed -e 's/,/\n/g' | grep -w ${GREPFLAGS} "$2" | cut -d"[" -f2- | cut -d":" -f2-)
+    echo "${temp##*|}" 
+
 }                                                   
 
 jsonvalx()
