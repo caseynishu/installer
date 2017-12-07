@@ -22,12 +22,12 @@ aaf23a73d4ffca7cffe84f695fca53d9  ./usr/share/connectd/scripts/connectd_stop
 37fc71c01c9e575418846d5b5e900beb  ./usr/share/connectd/scripts/connectd_schannel
 83a95e761c60e4782ca107f4bba86475  ./usr/share/connectd/scripts/connectd_start
 2923af59e6368bff61bd4f274929476f  ./usr/share/connectd/scripts/launch_connectd
-f75e7982c296f34ba341fdb27e0c4db9  ./usr/bin/connectd_options
+f83ced2178c07e910617133b9871a85c  ./usr/bin/connectd_options
 f6d0a2ac8095e570546c421fedc48b65  ./usr/bin/connectd_factoryreset
-3701d1dc028a276b380e327304e0c2cf  ./usr/bin/connectd_wlib
+e3acddc456d0f4223ad8879ceff0d13e  ./usr/bin/connectd_wlib
 a7027e1734899e7cc6eebb6ea558acd4  ./usr/bin/connectd.pi
 5f7d5edadcc2271662503a5a24eaa90a  ./usr/bin/connectd_enable_bulk_reg
-23b23554c2c8d51e04a03dfcb8ad0c45  ./usr/bin/connectd_control
+a22fe912c828e4baabd18aa2d28d88a1  ./usr/bin/connectd_control
 791897edb322d08e85b266934afc8ebc  ./usr/bin/connectd_library
 cbb1939afac64d25845d4d1ae4b2e3ac  ./usr/bin/connectd_installer
 39cce1f334113d99e486d3fd466709bd  ./usr/bin/connectd_schannel.pi
