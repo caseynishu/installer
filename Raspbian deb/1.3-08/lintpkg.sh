@@ -8,13 +8,14 @@ ver=1.3-08
 pkgFolder="$pkg"_"$ver"
 # set architecture
 controlFile="$pkgFolder"/DEBIAN/control
+RELEASE="_BETA"
 
 #-------------------------------------------------
 # setOption() is specifically to change settings in the connectd_options file
 
 setOption()
 {
-    sed -i '/'"^$1"'/c\'"$1=$2"'' "$pkgFolder"/usr/bin/connectd_options
+    sed -i '/'"^$1"'/c\'"$1=$2 $3 $4 $5 $6"'' "$pkgFolder"/usr/bin/connectd_options
    # sed -i '/"$1"/c\"$1=$2"' "$pkgFolder"/usr/bin/connectd_options
 }
 
@@ -55,37 +56,46 @@ read archMenu
 
 buildDeb=0
 
-if [ $archMenu -eq 1 ]; then
+if [ "$archMenu" -eq 1 ]; then
     setOption "PSFLAGS" "ax"
+#    setOption "mac" '$(ip addr | grep ether | tail -n 1 | awk \'{ print \$2 }\')'
+    setOption "mac" '$'"(ip addr | grep ether | tail -n 1 | awk" "'{ print" '$2' "}')"
     arch="armhf"
     PLATFORM=pi
     buildDeb=1
-elif [ $archMenu -eq 2 ]; then
+elif [ "$archMenu" -eq 2 ]; then
     setOption "PSFLAGS" "ax"
+#    setOption "mac" '$(ip addr | grep ether | tail -n 1 | awk "{ print \$2 }")'
+    setOption "mac" '$'"(ip addr | grep ether | tail -n 1 | awk" "'{ print" '$2' "}')"
     arch="armel"
     PLATFORM=pi
     buildDeb=1
-elif [ $archMenu -eq 3 ]; then
+elif [ "$archMenu" -eq 3 ]; then
     setOption "PSFLAGS" "ax"
+#    setOption "mac" '$(ip addr | grep ether | tail -n 1 | awk "{ print $2 }")'
+    setOption "mac" '$'"(ip addr | grep ether | tail -n 1 | awk" "'{ print" '$2' "}')"
     arch="i386"
     PLATFORM=x86
     buildDeb=1
-elif [ $archMenu -eq 4 ]; then
+elif [ "$archMenu" -eq 4 ]; then
     arch="amd64"
+    setOption "mac" '$'"(ip addr | grep ether | tail -n 1 | awk" "'{ print" '$2' "}')"
     PLATFORM=i686
     buildDeb=1
     setOption "PSFLAGS" "ax"
-elif [ $archMenu -eq 5 ]; then
+elif [ "$archMenu" -eq 5 ]; then
     arch="armhf"
     PLATFORM=pi
-elif [ $archMenu -eq 6 ]; then
+elif [ "$archMenu" -eq 6 ]; then
     arch="mips-msb"
     PLATFORM=mips-msb-uClib
     setOption "PSFLAGS" "w"
-elif [ $archMenu -eq 9 ]; then
+    setOption "mac" "\$(ifconfig $NETIF | grep HWaddr | awk \'{ print \$5 }\' | tail -n 1)"
+elif [ "$archMenu" -eq 9 ]; then
     arch="arm-uclib-static"
     PLATFORM=arm-uclib-static
     setOption "PSFLAGS" "w"
+    setOption "mac" '$'"(ip addr | grep ether | tail -n 1 | awk" "'{ print" '$2' "}')"
 else
     echo "Menu setting not defined!"
     exit
@@ -128,11 +138,11 @@ dpkg-deb --build "$pkgFolder"
 
 version=$(grep -i version "$controlFile" | awk '{ print $2 }')
 
-
-mv "$pkgFolder".deb "$pkg"_"$version"_"$arch".deb
+# for now, mark all releases as BETA
+mv "$pkgFolder".deb "${pkg}_${version}_$arch$RELEASE".deb
 
 # scan result for errors and warnings
-lintian -EviIL +pedantic "$pkg"_"$version"_"$arch".deb  > lintian-result.txt
+lintian -EviIL +pedantic "${pkg}_${version}_$arch$RELEASE".deb  > lintian-result.txt
 grep E: lintian-result.txt > lintian-E.txt
 grep W: lintian-result.txt > lintian-W.txt
 grep I: lintian-result.txt > lintian-I.txt
@@ -147,7 +157,10 @@ echo "Building reference deb"
 dpkg-deb --build "$pkgFolder"
 version=$(grep -i version "$controlFile" | awk '{ print $2 }')
 
+# for now, mark all releases as BETA
 ./extractScripts "$pkgFolder".deb
-mv "$pkgFolder".deb.gz "$pkgFolder"_"$PLATFORM".gz
+mv "$pkgFolder".deb.gz "${pkg}_${version}_$arch$RELEASE".gz
 
 fi
+
+ls -l "${pkg}*"

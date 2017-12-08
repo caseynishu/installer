@@ -30,3 +30,4 @@ chown root:root $DIR/usr/share/doc
 chown root:root $DIR/usr/share/doc/connectd
 chown root:root $DIR/usr/share/doc/connectd/*
 chown root:root $DIR/usr/share/doc/connectd/*.*
+chmod +x $DIR/usr/bin/*

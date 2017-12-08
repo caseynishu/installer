@@ -3,7 +3,7 @@ Version: 1.3-08f
 Section: non-free/net
 Priority: optional
 Homepage: http://remot3.it
-Architecture: armhf
+Architecture: amd64
 Depends: libc6 (>= 2.1), mawk (>= 1.0), grep (>= 2.1.6), curl (>= 7.25.0), psmisc (>= 22.19-1)
 Maintainer: Gary Worsham <gary@remot3.it>
 Description: remot3.it is a cloud service that provides secure connections to 

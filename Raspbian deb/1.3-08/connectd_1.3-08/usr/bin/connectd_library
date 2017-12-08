@@ -10,7 +10,7 @@
 ##### Settings #####
 LIBVERSION=lib_v1.3-08
 AUTHOR="Gary Worsham"
-LIBMODIFIED="November 17, 2017"
+LIBMODIFIED="December 05, 2017"
 DAEMON=connectd
 GREPFLAGS=
 CURL_OPTS="-k -s -S -X"
@@ -50,6 +50,7 @@ displayVersion()
 {
     printf "remot3.it connection installer Version: %s %s \n" "$VERSION" "$LIBVERSION"
     printf "Modified: %s (library) %s \n" "$MODIFIED" "$LIBMODIFIED"
+    printf "Build date: %s " "$BUILDDATE"
 }
 ##### End Version #####
 
@@ -143,8 +144,7 @@ connectdCompatibility()
 # in connectd_register
 getHardwareID()
 {
-    mac=$(ip addr | grep ether | tail -n 1 | awk '{ print $2 }')
-#     mac=$(ifconfig "$NETIF" | grep HWaddr | awk '{ print $5 }')
+# expression for mac is set in connectd_options
     if [ -f "$HARDWAREIDFILE" ]; then
 	HardwareID=$(cat "$HARDWAREIDFILE")
     else
@@ -541,7 +541,8 @@ checkAPIResult()
         echo "API call to $1 failed!"
         reason=$(jsonval "$2" 'reason')
         echo "$reason"
-	read key
+#        echo "Hit any key to continue."
+#	read key
     fi
 }
 
@@ -839,17 +840,22 @@ userLogin () #Portal login function
         if [ "$PASSWORD" != "" ]; then
 	    password="$PASSWORD"
         else
-            stty -echo
+	# use stty to suppress password, if stty exists.
+            if [ "$(which stty)" != "" ]; then
+                stty -echo
+	    fi
 	    printf "\nPlease enter your remot3.it password: \n"
 	    password=""
 	    read password
-	    stty echo
+           if [ "$(which stty)" != "" ]; then
+                stty echo
+	    fi
         fi
    fi
    if [ "$DEVELOPERKEY" != "" ]; then 
        developerkey="$DEVELOPERKEY"
    else        
-        printf "Please enter your remot3.it Developer API key: \n"
+        printf "\nPlease enter your remot3.it Developer API key: \n"
 	read developerkey
     fi
 #   echo $username $password $authhash
@@ -964,6 +970,11 @@ checkForDeviceName()
 	        protocol=$(jsonval "$resp" "title")
 		debug "protocol: $protocol"
             fi
+        else
+            echo "UID $uid was not pre-registered successfully."
+            logger "UID $uid was not pre-registered successfully."
+            echo "Please contact support@remot3.it."
+            exit 1
         fi
     else	# register the device using an RMT3 service
 #	echo "Did not find rmt3 conf file"
@@ -1050,7 +1061,7 @@ enableStartup()
     if [ $startupScripts = 3 ]; then
         cronAddLine "@reboot $BIN_DIR/$STARTEMUP"
     elif [ $startupScripts = 1 ]; then
-        echo "need to add startup link to /etc/init.d"
+        echo "You will need to add reboot start/stop links to $BIN_DIR/$STARTEMUP"
     fi
 }
 ######### End Enable remot3.it services to start at reboot time ######
@@ -1061,7 +1072,7 @@ disableStartup()
     if [ $startupScripts = 3 ]; then
         cronRemoveLine "@reboot $BIN_DIR/$STARTEMUP"
     elif [ $startupScripts = 1 ]; then
-        echo "need to remove startup link from /etc/init.d"
+        echo "You will need to remove reboot start/stop links to $BIN_DIR/$STARTEMUP"
     fi
 }
 
@@ -1106,30 +1117,36 @@ installStartStop()
  #   elif [ $startupScripts = 1 ]; then
  #       ln -s /usr/bin/connectd_start /etc/init.d/connectd
     fi
-	# see if there is an entry to start the chosen service daemon already
-	checkStartConnectd=$(grep -c "$CONNECTD_PORT" "$BIN_DIR"/"$STARTEMUP" )
-	# if not, add it
-	if [ "$checkStartConnectd" = 0 ]; then
-	    sed s/REPLACE_TEXT/"$CONNECTD_PORT"/ < "$CONNECTD_LIB_DIR"/scripts/connectd_start.add > "$TMP_DIR"/connectd_start.add
-	    sh -c "cat $TMP_DIR/connectd_start.add >> $BIN_DIR/$STARTEMUP"
-            rm "$TMP_DIR"/connectd_start.add
-	fi
-	# see if there is an entry to start the listener service daemon schannel.x already
-	checkStartSchannel=$(grep -c "connectd_schannel" "$BIN_DIR"/"$STARTEMUP" )
-	# if not, add it
-	if [ "$checkStartSchannel" = 0 ]; then
-	    sh -c "echo '"$BIN_DIR/connectd_schannel" start' >> $BIN_DIR/$STARTEMUP"
-	fi
-	chmod +x "$BIN_DIR"/"$STARTEMUP"
-	setBASEDIR "$BIN_DIR"/"$STARTEMUP"
-	# copy the template connectd_stop then update the BASEDIR variable
-	cp "$CONNECTD_LIB_DIR"/scripts/connectd_stop "$BIN_DIR"
-	chmod +x "$BIN_DIR"/connectd_stop
-	setBASEDIR "$BIN_DIR"/connectd_stop
-	# copy the template connectd_schannel then update the BASEDIR variable
-	cp "$CONNECTD_LIB_DIR"/scripts/connectd_schannel "$BIN_DIR"
-	chmod +x "$BIN_DIR"/connectd_schannel
-	setBASEDIR "$BIN_DIR"/connectd_schannel
+    # see if there is an entry to start the chosen service daemon already
+    checkStartConnectd=$(grep -c "$CONNECTD_PORT" "$BIN_DIR"/"$STARTEMUP" )
+    # if not, add it
+    if [ "$checkStartConnectd" = 0 ]; then
+	sed s/REPLACE_TEXT/"$CONNECTD_PORT"/ < "$CONNECTD_LIB_DIR"/scripts/connectd_start.add > "$TMP_DIR"/connectd_start.add
+	sh -c "cat $TMP_DIR/connectd_start.add >> $BIN_DIR/$STARTEMUP"
+        rm "$TMP_DIR"/connectd_start.add
+    fi
+    # see if there is an entry to start the listener service daemon schannel.x already
+    checkStartSchannel=$(grep -c "connectd_schannel" "$BIN_DIR"/"$STARTEMUP" )
+    # if not, add it
+    if [ "$checkStartSchannel" = 0 ]; then
+        sh -c "echo '"$BIN_DIR/connectd_schannel" start' >> $BIN_DIR/$STARTEMUP"
+    fi
+    setBASEDIR "$BIN_DIR"/"$STARTEMUP"
+    chmod +x "$BIN_DIR"/"$STARTEMUP"
+
+    # copy the template connectd_stop then update the BASEDIR variable
+    if [ ! -e "$BIN_DIR"/connectd_stop ]; then
+        cp "$CONNECTD_LIB_DIR"/scripts/connectd_stop "$BIN_DIR"
+        setBASEDIR "$BIN_DIR"/connectd_stop
+        chmod +x "$BIN_DIR"/connectd_stop
+    fi
+
+    # copy the template connectd_schannel then update the BASEDIR variable      
+    if [ ! -e "$BIN_DIR"/connectd_schannel ]; then
+        cp "$CONNECTD_LIB_DIR"/scripts/connectd_schannel "$BIN_DIR"
+        setBASEDIR "$BIN_DIR"/connectd_schannel
+        chmod +x "$BIN_DIR"/connectd_schannel
+    fi
 }
 ######### End Start/Stop Scripts #########
 
@@ -1151,7 +1168,7 @@ checkUID()
     if [ "$checkforUID" = 2 ]; then
 	#    cp "$CONNECTD_LIB_DIR"/"$CONNECTD_PORT".conf /"$CONNECTD_DIR"/
 	uid=$(grep ^UID "$TMP_DIR"/"$CONNECTD_PORT".conf | awk '{print $2}' )
-	printf "\n\nAllocated UID: %s. \n\n" "$uid"
+	printf "\n==========================================\nAllocated UID: %s. \n\n" "$uid"
     else
 	retryFetchUID
     fi
@@ -1215,62 +1232,9 @@ preregisterUID()
 }
 ######### End Pre-register Device #########
 
-######### Get secret #########
-getSecret()
-{
-    printf "."
 
-    if [ "$PROTOCOL" = "rmt3" ]; then
-        secretCall="$(curl ${CURL_OPTS} 'POST' $regdeviceURL -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$HardwareID\"}" -H "Content-Type:application/json" -H "developerkey:$developerkey" -H "token:$token")"    
-    else
-        secretCall="$(curl ${CURL_OPTS} 'POST' $regdeviceURL -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$HardwareID\", \"skipemail\":\"true\"}" -H "Content-Type:application/json" -H "developerkey:$developerkey" -H "token:$token")"
-    fi
+######### registerDevice - Get Device Name #########
 
-    checkAPIResult "$regdeviceURL" "$secretCall"
-
-    error="$(jsonval "$secretCall" "Error")"
-    debug "Errors=$error"
-    
-    result="$(jsonval "$secretCall" "status")"
-    if [ "$result" = "false" ]; then
-        if [ "$error" = "DuplicateName:" ]; then
-            echo
-	    echo "There is already a Service registered to your account as $alias."
-	    echo "Hit any key to continue."
-	    read AnyKey
-        elif [ "$error" = "DuplicateAddress:" ]; then
-            echo
-	    echo "Duplicate Address error while attempting to register $alias."
-	    echo "Hit any key to continue."
-	    read AnyKey
-        else
-            reason=$(jsonval "$secretCall" "reason")
-            echo "$regdeviceURL call failed."  
-            echo "Reason was: $reason"
-        fi
-    else
-    	test1="$(echo "$secretCall" | grep -c "true" )"
-#    	test2="$(echo "$secretCall" | grep -c -E "missing api token|api token missing" )"
-    	test2="$(echo "$secretCall" | grep -c "api token" )"
-    	test3="$(echo "$secretCall" | grep -c "false" )"
-    	if [ "$test1" = 1 ]; then
-            secret="$(getJSONSecret "$secretCall" "secret")"
-# echo "secret = $secret"
-    	    echo "# password - erase this line to unregister the device" >> "$TMP_DIR"/"$CONNECTD_PORT".conf
-	    echo "password $secret" >> "$TMP_DIR"/"$CONNECTD_PORT".conf
-	#       finally copy valid assembled enablement file to $CONNECTD_DIR
-	    mv "$TMP_DIR"/"$CONNECTD_PORT".conf "$CONNECTD_DIR"/"$CONNECTD_PORT".conf
-    	elif [ "$test2" = 1 ]; then
-            printf "Invalid or missing login token. Trying again.\n"
-	    userLogin
-	    testLogin
-	    getSecret
-    	fi
-    fi
-}
-######### End Register Device #########
-
-######### Get Device Name #########
 registerDevice()
 {
     printf "."
@@ -1290,6 +1254,58 @@ registerDevice()
             alias=""
         fi
     done
+    printf "."
+
+    result=
+
+    while [ "$result" != "true" ]; do
+
+        if [ "$PROTOCOL" = "rmt3" ]; then
+            secretCall="$(curl ${CURL_OPTS} 'POST' $regdeviceURL -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$HardwareID\"}" -H "Content-Type:application/json" -H "developerkey:$developerkey" -H "token:$token")"    
+        else
+            secretCall="$(curl ${CURL_OPTS} 'POST' $regdeviceURL -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$HardwareID\", \"skipemail\":\"true\"}" -H "Content-Type:application/json" -H "developerkey:$developerkey" -H "token:$token")"
+        fi
+
+        checkAPIResult "$regdeviceURL" "$secretCall"
+
+        error="$(jsonval "$secretCall" "Error")"
+        debug "Errors=$error"
+    
+        result="$(jsonval "$secretCall" "status")"
+        if [ "$result" = "false" ]; then
+            if [ "$error" = "DuplicateName:" ]; then
+                echo
+	        echo "There is already a Service registered to your account as $alias."
+	        echo "Hit any key to continue."
+	        read AnyKey
+                alias=
+                registerDevice
+            elif [ "$error" = "DuplicateAddress:" ]; then
+                echo
+	        echo "Duplicate Address error while attempting to register $alias."
+	        echo "Hit any key to continue."
+	        read AnyKey
+                exit 1
+            else
+                echo "Error: $regdeviceURL call failed."  
+                reason=$(jsonval "$secretCall" "reason")
+                echo "Reason was: $reason"
+	        echo "Hit any key to continue."
+	        read AnyKey
+                exit 1
+            fi
+        else
+    	    if [ "$result" = "true" ]; then
+                secret="$(getJSONSecret "$secretCall" "secret")"
+    	        echo "# password - erase this line to unregister the device" >> "$TMP_DIR"/"$CONNECTD_PORT".conf
+	        echo "password $secret" >> "$TMP_DIR"/"$CONNECTD_PORT".conf
+	    #       finally copy valid assembled enablement file to $CONNECTD_DIR
+	        mv "$TMP_DIR"/"$CONNECTD_PORT".conf "$CONNECTD_DIR"/"$CONNECTD_PORT".conf
+    	    fi
+        fi
+
+    done
+
     printf "Your Service Attachment will be called %s.\n\n" "$alias" > /dev/null
 }
 ######### Get Device Name #########
@@ -1360,7 +1376,7 @@ makeConnection()
         echo "A $PROTOCOL service has already been configured on port $PORT."
         echo "Skipping $alias..."
     else
-        configureConnection
+        configureConnection "skipIfDuplicateName"
     fi
 }
 
@@ -1370,13 +1386,12 @@ configureConnection()
 {
     installEnablement
     installStartStop
-    # REGISTERSERVICE controls (in batch installer connectd_register) whether or not services are registered at the time of installation
+    # REGISTERSERVICE controls (in connectd_options) whether or not services are registered at the time of installation
     if [ "$REGISTERSERVICE" = "1" ]; then
     	fetchUID
     	checkUID
     	preregisterUID
     	registerDevice
-    	getSecret
 
     	if [ "$error" != "DuplicateName:" ]; then
     	    overridePort
@@ -1385,7 +1400,9 @@ configureConnection()
 	    # the startup script will only start one instance
 	    "$BIN_DIR"/connectd_schannel start > /dev/null
 	else
-            echo "Duplicate Name!"
+	    if [ "$1" = "skipIfDuplicateName" ]; then
+                echo "Duplicate Name!"
+            fi
         fi
     fi
 }

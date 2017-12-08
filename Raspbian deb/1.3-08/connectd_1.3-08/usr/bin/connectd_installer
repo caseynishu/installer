@@ -11,7 +11,7 @@
 ##### Settings #####
 VERSION=v1.3-08
 AUTHOR="Gary Worsham"
-MODIFIED="October 16, 2017"
+MODIFIED="December 02, 2017"
 
 USERNAME=""
 PASSWORD=""
@@ -28,22 +28,15 @@ INSTALLPATH=/usr/bin
 . "$BIN_DIR"/connectd_library
 # ----------------------------------------
 
-#==================================================================================
-# If STARTDAEMONSONREBOOT is set to "1", then following the execution of the remot3itinstaller_OEM script,
-# the next time the device is rebooted, the daemons will be started.
-# If it is preferred that the daemons not autostart on the next reboot, set STARTDAEMONSONREBOOT to "0".
-
-STARTDAEMONSONREBOOT="1"
-
 ######### Main Program #########
 main()
 {
     getHardwareID
-    # interactive installer defaults RMT3 service base name to MAC.
+    # interactive installer asks user for RMT3 service name.
     # OEM installer allows OEM to use a different function to set the auto-assigned
-    # service names.
+    # service names. By default it is the MAC.
     SERVICEBASENAME=$MAC
-    interactiveInstall $1
+    interactiveInstall $1 $2 $3
 }
 ######### End Main Program #########
 main $1 $2 $3
