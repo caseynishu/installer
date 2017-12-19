@@ -87,8 +87,14 @@ elif [ "$archMenu" -eq 5 ]; then
     arch="armhf"
     PLATFORM=pi
 elif [ "$archMenu" -eq 6 ]; then
-    arch="mips-msb"
+# e.g. Linino OpenWRT
+    arch="mips-msb-uClib"
     PLATFORM=mips-msb-uClib
+    setOption "PSFLAGS" "w"
+    setOption "mac" "\$(ifconfig $NETIF | grep HWaddr | awk \'{ print \$5 }\' | tail -n 1)"
+elif [ "$archMenu" -eq 8 ]; then
+    arch="mipsel-gcc342"
+    PLATFORM=mipsel-gcc342
     setOption "PSFLAGS" "w"
     setOption "mac" "\$(ifconfig $NETIF | grep HWaddr | awk \'{ print \$5 }\' | tail -n 1)"
 elif [ "$archMenu" -eq 9 ]; then

@@ -12,7 +12,7 @@
 ##### Settings #####
 LIBVERSION=lib_v1.3-07_Pi
 AUTHOR="Gary Worsham"
-LIBMODIFIED="October 22, 2017"
+LIBMODIFIED="December 13, 2017"
 DAEMON=weavedconnectd
 
 # ----------------------------------------
@@ -70,37 +70,6 @@ displayVersion()
 }
 ##### End Version #####
 
-#### check for updated installer
-checkForUpdate()
-{
-    echo
-    echo "-------------------"
-    echo    
-    currentlyInstalled=$(dpkg --status weavedconnectd | grep Version | awk '{ print $2 }')
-    echo "weavedconnectd version $currentlyInstalled is currently installed."
-
-    # check to see if updated version exists
-    resp=$(curl -s -S -X GET -H "content-type:application/json" -H "apikey:$APIKEY"  -H "token:$token" "$versionURL")
-    checkAPIResult "$versionURL" "$resp"
-    package=$(jsonval "$resp" "component")
-    latestVer=$(jsonval "$resp" "version")
-    echo    
-    echo "$latestVer is the most recent version of $package"
-    if [ "$currentlyInstalled" != "$latestVer" ]; then
-    	downloadMsg=$(jsonval "$resp" "description")
-    	echo "A new installer is available at $downloadMsg"
-        if ask "Would you like to download and install this file now?"; then
-            cd /tmp
-            wget "$downloadMsg" -O "$TMP_DIR"\weavedconnectdpackage.deb
-            dpkg -i "$TMP_DIR"\weavedconnectdpackage.deb &
-            exit
-       fi
-    fi
-}
-
-##### end of check for update
-
-
 ##### Compatibility checker #####
 weavedCompatibility()
 {
@@ -130,7 +99,8 @@ weavedCompatibility()
 
 getSerialID()
 {
-    mac=$(ifconfig eth0 | grep HWaddr | awk '{ print $5 }')
+# updated mac expression to support Raspbian Stretch  
+    mac=$(ip addr | grep ether | tail -n 1 | awk '{ print $2 }') 
     if [ -f "$SERIALNUMBERFILE" ]; then
 	SerialID=$(cat $SERIALNUMBERFILE)
     else
@@ -1356,7 +1326,6 @@ interactiveInstall()
     platformDetection
     weavedCompatibility
     askRegisterLogin
-    checkForUpdate
     checkForDeviceName
     # main menu loop 
     menuLoop

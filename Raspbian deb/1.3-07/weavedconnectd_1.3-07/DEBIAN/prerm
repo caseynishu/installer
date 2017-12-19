@@ -3,7 +3,7 @@
 #
 
 set -e
-logger "weavedconnectd 1.3-07u installer prerm $1"
+logger "weavedconnectd 1.3-07y installer prerm $1"
 
 case "$1" in
 

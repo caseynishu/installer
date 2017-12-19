@@ -50,6 +50,8 @@ INSTALLPATH=/usr/bin
 main()
 {
     displayVersion
+    checkForRoot
+    checkForUtilities
     platformDetection
     echo "Platform = " $PLATFORM 
 #-----------------------------------------------------------------------

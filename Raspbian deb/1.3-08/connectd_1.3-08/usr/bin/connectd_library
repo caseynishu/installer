@@ -66,6 +66,22 @@ checkForRoot()
 }
 ##### End Version #####
 
+##### checkForUtilities #####
+# confirm presence of required utilities for installer to work
+
+checkForUtilities()
+{
+    # check for curl with SSL
+    curl --version | grep SSL &> /dev/null
+    if [ $? -ne 0 ]; then
+        echo "Running this program requires curl with SSL support." 1>&2
+        echo "Please install curl with SSL support." 1>&2
+        echo "Contact support@remot3.it if you are not sure what to do." 1>&2
+	exit 1
+    fi
+}
+##### End checkForUtilities #####
+
 #### check for updated installer
 # as written this only works on Debian operating systems
 # CHECKFORDEB should be set in calling script
@@ -119,18 +135,27 @@ mv()
 ##### Compatibility checker #####
 connectdCompatibility()
 {
-    printf "\nChecking your network for compatibility... \n\n"
+    printf "\nChecking the daemon for compatibility... \n\n"
     "$BIN_DIR"/"$DAEMON"."$PLATFORM" -n > "$TMP_DIR"/.testdaemon
+    if [ $? -ne 0 ]; then
+        echo "The supplied daemon $DAEMON.$PLATFORM is not compatible with this device."
+        echo "Please contact support@remot3.it with the following information:"
+        cat /proc/cpuinfo
+        exit 1
+    else
+        echo "Using architecture $PLATFORM..."
+    fi
+    printf "\nChecking your network for compatibility... \n\n"
     grep OK "$TMP_DIR"/.testdaemon > "$TMP_DIR"/.networkDump
     number=$(cat "$TMP_DIR"/.networkDump | wc -l)
 
     if [ "$number" -ge 3 ]; then
         printf "Your network is compatible with remot3.it services.\n\n"
-        sleep 2
+        sleep 1
     elif [ "$(grep "$TMP_DIR/.networkDump" "Send to" | grep -c "OK" )" -lt 1 ]; then
         printf "Unfortunately, it appears your network may not currently be compatible with remot3.it services.\n"
-        printf "Please visit https://forum.connectd.com for help.\n\n"
-        exit
+        printf "Please contact support@remot3.it for help.\n\n"
+        exit 1
     fi
 }
 ##### End Compatibility checker #####
@@ -1411,9 +1436,9 @@ configureConnection()
 interactiveInstall()
 {
     echo
-    checkForRoot
     displayVersion "$1"
-    # bashCheck
+    checkForRoot
+    checkForUtilities
     platformDetection
     connectdCompatibility
     askRegisterLogin

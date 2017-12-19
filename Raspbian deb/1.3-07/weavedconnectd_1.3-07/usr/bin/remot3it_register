@@ -20,9 +20,9 @@
 #
 
 ##### Settings #####
-VERSION=v1.3-07_x86_OEM
+VERSION=v1.3-07y
 AUTHOR="Gary Worsham"
-MODIFIED="September 02, 2016"
+MODIFIED="December 13, 2017"
 DEBUG="0"
 #=======================================================================
 # remot3.it recommends running this script (with real username/password) from /tmp folder.
@@ -89,7 +89,6 @@ main()
         fi
         userLogin
         testLogin
-        checkForUpdate
 # =============================================    
 # $SERVICEBASENAME is the base name of all installed services installed
 # with weavedinstaller_OEM

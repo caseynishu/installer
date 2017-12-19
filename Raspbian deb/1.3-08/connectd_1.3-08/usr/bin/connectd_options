@@ -3,7 +3,7 @@
 #===================================
 MODIFIED="December 02, 2017"
 #===================================
-BUILDDATE="Thu Dec  7 17:49:46 PST 2017"    
+BUILDDATE="Sun Dec 10 05:51:08 PST 2017"    
 #===================================
 # set DEBUG to 1 to enable debugging messages
 DEBUG="0"
@@ -37,7 +37,7 @@ PID_DIR=/var/run
 #===================================
 # PLATFORM is the extension for the binaries, depends on CPU architecture
 # and shared libraries
-PLATFORM=i686    
+PLATFORM=mips-msb-uClib    
 #===================================
 # startupScripts = 0, ask; 1, init.d; 2, systemd; 3, crontab
 startupScripts=3
@@ -49,14 +49,14 @@ PROVISION=pi
 NETIF=$(route | grep default | awk '{ print $8 }')
 #===================================
 # mac is the expression used to get the MAC for autonaming
-mac=$(ip addr | grep ether | tail -n 1 | awk '{ print $2 }') 
+mac=$(ifconfig  | grep HWaddr | awk '{ print $5 }' | tail -n 1)    
 #===================================
 # PSFLAGS is the option to be sent to the "ps" command to find the running daemons
 # For systems with root login and busybox implementation of ps, this should probably be: 
 # PSFLAGS=
 # For Ubuntu/Raspberry Pi/etc. running bash and standalone ps binary, it should be:
 # PSFLAGS="ax"
-PSFLAGS=ax    
+PSFLAGS=w    
 #===================================
 # If REGISTERSERVICE is set to 1, then account credentials need to be supplied, either above,
 # or if those are left at default values, then the script asks for username, password and developer key.
