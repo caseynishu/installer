@@ -5,14 +5,14 @@
 #  Run 'sudo weavedinstaller' to install, configure or remove remot3.it
 #  attachment services for tcp listeners.
 #
-#  remot3.it by Weaved, Inc. 
-#  Copyright 2016. All rights reserved.
+#  remot3.it, Inc. 
+#  Copyright 2017. All rights reserved.
 #
 
 ##### Settings #####
 VERSION=v1.3-07_Pi
 AUTHOR="Gary Worsham"
-MODIFIED="June 24, 2017"
+MODIFIED="December 22, 2017"
 
 USERNAME=""
 PASSWORD=""
@@ -23,7 +23,7 @@ DEBUG="0"
 MAXSEL=6
 
 #==================================================================================
-# If STARTDAEMONSONREBOOT is set to "1", then following the execution of the weavedinstaller_OEM script,
+# If STARTDAEMONSONREBOOT is set to "1", then following the execution of the remot3it_register script,
 # the next time the device is rebooted, the daemons will be started.
 # If it is preferred that the daemons not autostart on the next reboot, set STARTDAEMONSONREBOOT to "0".
 
@@ -34,9 +34,8 @@ source /usr/bin/weavedlibrary
 ######### Main Program #########
 main()
 {
-    getSerialID
     # interactive installer defaults RMT3 service base name to MAC.
-    # OEM installer allows OEM to use a different function to set the auto-assigned
+    # remot3it_register allows OEM to use a different function to set the auto-assigned
     # service names.
     SERVICEBASENAME="$MAC"
     interactiveInstall "$1"

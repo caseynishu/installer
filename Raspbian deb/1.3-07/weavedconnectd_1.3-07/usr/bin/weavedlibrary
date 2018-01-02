@@ -12,7 +12,7 @@
 ##### Settings #####
 LIBVERSION=lib_v1.3-07_Pi
 AUTHOR="Gary Worsham"
-LIBMODIFIED="December 13, 2017"
+LIBMODIFIED="December 24, 2017"
 DAEMON=weavedconnectd
 
 # ----------------------------------------
@@ -20,7 +20,7 @@ DAEMON=weavedconnectd
 # these folders are not the same as used by Bulk Registration
 WEAVED_DIR=/etc/weaved/services
 WEAVED_LIB_DIR=/usr/share/weavedconnectd
-SERIALNUMBERFILE=/etc/weaved/serial.txt
+HWIDFILE=/etc/weaved/serial.txt
 BIN_DIR=/usr/bin
 TMP_DIR=/tmp
 NOTIFIER=weavednotify.sh
@@ -83,38 +83,64 @@ weavedCompatibility()
         sleep 2
     elif [ "$(cat $TMP_DIR/.networkDump | grep "Send to" | grep "OK" | wc -l)" -lt 1 ]; then
         printf "Unfortunately, it appears your network may not currently be compatible with remot3.it services.\n"
-        printf "Please visit https://forum.weaved.com for help.\n\n"
+        printf "Please send an e-mail to support@remot3.it for help.\n\n"
         exit
     fi
 }
 ##### End Compatibility checker #####
 
-##### get SerialID address #####
-# SerialID is a UUID concatenated with eth0 MAC address
-# if the file /etc/weaved/serial.txt does not exist, create the
-# value and write it there.  Otherwise read the value from then
-# file.
+##### set HWID #####
+# HWID is a UUID concatenated with eth0 MAC address
 # mac is also determined here as it is used for the SERVICEBASENAME
-# in weavedinstaller_OEM
+# in remot3it_register
 
-getSerialID()
+setHWID()
 {
 # updated mac expression to support Raspbian Stretch  
     mac=$(ip addr | grep ether | tail -n 1 | awk '{ print $2 }') 
-    if [ -f "$SERIALNUMBERFILE" ]; then
-	SerialID=$(cat $SERIALNUMBERFILE)
-    else
-    	num=20
-    	random=$(tr -dc A-Za-z0-9 < /dev/urandom | dd bs=$num count=1 2> /dev/null)
-	SerialID="$mac-$random"
+    num=20
+    random=$(tr -dc A-Za-z0-9 < /dev/urandom | dd bs=$num count=1 2> /dev/null)
+    HWID="$mac-$random"
+    echo "Setting HWID to $HWID"
+    echo "$HWID" > "$HWIDFILE"
+    chmod -w "$HWIDFILE"
+    logger "remot3.it Setting HWID to $HWID"
+}
+##### End set HWID #####
 
-	echo "$SerialID" > "$SERIALNUMBERFILE"
-	chmod -w "$SERIALNUMBERFILE"
+##### get HWID #####
+# HWID is a UUID concatenated with eth0 MAC address
+# Read the HWID value from the file $HWIDFILE.
+
+getHWID()
+{
+    if [ -f "$HWIDFILE" ]; then
+	HWID=$(cat $HWIDFILE)
+        echo "Getting HWID: $HWID"
+        logger "remot3.it Getting HWID: $HWID"
+    else
+        echo "Can't locate $HWIDFILE"
+        logger "remot3.it Can't locate $HWIDFILE"
+        exit 1
     fi
-    logger "remot3.it SerialID is $SerialID"
 }
 
-##### end get SerialID address #####
+##### end get HWID #####
+
+##### clear HWID #####
+# HWID is a UUID concatenated with eth0 MAC address
+# Read the HWID value from the file $HWIDFILE.
+
+clearHWID()
+{
+    if [ -f "$HWIDFILE" ]; then
+        echo "Clearing $HWIDFILE"
+	rm $HWIDFILE
+    fi
+    logger "remot3.it Clearing $HWIDFILE"
+}
+
+##### end clear HWID #####
 
 ##### factory reset - doesn't actually do anything at present
 factoryReset()
@@ -195,7 +221,7 @@ checkforServices()
                 elif [ "$protocol" == "HTTP" ]; then
                     port=80
                 elif [ "$protocol" == "VNC" ]; then
-                    port=5901
+                    port=5900
 	        # trim this one's name so it fits on display
                 elif [ "$protocol" == "Generic TCP" ]; then
                     protocol="TCP"
@@ -237,7 +263,7 @@ checkforServices()
 
     if [ "$WARNING" == "1" ]; then
         printf "WARNING-NONE indicates that there is no TCP listener \n"
-        printf "detected at that port. Please check your settings.\n"
+        printf "detected at that port. Please check your server settings.\n"
         echo "============================================================"
     fi
     printf "\n"
@@ -320,8 +346,8 @@ platformDetection()
 	fi
         SYSLOG=/var/log/syslog
     else
-        printf "Sorry, you are running this installer on an unsupported device. But if you go to \n"
-        printf "http://forum.weaved.com we'll be happy to help you get your device up and running. \n\n"
+        printf "Sorry, you are running this installer on an unsupported device. But if you send an e-mail \n"
+        printf "to support@remot3.it we'll be happy to help you get your device up and running. \n\n"
         printf "Please supply the following information: \n\n"
         uname -a
         cat /proc/cpuinfo
@@ -348,7 +374,7 @@ protocolSelection()
         printf "                                             \n"
         printf "     1) SSH on port 22                       \n"
         printf "     2) Web (HTTP) on port 80                \n"
-        printf "     3) VNC on port 5901                     \n"
+        printf "     3) VNC on port 5900                     \n"
         printf "     4) Custom (TCP)                         \n"
         printf "     5) Return to previous menu              \n"
         printf "                                             \n"
@@ -401,9 +427,9 @@ protocolSelection()
             WEAVED_PORT=Weaved"$PROTOCOL""$PORT"
         elif [ "$get_num" == 3 ]; then
             PROTOCOL=vnc
-            printf "The default port for VNC (tightvncserver) is 5901.\n"
+            printf "The default port for VNC (RealVNC) is 5900.\n"
             if ask "Would you like to continue with the default port assignment?"; then
-                PORT=5901
+                PORT=5900
             else
                 CUSTOM=2
                 while [[ ! "${get_port}" =~ ^[0-9]+$ ]]; do
@@ -519,6 +545,7 @@ deleteConnection()
 	    deviceType=$(jsonval "$resp" "title")
 	    if ask "Are you sure you want to delete the remot3.it $deviceType attachment $serviceName?"; then
 		printf "Deleting $serviceName...\n"
+		logger "remot3.it Deleting $serviceName..."
 		result=$(curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token")
 
                 checkAPIResult "$deleteURL" "$result"
@@ -568,6 +595,7 @@ deleteAllConnections()
             serviceName=$(jsonval "$resp" "name")
 
 	    printf "\nDeleting $serviceName...\n"
+	    logger "remot3.it Deleting $serviceName..."
 	
 	    result=$(curl -s $deleteURL -X 'POST' -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token")
             checkAPIResult "$deleteURL" "$result"
@@ -595,9 +623,7 @@ deleteAllConnections()
 # also should clear out crontab at this point
 	disableStartup
 # remove serial.txt
-        if [ -f $SERIALNUMBERFILE ]; then
-	    rm $SERIALNUMBERFILE
-   	fi
+	clearHWID
     fi
     exit
 }
@@ -862,7 +888,7 @@ testLogin()
         printf "Please correct the system date if needed and run the installer again.\n"
         printf "Run the command 'man date' for help resetting the date.\n\n"
         printf "If you are receiving this message and your system date is correct,\n"
-        printf "please contact remot3.it support at forum.weaved.com.\n"
+        printf "please contact remot3.it support at support@remot3.it.\n"
         exit
     fi
 }
@@ -903,19 +929,14 @@ checkForDeviceName()
         fi
     else	# register the device using an RMT3 service
 #	echo "Did not find rmt3 conf file"
-#   look for an existing serial.txt and delete it if found
-        if [ -f /etc/weaved/serial.txt ]; then
-            rm /etc/weaved/serial.txt
-        fi
-
+        clearHWID
+        setHWID
         PROTOCOL=rmt3
         PORT=65535
         WEAVED_PORT=Weaved"$PROTOCOL""$PORT"
         configureConnection
-	debug $SerialID
 	# now iterate through existing conf files, skipping rmt3 one, and add HWID to others
     	convertExistingUIDs
-
     fi
 }
 
@@ -924,21 +945,22 @@ convertExistingUIDs()
 {
 # check to make sure there is an existing directory before trying to iterate.
     if [ -d "$WEAVED_DIR" ]; then
-        logger "updating existing services to add HWID"
+        logger "remot3.it updating existing services to add HWID"
+        getHWID
     	for file in $WEAVED_DIR/*.conf; do
 	    debug "$file"
             if [ "$file" != Weavedrmt365535.conf ]; then
 	# get service name from UID
                 uid="$(grep '^UID' $file | awk '{print $2}')"
 
-                result=$(curl -s $deviceHWIDURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"hardwareid\":\"$SerialID\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token" &> /dev/null)
+                result=$(curl -s $deviceHWIDURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"hardwareid\":\"$HWID\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token" &> /dev/null)
 
                 checkAPIResult "$deviceHWID" "$result"
 
 	        addHWIDResult=$(jsonval "$result" "status")
 
 		echo "Updating $file"
-	        logger "weaved: Adding HWID $SerialID to $serviceName UID $uid - $addHWIDResult"
+	        logger "remot3.it: Adding HWID $HWID to $serviceName UID $uid - $addHWIDResult"
 # now update start/stop script
 		WEAVED_PORT=$(basename $file ".conf")
 		installStartStop
@@ -1000,7 +1022,7 @@ cronAddLine()
 {
     crontab -l 2>/dev/null 1> "$TMP_DIR"/.crontab_old
     echo "$1" >> "$TMP_DIR"/.crontab_old
-    logger "cronAddline $1"
+    logger "remot3.it cronAddline $1"
     crontab "$TMP_DIR"/.crontab_old
 }
 ######### End add line to cron ######
@@ -1112,7 +1134,7 @@ retryFetchUID()
     checkforUID="$(tail "$TMP_DIR"/"$WEAVED_PORT".conf | grep UID | wc -l)"
     if [ "$checkforUID" != 2 ]; then
 	printf "We have unsuccessfully retried to obtain a UID.\n"
-        printf "Please contact remot3.it Support at http://forum.weaved.com for help.\n\n"
+        printf "Please contact remot3.it Support at support@remot3.it for help.\n\n"
     fi
 }
 ######### Retry Fetch UID ##########
@@ -1137,15 +1159,8 @@ preregisterUID()
 	testLogin
 	preregisterUID
     elif [ "$test3" = 1 ]; then
-	printf "Sorry, the pre-registration of UID: %s is failing. You can finish registration\n" "$uid"
-	printf "manually using the following steps: \n\n"
-	printf "1) From the same network as your device, please log into https://weaved.com \n"
-	printf "2) Once logged in, please visit the following URL:\n"
-        printf "https://developer.weaved.com/portal/members/registerDevice.php \n"
-	printf "3) Enter a name for your Service.\n"
-	printf "4) Please contact us at http://forum.weaved.com and let us know about this issue,\n" 
-        printf "including the version of installer, and whether manual registration\n"
-	printf "worked for you. Sorry for the inconvenience. \n\n"
+	printf "Please contact us at support@remot3.it and let us know about this issue,\n" 
+        printf "including the version of installer. Sorry for the inconvenience. \n\n"
 	overridePort
 	startService
 	exit
@@ -1156,17 +1171,16 @@ preregisterUID()
 ######### Get secret #########
 getSecret()
 {
-    printf "."
 
     if [ "$PROTOCOL" == "rmt3" ]; then
-        secretCall="$(curl -s $regdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$SerialID\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token")"    
+        secretCall="$(curl -s $regdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$HWID\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token")"    
 
     else
-
-        secretCall="$(curl -s $regdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$SerialID\", \"skipemail\":\"true\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token")"
+        getHWID
+        secretCall="$(curl -s $regdeviceURL -X 'POST' -d "{\"deviceaddress\":\"$uid\", \"devicealias\":\"$alias\", \"skipsecret\":\"true\", \"hardwareid\":\"$HWID\", \"skipemail\":\"true\"}" -H "Content-Type:application/json" -H "apikey:$APIKEY" -H "token:$token")"
     
     fi
-
+    printf "."
     checkAPIResult "$regdeviceURL" "$secretCall"
 
     error=$(jsonval "$secretCall" "Error")
@@ -1591,7 +1605,7 @@ REBOOTFILE=/root/.remot3.it/reboot.sh
     echo "#!/bin/bash" > "$REBOOTFILE"
     echo "# REBOOT DEVICE" >> "$REBOOTFILE"
     echo "source /usr/bin/remot3_script_lib" >> "$REBOOTFILE"
-    echo "source /usr/bin/weavedinstallerlib" >> "$REBOOTFILE"
+    echo "source /usr/bin/weavedlibrary" >> "$REBOOTFILE"
     echo "wait_for_internet" >> "$REBOOTFILE"
     echo "sleep 5" >> "$REBOOTFILE"
     echo "${TOOL_DIR}/task_notify.sh a $1 $2 'Rebooted.'" >> $REBOOTFILE

@@ -9,7 +9,7 @@
 #  will store info in WEAVED_DIR
 #
 #
-#  Weaved Inc : www.weaved.com
+#  remot3.it Inc : https://remot3.it
 #
 #
 
@@ -19,13 +19,13 @@ source /usr/bin/remot3_wlib.sh
 #set -x
 
 #### Settings #####
-VERSION=0.0.4
-MODIFIED="June 2, 2016"
+VERSION=0.0.5
+MODIFIED="December 22, 2017"
 #
 # Config Dir
 #
 WEAVED_DIR="/etc/weaved"
-#Installed Provisioing files go here (unprovisioned only)
+#Installed Provisioning files go here (unprovisioned only)
 PROVISION_DEFAULT="$WEAVED_DIR/pfiles"
 #created devices are in availabe
 DEVICES_AVAILABLE="$WEAVED_DIR/available"

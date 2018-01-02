@@ -3,19 +3,19 @@
 #  weavedenablestartup
 #
 #  Run 'sudo weavedenablestartup' to enable startup of 
-#  installed Weaved attachment services for tcp listeners.
+#  installed remot3.it attachment services for tcp listeners.
 #
-#  Weaved, Inc. Copyright 2016. All rights reserved.
+#  remot3.it, Inc. Copyright 2017. All rights reserved.
 #
 ##### Settings #####
-VERSION=v1.3-06_Enable_Startup
+VERSION=v1.3-07z
 AUTHOR="Gary Worsham"
-MODIFIED="June 02, 2016"
+MODIFIED="December 22, 2017"
 DEBUG="1"
 
 #==========================================================================
 
-source weavedinstallerlib
+source /usr/bin/weavedlibrary
 
 ######### Main Program #########
 main()

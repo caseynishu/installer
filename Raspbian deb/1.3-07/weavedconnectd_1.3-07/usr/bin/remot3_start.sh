@@ -2,7 +2,7 @@
 #
 #  Remot3 it startup script
 #
-#  Weaved Inc : www.weaved.com
+#  remot3.it Inc : https://remot3.it
 #
 #
 
@@ -10,8 +10,8 @@
 source /usr/bin/remot3_wlib.sh
 
 #### Settings #####
-VERSION=0.0.2
-MODIFIED="June 2, 2016"
+VERSION=0.0.3
+MODIFIED="December 22, 2017"
 #
 # Config 
 #mac

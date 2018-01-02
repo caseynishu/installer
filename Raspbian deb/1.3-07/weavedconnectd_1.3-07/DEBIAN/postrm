@@ -5,7 +5,7 @@
 TMP_DIR=/tmp
 
 set -e
-logger "weavedconnectd 1.3-07y postrm state $1"
+logger "weavedconnectd 1.3-07z postrm state $1"
 
 case "$1" in
   purge)
@@ -28,12 +28,28 @@ case "$1" in
            rm -f $file
         fi
     done
-# remove configuration files
+# remove provisioning files
     for file in /etc/weaved/services/Weaved*.conf ; do
         if [ -f $file ]; then
             rm -f $file
         fi
     done
+# remove serial number (HWID) file
+    if [ -e /etc/weaved/serial.txt ]; then
+      rm /etc/weaved/serial.txt
+    fi
+# remove configured and active provisioning files (bulk reg)
+    if [ -e /etc/weaved/active/*.pi ]; then
+      rm /etc/weaved/active/*.pi
+    fi
+# remove configured provisioning files (bulk reg)
+    if [ -e /etc/weaved/available/*.pi ]; then
+      rm /etc/weaved/available/*.pi
+    fi
+# remove oem TEMPLATE provisioning files (bulk reg)
+    if [ -e /etc/weaved/pfiles/*.pi ]; then
+      rm /etc/weaved/pfiles/*.pi
+    fi
 # remove PID files
     for file in /var/run/Weaved*.pid ; do
         if [ -f $file ]; then
@@ -43,6 +59,10 @@ case "$1" in
 # remove installation template files
     if [ -d /usr/share/weavedconnectd ]; then
       rm -r /usr/share/weavedconnectd
+    fi
+# remove configuration files folder
+    if [ -d /etc/weaved ]; then
+      rm -r /etc/weaved
     fi
 # remove crontab entry
     crontab -l | grep -v weavedstart.sh | cat > $TMP_DIR/.crontmp
