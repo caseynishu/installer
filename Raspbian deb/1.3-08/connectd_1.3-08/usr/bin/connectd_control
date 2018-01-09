@@ -19,7 +19,7 @@
 
 #### Settings #####
 VERSION=0.0.8
-MODIFIED="December 4, 2017"
+MODIFIED="January 09, 2018"
 #
 # Config Dir
 #
@@ -29,7 +29,7 @@ REMOT3IT_DIR="/etc/connectd"
 PROVISION_DOWNLOAD="$REMOT3IT_DIR/dfiles"
 #Installed Provisioning files go here (unprovisioned only)
 PROVISION_DEFAULT="$REMOT3IT_DIR/pfiles"
-#created devices are in availabe
+#created devices are in available
 DEVICES_AVAILABLE="$REMOT3IT_DIR/available"
 #active devices are sym linked in active
 DEVICES_ACTIVE="$REMOT3IT_DIR/active"
@@ -46,7 +46,7 @@ LOG_DIR=/var/log
 #
 #
 BIN_DIR=/usr/bin
-DAEMON=connectd.i686
+DAEMON=connectd.pi    
 #
 # Save Auth in homedir
 #
@@ -64,6 +64,9 @@ REG_ID_ADAPTER="wlan0"
 #REG_ID_ADAPTER="enp5s0"
 REG_KEY_ADAPTER="eth0"
 #REG_KEY_ADAPTER="enp5s0"
+# if desired, customize these expressions for your platform
+hardware_id=$(cat /sys/class/net/$REG_ID_ADAPTER/address | sed s/://g)
+registration_key=$(cat /sys/class/net/$REG_KEY_ADAPTER/address | sed s/://g) 
 
 BULK_REG_DEVICE_FILE="$DEVICES_ACTIVE/rmt3.i686"
 #
@@ -133,7 +136,7 @@ printf "\n%s\n\n\n" "$man_text"
 usage()
 {
     echo "Usage: $0 command " >&2
-    echo "  commands : types typesl status enable disable start stop restart dprovision bprovision update updatedeb reset" >&2
+    echo "  commands : show types typesl status enable disable start stop restart dprovision bprovision update updatedeb reset" >&2
     echo "Version $VERSION Build $MODIFIED" >&2
     exit 1 
 }
@@ -180,20 +183,24 @@ reset()
 }
 
 #
-# Customize this for your product
+# Show the HWID and REG_KEY for this device
+#
+show()
+{
+    printf "Hardware ID is %s\nRegistration key is %s\n" $hardware_id $registration_key
+}
+
 #
 get_registration_data()
 {
     if [ $REG_DEBUG -gt 0 ]; then
+# override values set at top of file
         hardware_id="00:ab:cd:ef:00:FF"
         registration_key="MYSECRET"
-    else
-        hardware_id=$(cat /sys/class/net/$REG_ID_ADAPTER/address | sed s/://g)
-        registration_key=$(cat /sys/class/net/$REG_KEY_ADAPTER/address | sed s/://g) 
     fi
 
-    registration_key="FOOBAR"
-    hardware_id="DEO_POOLED_1"
+#    registration_key="FOOBAR"
+#    hardware_id="DEO_POOLED_1"
 
     if [ $VERBOSE -gt 0 ]; then
         printf "Hardware ID is %s registration key is %s\n" $hardware_id $registration_key
@@ -1301,6 +1308,9 @@ case "$command" in
     "dprovision")
         shift
         dprovision $@
+        ;;
+    "show")
+        show
         ;;
     "enable")
         shift

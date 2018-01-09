@@ -1,1 +1,3 @@
 /etc/connectd/schannel.conf
+/etc/init.d/remot3it
+/etc/init.d/remot3it.schannel
