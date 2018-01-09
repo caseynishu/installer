@@ -80,13 +80,37 @@ jsonval()
 
 }                                                   
 
-jsonvalx()
+
+#jsonvalz
+jsonvalz()
 {
-    temp=`echo $1 | sed -e 's/[{}"]//g' -e "s/,/\\$liblf/g" | grep -w $2 | cut -d":" -f2-`
-    #echo ${temp##*|}
-    echo ${temp}    
+    temp=$(echo "$1" | sed -e 's/[{}\"]//g')
+    echo "a==$temp"
+    temp=$(echo "$temp" | sed -e 's/,/\n/g')
+    echo "b==$temp"
+    temp=$(echo "$temp" grep -w ${GREPFLAGS} "$2" )
+    echo "c==$temp"
+    temp=$(echo "$temp" | cut -d"[" -f2- | cut -d":" -f2-)
+    echo "d==$temp"
+    echo "${temp##*|}" 
 }
 
+#
+jsonvalx()
+{
+    temp=$(echo "$1" | grep -oP '"'"$2"'"\s*:\s*"\K([^"]*)' )
+    #temp=$(echo \[$1\] | json.sh )
+    echo ${temp}
+}
+
+jsonvalxf()
+{
+
+    set -x
+    temp=$(cat $1 | grep -oP '"'"$2"'"\s*:\s*"\K([^"]*)' )
+    #temp=$(echo \[$1\] | json.sh )
+    echo ${temp}
+}
 
 
 #                                                                                                
@@ -112,7 +136,12 @@ pipe2space()
 {
     echo "$@" | sed -e 's/^/ /g'                                                         
 }                
-                                               
+
+ret2pipe()
+{
+    echo "$@" | sed -e 's/\/n/^/g'
+}
+
 #                   
 # urlencode $1
 #                                      
