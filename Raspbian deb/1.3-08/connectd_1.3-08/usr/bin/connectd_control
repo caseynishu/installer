@@ -68,7 +68,12 @@ REG_KEY_ADAPTER="eth0"
 # if desired, customize these expressions for your platform
 hardware_id="$(cat /sys/class/net/$REG_ID_ADAPTER/address | sed s/://g)"
 registration_key="$(cat /sys/class/net/$REG_KEY_ADAPTER/address | sed s/://g)"
-bulk_id_code=$(cat "$REMOT3IT_BULK_ID")
+
+if [ -f "$REMOT3IT_BULK_ID" ]; then
+    bulk_id_code=$(cat "$REMOT3IT_BULK_ID")
+else
+    bulk_id_code="Bulk ID code file is missing."
+fi
 
 BULK_REG_DEVICE_FILE="$DEVICES_ACTIVE/rmt3.i686"
 #
