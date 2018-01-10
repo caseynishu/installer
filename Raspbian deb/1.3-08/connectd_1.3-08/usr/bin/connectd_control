@@ -753,7 +753,7 @@ update_afile()
 #
 dconfig()
 {
-    #download the config fir th passed provsioning file
+    #download the config fir th passed provisioning file
     resp2=$(curl -s -S -X GET -H "content-type:application/json" "$ProvisionConfig/$1/$2/")
     status=$(jsonvalx "$resp2" "status")
     if [ "$status" = "true" ]; then
@@ -765,7 +765,7 @@ dconfig()
     	# check if config file is there, if not, check if we are enabled
     	if [ ! -f "$PROVISION_DOWNLOAD/$i.conf" ]; then
     		# conf file does not exit
-        	if [ $VERBOSE -gt 0 ]; then printf "config file does not exist\n" ; fi
+        	if [ $VERBOSE -gt 0 ]; then printf "Config file does not exist. Need to create.\n" ; fi
         	if [ $enabled = "1" ]; then
         	    # enabled, generate config file and pfiles 
                 write_config "$i" "$resp2"
@@ -810,7 +810,7 @@ dconfig()
 }
 
 #
-#download provsioning and configurating files
+#download provisioning and configurating files
 # update configuration if exists and are changed
 #
 dprovision()
@@ -856,11 +856,11 @@ dprovision()
                     if [ "$resp2" = "200" ]; then
                         # if retrun code is 200 we keep the file
 						mv "$PROVISION_DOWNLOAD/$i.tmp" "$PROVISION_DOWNLOAD/$i"
-						if [ $VERBOSE -gt 0 ]; then printf "downloaded provsioning ok (%s)\n" $resp2 ; fi						
+						if [ $VERBOSE -gt 0 ]; then printf "downloaded provisioning ok (%s)\n" $resp2 ; fi						
                     else
                         # do not keep, bad
                         rm "$PROVISION_DOWNLOAD/$i.tmp"
-                        if [ $VERBOSE -gt 0 ]; then printf "Failed to download provsioning file (%s)\n" $resp2 ; fi
+                        if [ $VERBOSE -gt 0 ]; then printf "Failed to download provisioning file (%s)\n" $resp2 ; fi
                     fi
                 else
                     # do nothing already downloaded
@@ -882,7 +882,7 @@ dprovision()
 }
 
 
-#bulk provision a specific pfile do not call directly call bprovsion()
+#bulk provision a specific pfile do not call directly call bprovision()
 bprovisionit()
 {
     if [ $VERBOSE -gt 0 ]; then
@@ -893,7 +893,7 @@ bprovisionit()
     #idlen=expr length "$project_id"
     idlen=${#project_id} 
     if [ $idlen -eq 36 ]; then
-        # we have provsioning file lets make call
+        # we have provisioning file lets make call
         get_registration_data
         if [ $VERBOSE -gt 0 ]; then
             printf "Call API with project_id %s with hwid and reg key.\n" $project_id
