@@ -92,7 +92,7 @@ BULK_RETRY_TIME=20
 # API's
 #
 apiMethod="https://"
-apiVersion="/apv/v24.11"
+apiVersion="/apv/v24.15"
 apiServer="api01.remot3.it"
 #
 # API URL's
