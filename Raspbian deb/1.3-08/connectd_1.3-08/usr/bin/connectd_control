@@ -436,6 +436,14 @@ create_config()
     if [ ! -d "$DEVICES_RUNNING" ] ; then
         mkdir "$DEVICES_RUNNING"
     fi
+    # create dfiles dir
+    if [ ! -d "$PROVISION_DOWNLOAD" ] ; then
+        mkdir "$PROVISION_DOWNLOAD"
+    fi
+    # create pfiles dir
+    if [ ! -d "$PROVISION_DEFAULT" ] ; then
+        mkdir "$PROVISION_DEFAULT"
+    fi
 }
 #
 # Cleanup, this cleans up the files for the connection, and kills the P2P session if necessary
@@ -808,7 +816,7 @@ dprovision()
     if [ "$#" -ne 2 ]; then
     #if [ -z "${@}" ]; then
         ret=3
-        echo "ERROR: dprovision requires two parameters, a project ID and a secret."
+        echo "ERROR: dprovision requires two parameters, a project ID and a HardwareID."
     else
 		#
 		# get the list of project ID's for the product
