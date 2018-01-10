@@ -37,6 +37,7 @@ DEVICES_ACTIVE="$REMOT3IT_DIR/active"
 PID_DIR=/var/run
 DEVICES_RUNNING="$PID_DIR/remot3it"
 #
+REMOT3IT_BULK_ID="$REMOT3IT_DIR/bulk_identification_code.txt"
 REMOT3IT_VERSION="$REMOT3IT_DIR/remot3it_version.txt"
 #LOG_DIR="/tmp/"
 #LOG_FILE="$LOG_DIR/remot3it_log.$$.txt"
@@ -65,8 +66,9 @@ REG_ID_ADAPTER="wlan0"
 REG_KEY_ADAPTER="eth0"
 #REG_KEY_ADAPTER="enp5s0"
 # if desired, customize these expressions for your platform
-hardware_id=$(cat /sys/class/net/$REG_ID_ADAPTER/address | sed s/://g)
-registration_key=$(cat /sys/class/net/$REG_KEY_ADAPTER/address | sed s/://g) 
+hardware_id="$(cat /sys/class/net/$REG_ID_ADAPTER/address | sed s/://g)"
+registration_key="$(cat /sys/class/net/$REG_KEY_ADAPTER/address | sed s/://g)"
+bulk_id_code=$(cat "$REMOT3IT_BULK_ID")
 
 BULK_REG_DEVICE_FILE="$DEVICES_ACTIVE/rmt3.i686"
 #
@@ -187,7 +189,9 @@ reset()
 #
 show()
 {
-    printf "Hardware ID is %s\nRegistration key is %s\n" $hardware_id $registration_key
+    printf "Hardware ID is %s\n" $hardware_id
+    printf "Registration key is %s\n" $registration_key
+    printf "Bulk ID Code is %s\n" $bulk_id_code
 }
 
 #
@@ -813,17 +817,19 @@ dprovision()
 {
     ret=1
     rc=1
-    if [ "$#" -ne 2 ]; then
+    p1=$bulk_id_code
+    p2=
+    #if [ "$#" -ne 2 ]; then
     #if [ -z "${@}" ]; then
-        ret=3
-        echo "ERROR: dprovision requires two parameters, a project ID and a HardwareID."
-    else
+    #    ret=3
+    #    echo "ERROR: dprovision requires two parameters, a project ID and a HardwareID."
+    #else
 		#
 		# get the list of project ID's for the product
 		# ProjectListURL		
 		#ProjectEnablement
         #ProjectListURL
-		resp=$(curl -s -S -X GET -H "content-type:application/json" "$ProjectListURL/$1/$2/")
+		resp=$(curl -s -S -X GET -H "content-type:application/json" "$ProjectListURL/$bulk_id_code/$hardware_id/")
         # parse response "status"
         status=$(jsonvalx "$resp" "status")
         if [ "$status" = "true" ]; then
@@ -863,7 +869,7 @@ dprovision()
 
                 #if provision exists lets try to get the config
                 if [ -f "$PROVISION_DOWNLOAD/$i" ]; then
-                    dconfig "$i" "$2" 
+                    dconfig "$i" "$hardware_id" 
                 fi    
             done
 
@@ -872,7 +878,7 @@ dprovision()
         else
             echo "failed"
         fi
-	fi
+	#fi
 }
 
 
