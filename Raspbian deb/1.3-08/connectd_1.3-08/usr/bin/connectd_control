@@ -194,9 +194,9 @@ reset()
 #
 show()
 {
-    printf "Hardware ID is %s\n" $hardware_id
-    printf "Registration key is %s\n" $registration_key
-    printf "Bulk ID Code is %s\n" $bulk_id_code
+    printf "Hardware ID is %s\n" "$hardware_id"
+    printf "Registration key is %s\n" "$registration_key"
+    printf "Bulk ID Code is %s\n" "$bulk_id_code"
 }
 
 #

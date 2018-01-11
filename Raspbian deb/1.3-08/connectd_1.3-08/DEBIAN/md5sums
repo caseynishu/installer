@@ -1,3 +1,4 @@
+7fb5918dcc4571bbef9aa98a538e0758  ./etc/connectd/bulk_identification_code.txt
 f9d834fb7d977ec238f68819098623ec  ./etc/connectd/schannel.conf
 e28f1a5122d4360228fe7c4b93c31a5e  ./etc/init.d/remot3it.schannel
 45d855a6affdcb999091eb772abc24fa  ./etc/init.d/remot3it
@@ -24,14 +25,14 @@ aaf23a73d4ffca7cffe84f695fca53d9  ./usr/share/connectd/scripts/connectd_stop
 37fc71c01c9e575418846d5b5e900beb  ./usr/share/connectd/scripts/connectd_schannel
 83a95e761c60e4782ca107f4bba86475  ./usr/share/connectd/scripts/connectd_start
 2923af59e6368bff61bd4f274929476f  ./usr/share/connectd/scripts/launch_connectd
-db9a3be34148b3283949df6620ca07e7  ./usr/bin/connectd_options
+c687141c346db264f3db41f9cda19139  ./usr/bin/connectd_options
 f6d0a2ac8095e570546c421fedc48b65  ./usr/bin/connectd_factoryreset
 1c569a90f9598b908f8c50f20589d3d3  ./usr/bin/connectd_wlib
 a7027e1734899e7cc6eebb6ea558acd4  ./usr/bin/connectd.pi
 92fce44e48ba26041d416cb3648d49f5  ./usr/bin/connectd_register_deprecated
 5f7d5edadcc2271662503a5a24eaa90a  ./usr/bin/connectd_enable_bulk_reg
-912134b4503ff5c08c4e726ef40a9e75  ./usr/bin/connectd_control
-77944376818778f13a85a381fadc8d3f  ./usr/bin/connectd_library
+e3abce6d4390fa46db8ef724ad25adfe  ./usr/bin/connectd_control
+6439d32f67b42bb0e146cad4103449d4  ./usr/bin/connectd_library
 39cce1f334113d99e486d3fd466709bd  ./usr/bin/connectd_schannel.pi
 ec83852a971bcb66365f3f8db46726ed  ./usr/bin/connectd_migrate_from_weaved
 3fe774f7f878ebd462e595d6d6b38235  ./usr/bin/connectd_script_lib-1.1

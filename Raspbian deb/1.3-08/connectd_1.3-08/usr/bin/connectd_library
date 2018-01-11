@@ -268,7 +268,7 @@ checkforServices()
                 elif [ "$protocol" = "HTTP" ]; then
                     port=80
                 elif [ "$protocol" = "VNC" ]; then
-                    port=5900
+                    port=5901
 	        # trim this one's name so it fits on display
                 elif [ "$protocol" = "Generic TCP" ]; then
                     protocol="TCP"
@@ -444,7 +444,7 @@ protocolSelection()
     printf "                                             \n"
     printf "     1) SSH on port 22                       \n"
     printf "     2) Web (HTTP) on port 80                \n"
-    printf "     3) VNC on port 5900                     \n"
+    printf "     3) VNC on port 5901                     \n"
     printf "     4) Custom (TCP)                         \n"
     printf "     5) Return to previous menu              \n"
     printf "                                             \n"
@@ -482,9 +482,9 @@ protocolSelection()
         CONNECTD_PORT=Connectd"$PROTOCOL""$PORT"
     elif [ "$get_num" = 3 ]; then
         PROTOCOL=vnc
-        printf "The default port for VNC (RealVNC) is 5900.\n"
+        printf "The default port for VNC (tightVNC) is 5901.\n"
         if ask "Would you like to continue with the default port assignment?"; then
-            PORT=5900
+            PORT=5901
         else
             CUSTOM=2
             getNumRange 1 65535    

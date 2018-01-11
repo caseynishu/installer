@@ -1,3 +1,4 @@
 /etc/connectd/schannel.conf
+/etc/connectd/bulk_identification_code.txt
 /etc/init.d/remot3it
 /etc/init.d/remot3it.schannel

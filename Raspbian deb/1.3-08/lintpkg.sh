@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 # lintpkg.sh
 # script to build Debian package for remot3.it connectd Installer
 # sorts out Lintian errors/warnings into individual
