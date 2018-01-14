@@ -1,0 +1,86 @@
+#!/bin/bash
+#
+#  Remot3.it startup script for connectd package
+#
+#  remot3.it Inc : remot3.it
+#
+#
+
+# include shell script lib, must be in path or specify path here
+source /usr/bin/connectd_wlib
+
+#### Settings #####
+VERSION=0.0.3
+MODIFIED="January 13, 2018"
+#
+# Config 
+#mac
+CONNECTD_DIR="/etc/connectd"
+LOG_NAME="connectd_start"
+VERBOSE=0
+
+do_provision()
+{
+    logger "[$LOG_NAME] Call dprovision"
+    # do bulk provisioning
+    info=$(connectd_control -v dprovision)
+    ret="$?"
+    logger [$LOG_NAME] $info
+
+    logger "[$LOG_NAME] Call bprovision"
+    # do bulk provisioning
+    info=$(connectd_control bprovision all)
+    ret="$?"
+    logger [$LOG_NAME] $info
+    return $ret
+}
+
+
+internet_available()
+{
+    ret=0
+    nc -z api.remot3.it 80  >/dev/null 2>&1
+    online=$?
+    if [ $online -eq 0 ]; then
+        if [ $VERBOSE -gt 0 ]; then
+            echo "Internet Available"
+        fi
+        ret=1
+    else
+        if [ $VERBOSE -gt 0 ]; then
+            echo "Internet Not Available"
+        fi
+    fi
+    return $ret
+}
+
+
+###################################################
+# Main Loop, wait for internet access             #  
+###################################################
+
+logger "[$LOG_NAME] Startup"
+
+while [ 1 ]
+do
+    internet_available
+    if [ "$?" -eq 1 ]; then
+        # internet is available, try provision
+        sleep 5
+        do_provision
+        #
+        if [ "$?" -eq 0 ]; then
+            #need restart of schannel
+            /etc/init.d/connectd.schannel restart
+        fi
+        #
+        break
+    fi 
+    sleep 15
+    logger "[$LOG_NAME] Loop"
+done
+logger "[$LOG_NAME] exit"
+
+exit 0
+
+

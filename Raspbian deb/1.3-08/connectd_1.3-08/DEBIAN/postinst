@@ -22,14 +22,4 @@ esac
 echo
 echo "================================================================================"
 echo
-echo "Run sudo connectd_installer to interactively add remot3.it connection services."
-echo
 echo "================================================================================"
-echo "If you want to add connectd services with minimal interaction:"
-echo "Edit /usr/bin/connectd_register to add account credentials"
-echo "and definitions of services you wish to install."
-echo
-echo "Finally, run sudo connectd_register to add remot3.it remote connection services."
-echo
-echo "See additional information and options in the connectd_register script."
-echo

@@ -5,12 +5,12 @@
 #  Interactive and preconfigured modes supported.
 #
 #  connectd by remot3.it, Inc. 
-#  Copyright 2017. All rights reserved.
+#  Copyright 2018. All rights reserved.
 
 ##### Settings #####
 LIBVERSION=lib_v1.3-08
 AUTHOR="Gary Worsham"
-LIBMODIFIED="December 05, 2017"
+LIBMODIFIED="January 11, 2018"
 DAEMON=connectd
 GREPFLAGS=
 CURL_OPTS="-k -s -S -X"
@@ -21,7 +21,7 @@ filename=$(basename "$0")
 token=""
 
 # ----------------------------------------
-STARTEMUP=connectd_start
+STARTEMUP=connectd_start_deprecated
 
 # ----------------------------------------
 # web API URLs
@@ -50,7 +50,7 @@ displayVersion()
 {
     printf "remot3.it connection installer Version: %s %s \n" "$VERSION" "$LIBVERSION"
     printf "Modified: %s (library) %s \n" "$MODIFIED" "$LIBMODIFIED"
-    printf "Build date: %s " "$BUILDDATE"
+    printf "Build date: %s\n" "$BUILDDATE"
 }
 ##### End Version #####
 
@@ -72,12 +72,14 @@ checkForRoot()
 checkForUtilities()
 {
     # check for curl with SSL
-    curl --version | grep SSL &> /dev/null
-    if [ $? -ne 0 ]; then
+    curlSupported=$(curl --version | grep SSL)
+    if [ "$curlSupported" = "" ]; then
         echo "Running this program requires curl with SSL support." 1>&2
         echo "Please install curl with SSL support." 1>&2
         echo "Contact support@remot3.it if you are not sure what to do." 1>&2
 	exit 1
+    else
+        echo "curl with SSL support installed."
     fi
 }
 ##### End checkForUtilities #####

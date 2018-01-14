@@ -46,8 +46,9 @@ LOG_DIR=/var/log
 #
 #
 #
+PLATFORM=pi    
 BIN_DIR=/usr/bin
-DAEMON=connectd.pi    
+DAEMON=connectd.$PLATFORM    
 #
 # Save Auth in homedir
 #
@@ -62,9 +63,9 @@ authtype=0
 #
 REG_DEBUG=0
 REG_ID_ADAPTER="wlan0"
-#REG_ID_ADAPTER="enp5s0"
+#REG_ID_ADAPTER="enp3s0"
 REG_KEY_ADAPTER="eth0"
-#REG_KEY_ADAPTER="enp5s0"
+#REG_KEY_ADAPTER="wlp2s0"
 # if desired, customize these expressions for your platform
 hardware_id="$(cat /sys/class/net/$REG_ID_ADAPTER/address | sed s/://g)"
 registration_key="$(cat /sys/class/net/$REG_KEY_ADAPTER/address | sed s/://g)"

@@ -11,19 +11,18 @@ controlFile="$pkgFolder"/DEBIAN/control
 RELEASE="_BETA"
 
 #-------------------------------------------------
-# setOption() is specifically to change settings in the connectd_options file
+# setOption() is used to change settings in the connectd_$1 file
 
 setOption()
 {
-    sed -i '/'"^$1"'/c\'"$1=$2 $3 $4 $5 $6"'' "$pkgFolder"/usr/bin/connectd_options
-   # sed -i '/"$1"/c\"$1=$2"' "$pkgFolder"/usr/bin/connectd_options
+    sed -i '/'"^$2"'/c\'"$2=$3 $4 $5 $6 $7"'' "$pkgFolder"/usr/bin/connectd_$1
 }
 
 #-------------------------------------------------
 setEnvironment()
 {
     sed -i "/Architecture:/c\Architecture: $1" "$controlFile"
-    setOption "Architecture" "$1"
+    setOption "options" "Architecture" "$1"
     if [ -e "$pkgFolder"/usr/bin/connectd.* ]; then
         rm "$pkgFolder"/usr/bin/connectd.*
     fi
@@ -33,7 +32,8 @@ setEnvironment()
     cp daemons/connectd."$2" "$pkgFolder"/usr/bin
     cp daemons/connectd_schannel."$2" "$pkgFolder"/usr/bin
 
-    setOption "PLATFORM" "$2"
+    setOption options "PLATFORM" "$2"
+    setOption control "PLATFORM" "$2"
 #    sed -i "/PLATFORM=/c\PLATFORM=$2" "$pkgFolder"/usr/bin/connectd_options
 }
 
@@ -47,42 +47,43 @@ echo "2) armel Debian"
 echo "3) i386 (32 bit) Debian"
 echo "4) amd64 (64 bit) Debian"
 echo "5) Liverock modem (Pi daemon)"
-echo "6) MIPS OpenWRT (Linino)"
+echo "6) MIPS OpenWRT (Linino) (msb-uclib)"
 echo "7) MIPS Broadcom 5354"
 echo "8) MIPS gcc 342"
 echo "9) ARM uClibc static"
+echo "10) mips-uclib-0.9.33.2"
 read archMenu
 
 
 buildDeb=0
 
 if [ "$archMenu" -eq 1 ]; then
-    setOption "PSFLAGS" "ax"
+    setOption options "PSFLAGS" "ax"
 #    setOption "mac" '$(ip addr | grep ether | tail -n 1 | awk \'{ print \$2 }\')'
-    setOption "mac" '$'"(ip addr | grep ether | tail -n 1 | awk" "'{ print" '$2' "}')"
+    setOption options "mac" '$'"(ip addr | grep ether | tail -n 1 | awk" "'{ print" '$2' "}')"
     arch="armhf"
     PLATFORM=pi
     buildDeb=1
 elif [ "$archMenu" -eq 2 ]; then
-    setOption "PSFLAGS" "ax"
+    setOption options "PSFLAGS" "ax"
 #    setOption "mac" '$(ip addr | grep ether | tail -n 1 | awk "{ print \$2 }")'
-    setOption "mac" '$'"(ip addr | grep ether | tail -n 1 | awk" "'{ print" '$2' "}')"
+    setOption options "mac" '$'"(ip addr | grep ether | tail -n 1 | awk" "'{ print" '$2' "}')"
     arch="armel"
     PLATFORM=pi
     buildDeb=1
 elif [ "$archMenu" -eq 3 ]; then
-    setOption "PSFLAGS" "ax"
+    setOption options "PSFLAGS" "ax"
 #    setOption "mac" '$(ip addr | grep ether | tail -n 1 | awk "{ print $2 }")'
-    setOption "mac" '$'"(ip addr | grep ether | tail -n 1 | awk" "'{ print" '$2' "}')"
+    setOption options "mac" '$'"(ip addr | grep ether | tail -n 1 | awk" "'{ print" '$2' "}')"
     arch="i386"
     PLATFORM=x86
     buildDeb=1
 elif [ "$archMenu" -eq 4 ]; then
     arch="amd64"
-    setOption "mac" '$'"(ip addr | grep ether | tail -n 1 | awk" "'{ print" '$2' "}')"
+    setOption options "mac" '$'"(ip addr | grep ether | tail -n 1 | awk" "'{ print" '$2' "}')"
     PLATFORM=i686
     buildDeb=1
-    setOption "PSFLAGS" "ax"
+    setOption options "PSFLAGS" "ax"
 elif [ "$archMenu" -eq 5 ]; then
     arch="armhf"
     PLATFORM=pi
@@ -90,18 +91,23 @@ elif [ "$archMenu" -eq 6 ]; then
 # e.g. Linino OpenWRT
     arch="mips-msb-uClib"
     PLATFORM=mips-msb-uClib
-    setOption "PSFLAGS" "w"
-    setOption "mac" "\$(ifconfig $NETIF | grep HWaddr | awk \'{ print \$5 }\' | tail -n 1)"
+    setOption options "PSFLAGS" "w"
+    setOption options "mac" "\$(ifconfig $NETIF | grep HWaddr | awk \'{ print \$5 }\' | tail -n 1)"
 elif [ "$archMenu" -eq 8 ]; then
     arch="mipsel-gcc342"
     PLATFORM=mipsel-gcc342
-    setOption "PSFLAGS" "w"
-    setOption "mac" "\$(ifconfig $NETIF | grep HWaddr | awk \'{ print \$5 }\' | tail -n 1)"
+    setOption options "PSFLAGS" "w"
+    setOption options "mac" "\$(ifconfig $NETIF | grep HWaddr | awk \'{ print \$5 }\' | tail -n 1)"
 elif [ "$archMenu" -eq 9 ]; then
     arch="arm-uclib-static"
     PLATFORM=arm-uclib-static
-    setOption "PSFLAGS" "w"
-    setOption "mac" '$'"(ip addr | grep ether | tail -n 1 | awk" "'{ print" '$2' "}')"
+    setOption options "PSFLAGS" "w"
+    setOption options "mac" '$'"(ip addr | grep ether | tail -n 1 | awk" "'{ print" '$2' "}')"
+elif [ "$archMenu" -eq 10 ]; then
+    arch="mips-uclib-0.9.33.2"
+    PLATFORM=mips-uclib-0.9.33.2
+    setOption options "PSFLAGS" "w"
+    setOption options "mac" "\$(ifconfig $NETIF | grep HWaddr | awk \'{ print \$5 }\' | tail -n 1)"
 else
     echo "Menu setting not defined!"
     exit
@@ -109,7 +115,7 @@ fi
 
 setEnvironment "$arch" "$PLATFORM"
 # put build date into connected_options
-setOption "BUILDDATE" "\"$(date)\""
+setOption options "BUILDDATE" "\"$(date)\""
 
 # clean up and recreate md5sums file
 cd "$pkgFolder"
