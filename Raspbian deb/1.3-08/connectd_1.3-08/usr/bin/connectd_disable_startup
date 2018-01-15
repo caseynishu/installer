@@ -1,0 +1,32 @@
+#!/bin/sh
+
+#  connectd_disable_startup
+#
+#  Run 'sudo connectd_disable_startup' to disable startup of 
+#  installed remot3.it attachment services for tcp listeners.
+#
+#  remot3.it, Inc. Copyright 2018. All rights reserved.
+#
+##### Settings #####
+VERSION=v1.3-08_Disable_Startup
+AUTHOR="Gary Worsham"
+MODIFIED="January 14, 2018"
+DEBUG="1"
+
+#==========================================================================
+
+. /usr/bin/connectd_library
+
+######### Main Program #########
+main()
+{
+    displayVersion
+# =============================================    
+    update-rc.d -f connectd disable
+    update-rc.d -f connectd_schannel disable
+# =============================================   
+    echo "Remot3.it connectd services disabled at startup." 
+}
+######### End Main Program #########
+# 
+main 

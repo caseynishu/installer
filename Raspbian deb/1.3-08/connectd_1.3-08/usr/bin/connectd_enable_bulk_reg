@@ -1,10 +1,11 @@
 #!/bin/sh
-#----- remot3it_enable_bulk_reg.sh
-# Version 1.01
-# August 02, 2016
+#----- connectd_enable_bulk_reg
+# Version 1.02
+# January 14, 2018
 #
-# enables bulk registration, assuming that desired enablement files are in /etc/remot3it/pfiles
+# enables bulk registration, assuming that desired enablement files are 
+# in /etc/connectd/pfiles
 #---------------------
-update-rc.d remot3it defaults 99 10
-update-rc.d remot3it.schannel defaults 99 10
+update-rc.d connectd defaults 99 10
+update-rc.d connectd_schannel defaults 99 10
 

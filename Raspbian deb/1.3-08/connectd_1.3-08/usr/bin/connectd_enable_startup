@@ -1,0 +1,32 @@
+#!/bin/sh
+
+#  connectd_enable_startup
+#
+#  Run 'sudo connectd_enable_startup' to enable startup of 
+#  installed remot3.it attachment services for tcp listeners.
+#
+#  remot3.it, Inc. Copyright 2018. All rights reserved.
+#
+##### Settings #####
+VERSION=v1.3-08_Enable_Startup
+AUTHOR="Gary Worsham"
+MODIFIED="January 14, 2018"
+DEBUG="1"
+
+#==========================================================================
+
+. /usr/bin/connectd_library
+
+######### Main Program #########
+main()
+{
+    displayVersion
+# =============================================    
+    update-rc.d -f connectd enable
+    update-rc.d -f connectd_schannel enable
+# =============================================   
+    echo "Remot3.it connectd services enabled at startup." 
+}
+######### End Main Program #########
+# 
+main 

@@ -6,7 +6,7 @@
 #
 #  <optional>  -v = verbose -v -v =maximum verbosity
 #
-#  will store info in REMOT3IT_DIR
+#  will store info in CONNECTD_DIR
 #
 #  remot3.it Inc : https://remot3.it
 #
@@ -14,6 +14,8 @@
 
 # include shell script lib
 . /usr/bin/connectd_wlib
+# pick up global options, e.g. PLATFORM
+. /usr/bin/connectd_options
 
 #set -x
 
@@ -23,30 +25,29 @@ MODIFIED="January 09, 2018"
 #
 # Config Dir
 #
-REMOT3IT_DIR="/etc/connectd"
+CONNECTD_DIR="/etc/connectd"
 
 #Raw Provisioning Files Downloaded
-PROVISION_DOWNLOAD="$REMOT3IT_DIR/dfiles"
+PROVISION_DOWNLOAD="$CONNECTD_DIR/dfiles"
 #Installed Provisioning files go here (unprovisioned only)
-PROVISION_DEFAULT="$REMOT3IT_DIR/pfiles"
+PROVISION_DEFAULT="$CONNECTD_DIR/pfiles"
 #created devices are in available
-DEVICES_AVAILABLE="$REMOT3IT_DIR/available"
+DEVICES_AVAILABLE="$CONNECTD_DIR/available"
 #active devices are sym linked in active
-DEVICES_ACTIVE="$REMOT3IT_DIR/active"
+DEVICES_ACTIVE="$CONNECTD_DIR/active"
 #running devices have pidfiles of the same name in running
 PID_DIR=/var/run
-DEVICES_RUNNING="$PID_DIR/remot3it"
+DEVICES_RUNNING="$PID_DIR/connectd"
 #
-REMOT3IT_BULK_ID="$REMOT3IT_DIR/bulk_identification_code.txt"
-REMOT3IT_VERSION="$REMOT3IT_DIR/remot3it_version.txt"
+CONNECTD_BULK_ID="$CONNECTD_DIR/bulk_identification_code.txt"
+CONNECTD_VERSION="$CONNECTD_DIR/connectd_version.txt"
 #LOG_DIR="/tmp/"
-#LOG_FILE="$LOG_DIR/remot3it_log.$$.txt"
+#LOG_FILE="$LOG_DIR/connectd_log.$$.txt"
 LOG_FILE=/dev/null
 LOG_DIR=/var/log
 #
 #
 #
-PLATFORM=pi    
 BIN_DIR=/usr/bin
 DAEMON=connectd.$PLATFORM    
 #
@@ -70,8 +71,8 @@ REG_KEY_ADAPTER="eth0"
 hardware_id="$(cat /sys/class/net/$REG_ID_ADAPTER/address | sed s/://g)"
 registration_key="$(cat /sys/class/net/$REG_KEY_ADAPTER/address | sed s/://g)"
 
-if [ -f "$REMOT3IT_BULK_ID" ]; then
-    bulk_id_code=$(cat "$REMOT3IT_BULK_ID")
+if [ -f "$CONNECTD_BULK_ID" ]; then
+    bulk_id_code=$(cat "$CONNECTD_BULK_ID")
 else
     bulk_id_code="Bulk ID code file is missing."
 fi
@@ -170,12 +171,12 @@ isDirEmpty()
 reset()
 {
     # delete files
-    null=$(rm -f $REMOT3IT_DIR/*.ver 2>&1)
+    null=$(rm -f $CONNECTD_DIR/*.ver 2>&1)
     null=$(rm -f $DEVICES_AVAILABLE/* 2>&1)
     null=$(rm -f $DEVICES_ACTIVE/* 2>&1)
 
     # check for success
-    isDirEmpty "$REMOT3IT_DIR/*ver"
+    isDirEmpty "$CONNECTD_DIR/*ver"
     if [ "$?" -eq 1 ]; then
         isDirEmpty "$DEVICES_AVAILABLE/*"
         if [ "$?" -eq 1 ]; then
@@ -227,9 +228,9 @@ update_version()
     if [ -n "$2" ]; then
         version="$2"
         # Check against Saved Version
-        if [ -f "$REMOT3IT_DIR/$1.ver" ]; then
+        if [ -f "$CONNECTD_DIR/$1.ver" ]; then
             #get saved version
-            sversion=$(cat "$REMOT3IT_DIR/$1.ver")
+            sversion=$(cat "$CONNECTD_DIR/$1.ver")
         fi
         # Check if versions are the same
         if [ "$version" = "$sversion" ]; then
@@ -256,7 +257,7 @@ update_version()
             #
             # check return code, if OK cache this new version
             if [ "$status" = "true" ]; then
-                echo "$version" > "$REMOT3IT_DIR/$1.ver" 
+                echo "$version" > "$CONNECTD_DIR/$1.ver" 
                 echo "OK: new version $version updated to service for package $1"
             else
                 reason=$(jsonval "$(echo -n "$resp")" "reason")
@@ -430,9 +431,9 @@ cleanup_files()
 create_config()
 {
     umask 0077
-    # create remot3it directory
-    if [ ! -d "$REMOT3IT_DIR" ]; then
-        mkdir "$REMOT3IT_DIR" 
+    # create connectd directory
+    if [ ! -d "$CONNECTD_DIR" ]; then
+        mkdir "$CONNECTD_DIR" 
     fi
     # create active dir
     if [ ! -d "$DEVICES_ACTIVE" ] ; then

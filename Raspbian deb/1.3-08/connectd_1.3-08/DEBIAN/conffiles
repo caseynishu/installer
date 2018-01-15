@@ -1,4 +1,4 @@
 /etc/connectd/schannel.conf
 /etc/connectd/bulk_identification_code.txt
 /etc/init.d/connectd
-/etc/init.d/connectd.schannel
+/etc/init.d/connectd_schannel
