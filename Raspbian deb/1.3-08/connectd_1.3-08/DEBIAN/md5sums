@@ -25,7 +25,7 @@ aaf23a73d4ffca7cffe84f695fca53d9  ./usr/share/connectd/scripts/connectd_stop
 37fc71c01c9e575418846d5b5e900beb  ./usr/share/connectd/scripts/connectd_schannel
 83a95e761c60e4782ca107f4bba86475  ./usr/share/connectd/scripts/connectd_start
 2923af59e6368bff61bd4f274929476f  ./usr/share/connectd/scripts/launch_connectd
-c6d1b60b7c8213da96600a63fcbb66a3  ./usr/bin/connectd_options
+84daa300c812c34edde766a2246b151f  ./usr/bin/connectd_options
 f6d0a2ac8095e570546c421fedc48b65  ./usr/bin/connectd_factoryreset
 1c569a90f9598b908f8c50f20589d3d3  ./usr/bin/connectd_wlib
 a7027e1734899e7cc6eebb6ea558acd4  ./usr/bin/connectd.pi

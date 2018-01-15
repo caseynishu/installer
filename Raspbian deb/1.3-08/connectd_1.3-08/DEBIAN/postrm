@@ -23,10 +23,34 @@ case "$1" in
     for file in /usr/bin/notify_connectd*.sh ; do
       rm -f $file
     done
-# remove configuration files
+# remove configuration files and folders
     for file in /etc/connectd/services/connectd*.conf ; do
       rm -f $file
     done
+    for file in /etc/connectd/dfiles/* ; do
+      rm -f $file
+    done
+    if [ -d /etc/connectd/dfiles ]; then
+         rmdir /etc/connectd/dfiles
+    fi
+    for file in /etc/connectd/pfiles/* ; do
+      rm -f $file
+    done
+    if [ -d /etc/connectd/pfiles ]; then
+         rmdir /etc/connectd/pfiles
+    fi
+    for file in /etc/connectd/active/* ; do
+      rm -f $file
+    done
+    if [ -d /etc/connectd/active ]; then
+         rmdir /etc/connectd/active
+    fi
+    for file in /etc/connectd/available/* ; do
+      rm -f $file
+    done
+    if [ -d /etc/connectd/available ]; then
+         rmdir /etc/connectd/available
+    fi
 # remove PID files
     for file in /var/run/connectd*.pid ; do
       rm -f $file
