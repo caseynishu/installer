@@ -63,6 +63,7 @@ if [ "$archMenu" -eq 1 ]; then
     setOption options "mac" '$'"(ip addr | grep ether | tail -n 1 | awk" "'{ print" '$2' "}')"
     arch="armhf"
     PLATFORM=pi
+    setOption options "BASEDIR" ""
     buildDeb=1
 elif [ "$archMenu" -eq 2 ]; then
     setOption options "PSFLAGS" "ax"
@@ -70,6 +71,7 @@ elif [ "$archMenu" -eq 2 ]; then
     setOption options "mac" '$'"(ip addr | grep ether | tail -n 1 | awk" "'{ print" '$2' "}')"
     arch="armel"
     PLATFORM=pi
+    setOption options "BASEDIR" ""
     buildDeb=1
 elif [ "$archMenu" -eq 3 ]; then
     setOption options "PSFLAGS" "ax"
@@ -77,16 +79,21 @@ elif [ "$archMenu" -eq 3 ]; then
     setOption options "mac" '$'"(ip addr | grep ether | tail -n 1 | awk" "'{ print" '$2' "}')"
     arch="i386"
     PLATFORM=x86
+    setOption options "BASEDIR" ""
     buildDeb=1
 elif [ "$archMenu" -eq 4 ]; then
     arch="amd64"
     setOption options "mac" '$'"(ip addr | grep ether | tail -n 1 | awk" "'{ print" '$2' "}')"
     PLATFORM=i686
+    setOption options "BASEDIR" ""
     buildDeb=1
     setOption options "PSFLAGS" "ax"
 elif [ "$archMenu" -eq 5 ]; then
     arch="armhf"
     PLATFORM=pi
+    setOption options "mac" '$'"(ip addr | grep ether | tail -n 1 | awk" "'{ print" '$2' "}')"
+    setOption options "PSFLAGS" "ax"
+    setOption options "BASEDIR" "/home/user"
 elif [ "$archMenu" -eq 6 ]; then
 # e.g. Linino OpenWRT
     arch="mips-msb-uClib"
@@ -171,7 +178,9 @@ version=$(grep -i version "$controlFile" | awk '{ print $2 }')
 
 # for now, mark all releases as BETA
 ./extractScripts "$pkgFolder".deb
-mv "$pkgFolder".deb.gz "${pkg}_${version}_$arch$RELEASE".gz
+rm stage/*.gz
+mv "$pkgFolder".deb.gz stage/"${pkg}_${version}_$arch$RELEASE".gz
+./buildit.sh "${pkg}_${version}_$arch$RELEASE"
 
 fi
 

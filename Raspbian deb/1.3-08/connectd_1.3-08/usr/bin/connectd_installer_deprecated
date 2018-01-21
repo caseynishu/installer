@@ -11,7 +11,7 @@
 ##### Settings #####
 VERSION=v1.3-08
 AUTHOR="Gary Worsham"
-MODIFIED="December 02, 2017"
+MODIFIED="January 19, 2018"
 
 USERNAME=""
 PASSWORD=""
@@ -22,9 +22,10 @@ MAXSEL=6
 #==========================================================================
 # get global options such as NETIF, BASEDIR and PLATFORM
 # path to connectd_options has to be hardwired here and edited if needed
+# e.g. INSTALLPATH=/media/usb
 # ----------------------------------------
-INSTALLPATH=/usr/bin
-. "$INSTALLPATH"/connectd_options
+BASEDIR=
+. "$BASEDIR"/usr/bin/connectd_options
 . "$BIN_DIR"/connectd_library
 # ----------------------------------------
 
@@ -35,8 +36,8 @@ main()
     # interactive installer asks user for RMT3 service name.
     # OEM installer allows OEM to use a different function to set the auto-assigned
     # service names. By default it is the MAC.
-    SERVICEBASENAME=$MAC
-    interactiveInstall $1 $2 $3
+    SERVICEBASENAME="$MAC"
+    interactiveInstall "$1" "$2" "$3"
 }
 ######### End Main Program #########
-main $1 $2 $3
+main "$1" "$2" "$3"

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-#  launch_connectd - template file for start/stop of individual services
+#  connectd_launch - template file for start/stop of individual services
 #  
 #
 #  remot3.it, Inc. Copyright 2017. All rights reserved.
@@ -8,9 +8,8 @@
 
 VERSION="v1.6"
 AUTHOR="Gary Worsham"
-MODIFIED="October 16, 2017"
+MODIFIED="January 18, 2018"
 # BASEDIR is used to allow the package to be installed relative to any folder location
-# this variable will be overwritten by the installer script connectd_installer or connectd_register
 BASEDIR=
 . "$BASEDIR"/usr/bin/connectd_options
 
@@ -81,7 +80,7 @@ startConnectd()
 	isRunningCmd
 	if [ $isRunning = 0 ]; then
 		echo "Starting $CONNECTD_PORT..."
-		$BIN_DIR/$DAEMON -f $CONNECTD_DIR/$CONNECTD_PORT.conf -d $PID_DIR/$CONNECTD_PORT.pid > $LOG_DIR/$CONNECTD_PORT.log
+		$BIN_DIR/$DAEMON -f $CONNECTD_CONF_DIR/$CONNECTD_PORT.conf -d $PID_DIR/$CONNECTD_PORT.pid > $LOG_DIR/$CONNECTD_PORT.log
 		tail $LOG_DIR/$CONNECTD_PORT.log
 	else
 		echo "$CONNECTD_PORT is already started"

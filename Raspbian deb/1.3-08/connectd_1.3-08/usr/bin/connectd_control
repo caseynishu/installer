@@ -10,22 +10,25 @@
 #
 #  remot3.it Inc : https://remot3.it
 #
-#
+# BASEDIR is the path relative to / where these files are installed
+# e.g. BASEDIR=/media/usb
 
-# include shell script lib
-. /usr/bin/connectd_wlib
+BASEDIR=
+
 # pick up global options, e.g. PLATFORM
-. /usr/bin/connectd_options
+. "$BASEDIR"/usr/bin/connectd_options
+# include shell script lib
+. "$BIN_DIR"/connectd_wlib
 
 #set -x
 
 #### Settings #####
 VERSION=0.0.8
-MODIFIED="January 09, 2018"
+MODIFIED="January 19, 2018"
 #
 # Config Dir
-#
-CONNECTD_DIR="/etc/connectd"
+# CONNECTD_DIR is read from connectd_options
+# CONNECTD_DIR="/etc/connectd"
 
 #Raw Provisioning Files Downloaded
 PROVISION_DOWNLOAD="$CONNECTD_DIR/dfiles"
@@ -48,7 +51,6 @@ LOG_DIR=/var/log
 #
 #
 #
-BIN_DIR=/usr/bin
 DAEMON=connectd.$PLATFORM    
 #
 # Save Auth in homedir
@@ -59,17 +61,6 @@ DAEMON=connectd.$PLATFORM
 #
 USE_AUTHHASH=1
 authtype=0 
-#
-# set reg debug = 1 for debug registration
-#
-REG_DEBUG=0
-REG_ID_ADAPTER="wlan0"
-#REG_ID_ADAPTER="enp3s0"
-REG_KEY_ADAPTER="eth0"
-#REG_KEY_ADAPTER="wlp2s0"
-# if desired, customize these expressions for your platform
-hardware_id="$(cat /sys/class/net/$REG_ID_ADAPTER/address | sed s/://g)"
-registration_key="$(cat /sys/class/net/$REG_KEY_ADAPTER/address | sed s/://g)"
 
 if [ -f "$CONNECTD_BULK_ID" ]; then
     bulk_id_code=$(cat "$CONNECTD_BULK_ID")
@@ -249,7 +240,7 @@ update_version()
             #push to service
             post='{"hardware_id":"'$hardware_id'","device_address":"'$uid'","device_secret":"'$secret'","component":"'$1'","version":"'$version'"}'
             # make curl call
-            resp=$(curl -s -S -X POST -H "content-type:application/json" --data "$post" $ComponentVersionURL )
+            resp=$(curl ${CURL_OPTS} POST -H "content-type:application/json" --data "$post" $ComponentVersionURL )
        
             echo "curl ret $?"
 
@@ -503,78 +494,10 @@ check_auth_cache()
 
 
 #
-# projectsmatch_device 
-#   match the passed device name to the array and return the index if found or 0 if not
-#   if found device_state and device_address are set
 #
-match_device()
-{
-    # loop through the device array and match the device name
-    for i in "${device_array[@]}"
-    do
-        # do whatever on $i
-        #device_name=$(jsonval "$(echo -n "$i")" "devicealias") 
-        device_name=$(jsonval "$i" "devicealias") 
-   
-        if [ "$device_name" = "$1" ]; then
-            # Match echo out the UID/address
-            #device_address=$(jsonval "$(echo -n "$i")" "deviceaddress")
-            DEVICE_ADDRESS=$(jsonval "$i" "deviceaddress")
-            DEVICE_STATE=$(jsonval "$i" "devicestate")
-            #echo -n "$DEVICE_ADDRESS"
-            return 1
-        fi
-    done
-
-    #fail
-    #echo -n "Not found"
-    return 0
-}
-
-#
-# Device List
-#
-display_devices()
-{
-    printf "%-25s | %-15s |  %-10s \n" "Device Name" "Device Type" "Device State"
-    echo "--------------------------------------------------------------"
-    # loop through the device array and match the device name
-    for i in "${device_array[@]}"
-    do
-        # do whatever on $i
-        device_name=$(jsonval "$i" "devicealias")
-        device_state=$(jsonval "$i" "devicestate")
-        device_service=$(jsonval "$i" "servicetitle")
-        printf "%-25s | %-15s |  %-10s \n" $device_name $device_service $device_state
-        #echo "$device_name : $device_service : $device_state"
-    done
-}
-
-
-#
-# Save Auth
-#
-save_auth()
-{
-    if [ ! -e "$AUTH" ] ; then
-        if [ $VERBOSE -gt 0 ]; then
-            echo "Saving Weaved credentials for $username"
-        fi
-        # Save either pw or hash depending on settings
-        if [ $USE_AUTHHASH -eq 1 ]; then
-            echo "${username}|1|${ahash}" > $AUTH
-        else
-            echo "${username}|0|${password}" > $AUTH
-        fi
-    fi
-    # save token
-    echo "${token}" > $TOKEN
-}
-
-
 #### Local Data Functions
 
-# itterate through directory
+# iterate through directory
 get_provisioning_types()
 {
 
@@ -761,7 +684,7 @@ update_afile()
 dconfig()
 {
     #download the config fir th passed provisioning file
-    resp2=$(curl -s -S -X GET -H "content-type:application/json" "$ProvisionConfig/$1/$2/")
+    resp2=$(curl ${CURL_OPTS} GET -H "content-type:application/json" "$ProvisionConfig/$1/$2/")
     status=$(jsonvalx "$resp2" "status")
     if [ "$status" = "true" ]; then
     	#
@@ -836,7 +759,7 @@ dprovision()
 		# ProjectListURL		
 		#ProjectEnablement
         #ProjectListURL
-		resp=$(curl -s -S -X GET -H "content-type:application/json" "$ProjectListURL/$bulk_id_code/$hardware_id/")
+		resp=$(curl ${CURL_OPTS} GET -H "content-type:application/json" "$ProjectListURL/$bulk_id_code/$hardware_id/")
         # parse response "status"
         status=$(jsonvalx "$resp" "status")
         if [ "$status" = "true" ]; then
@@ -857,7 +780,7 @@ dprovision()
                     # download and store in directory
                     # ProjectEnablementGet
                     # in this case we write out the file and check the return code
-                    resp2=$(curl -s -S --write-out %{http_code} -X GET -H "content-type:application/json" \
+                    resp2=$(curl ${CURL_OPTS} --write-out %{http_code} -X GET -H "content-type:application/json" \
                                     -o "$PROVISION_DOWNLOAD/$i.tmp" "$ProvisionDownloadDirect/$i")
 
                     if [ "$resp2" = "200" ]; then
@@ -912,7 +835,7 @@ bprovisionit()
         	#data='{"project_id":"'$project_id'","hardware_id" : "'$hardware_id'", "registration_key" : "'$registration_key'"}'
         	data='{"queue_name":"WeavedTaskQueue_test","project_id":"'$project_id'","hardware_id" : "'$hardware_id'", "registration_key" : "'$registration_key'"}'
 
-        	resp=$(curl -s -S -X POST -H "content-type:application/json" --data "$data" $BulkRegisterURL )
+        	resp=$(curl ${CURL_OPTS} POST -H "content-type:application/json" --data "$data" $BulkRegisterURL )
 
         	#status=$(jsonval "$(echo -n "$resp")" "status")
         	status=$(jsonval "$resp" "status")

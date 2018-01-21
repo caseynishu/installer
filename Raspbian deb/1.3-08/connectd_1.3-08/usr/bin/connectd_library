@@ -10,10 +10,9 @@
 ##### Settings #####
 LIBVERSION=lib_v1.3-08
 AUTHOR="Gary Worsham"
-LIBMODIFIED="January 11, 2018"
+LIBMODIFIED="January 16, 2018"
 DAEMON=connectd
 GREPFLAGS=
-CURL_OPTS="-k -s -S -X"
 
 filename=$(basename "$0")
 
@@ -189,23 +188,14 @@ getHardwareID()
 ##### end get HardwareID address #####
 
 
-##### factory reset - doesn't actually do anything at present
-factoryReset()
-{
-    for f in "$CONNECTD_DIR"/*.conf ; do
-	printf "%s\n" "$f"
-    done 
-}
-##### end of factory reset
-
 ##### Check for existing services #####
 checkforServices()
 {
-    services="$CONNECTD_DIR/Connectd*.conf"
+    services="$CONNECTD_CONF_DIR/Connectd*.conf"
     firstFile=$(echo "$services" | awk '{print $1}')
 	echo "" > "$TMP_DIR"/.uidlist.txt
     if [ -e "$firstFile" ]; then
-	ls "$CONNECTD_DIR/Connectd*.conf" > "$TMP_DIR/.legacy_instances"
+	ls "$CONNECTD_CONF_DIR/Connectd*.conf" > "$TMP_DIR/.legacy_instances"
 	instanceNumber=$(wc "$TMP_DIR/.legacy_instances" -l)
 	if [ -f "$TMP_DIR/.instances" ]; then
 	    rm "$TMP_DIR/.instances"
@@ -225,7 +215,7 @@ checkforServices()
     printf "Protocol\tPort\tService\t\tremot3.it Service Name\n"
     echo "------------------------------------------------------------"
     WARNING="0"
-    confFiles=$(find "$CONNECTD_DIR" -name "*.conf")
+    confFiles=$(find "$CONNECTD_CONF_DIR" -name "*.conf")
     DeviceName=""
 
 #    echo $confFiles
@@ -585,7 +575,7 @@ deleteConnection()
 
     # now iterate through known connections to find it
 
-    for file in "$CONNECTD_DIR"/*.conf; do
+    for file in "$CONNECTD_CONF_DIR"/*.conf; do
         uid="$(grep '^UID' "$file" | awk '{print $2}')"
 	yooareell="$deviceURL/$uid"
 
@@ -639,7 +629,7 @@ deleteAllConnections()
 
 	"$BIN_DIR"/connectd_stop
 
-    	for file in "$CONNECTD_DIR"/*.conf; do
+    	for file in "$CONNECTD_CONF_DIR"/*.conf; do
 	# get service name from UID
             uid="$(grep '^UID' "$file" | awk '{print $2}')"
 	    resp=$(curl ${CURL_OPTS} GET -H "content-type:application/json" -H "developerkey:$developerkey"  -H "token:$token" "$deviceURL/$uid")
@@ -972,7 +962,7 @@ checkForDeviceName()
 # look for provisioning file corresponding to an existing Bulk Service
 # (which is used to represent the Device Name)
 
-    file="$CONNECTD_DIR"/Connectdrmt365535.conf
+    file="$CONNECTD_CONF_DIR"/Connectdrmt365535.conf
     if [ -f "$file" ]; then
 #	echo "Found rmt3 conf file"
 	debug "$file"
@@ -1019,9 +1009,9 @@ checkForDeviceName()
 convertExistingUIDs()
 {
 # check to make sure there is an existing directory before trying to iterate.
-    if [ -d "$CONNECTD_DIR" ]; then
+    if [ -d "$CONNECTD_CONF_DIR" ]; then
         logger "updating existing services to add HWID"
-    	for file in "$CONNECTD_DIR"/*.conf; do
+    	for file in "$CONNECTD_CONF_DIR"/*.conf; do
 	    debug "$file"
             if [ "$file" != Connectdrmt365535.conf ]; then
 	# get service name from UID
@@ -1045,22 +1035,23 @@ convertExistingUIDs()
 
 ######### Install Enablement #########
 # we install .conf file temporarily in $TMP_DIR and add UID and secret
-# before copying it to $CONNECTD_DIR
+# before copying it to $CONNECTD_CONF_DIR
 installEnablement()
 {
     printf "."
-    if [ ! -d "CONNECTD_DIR" ]; then
-	mkdir -p "$CONNECTD_DIR"
+echo "CONNECTD_CONF_DIR: $CONNECTD_CONF_DIR"
+    if [ ! -d "$CONNECTD_CONF_DIR" ]; then
+	mkdir -p "$CONNECTD_CONF_DIR"
     fi
 
 #
 # if REGISTERSERVICE==1, then we copy the template enablement file to /tmp where further things happen
-# before it is copied into place.  Otherwise we copy the template file directly to CONNECTD_DIR
+# before it is copied into place.  Otherwise we copy the template file directly to CONNECTD_CONF_DIR
 #
     if [ "$REGISTERSERVICE" = "1" ]; then
         cat "$CONNECTD_LIB_DIR"/conf/"$PROTOCOL".pi > "$TMP_DIR"/"$CONNECTD_PORT".conf
     else
-        cat "$CONNECTD_LIB_DIR"/conf/"$PROTOCOL".pi > "$CONNECTD_DIR"/"$CONNECTD_PORT".conf
+        cat "$CONNECTD_LIB_DIR"/conf/"$PROTOCOL".pi > "$CONNECTD_CONF_DIR"/"$CONNECTD_PORT".conf
     fi
 }
 ######### End Install Enablement #########
@@ -1122,7 +1113,7 @@ setBASEDIR()
 installStartStop()
 {
     printf "."
-    sed s/CONNECTD_PORT=/CONNECTD_PORT="$CONNECTD_PORT"/ < "$CONNECTD_LIB_DIR"/scripts/launch_connectd > "$TMP_DIR"/"$CONNECTD_PORT"
+    sed s/CONNECTD_PORT=/CONNECTD_PORT="$CONNECTD_PORT"/ < "$CONNECTD_LIB_DIR"/scripts/connectd_launch > "$TMP_DIR"/"$CONNECTD_PORT"
     cat "$TMP_DIR"/"$CONNECTD_PORT" > "$BIN_DIR"/"$CONNECTD_PORT"
     setBASEDIR "$BIN_DIR"/"$CONNECTD_PORT"
     chmod +x "$BIN_DIR"/"$CONNECTD_PORT"
@@ -1193,7 +1184,6 @@ checkUID()
     printf "."
     checkforUID="$(tail "$TMP_DIR"/"$CONNECTD_PORT".conf | grep -c UID )"
     if [ "$checkforUID" = 2 ]; then
-	#    cp "$CONNECTD_LIB_DIR"/"$CONNECTD_PORT".conf /"$CONNECTD_DIR"/
 	uid=$(grep ^UID "$TMP_DIR"/"$CONNECTD_PORT".conf | awk '{print $2}' )
 	printf "\n==========================================\nAllocated UID: %s. \n\n" "$uid"
     else
@@ -1211,7 +1201,6 @@ retryFetchUID()
 	fetchUID
 	checkforUID="$(tail "$TMP_DIR"/"$CONNECTD_PORT".conf | grep -c UID)"
 	if [ "$checkforUID" = 2 ]; then
-	    #        cp "$CONNECTD_LIB_DIR"/"$CONNECTD_PORT".conf /"$CONNECTD_DIR"/
 #	    uid="$(tail "$TMP_DIR"/"$CONNECTD_PORT".conf | grep UID | awk '{print $2}' | xargs echo)"
 	    uid="$(grep ^UID "$TMP_DIR"/"$CONNECTD_PORT".conf | awk '{print $2}' )"
 	    #       printf "\n\nAllocated UID: %s. \n\n" "$uid"
@@ -1326,8 +1315,8 @@ registerDevice()
                 secret="$(getJSONSecret "$secretCall" "secret")"
     	        echo "# password - erase this line to unregister the device" >> "$TMP_DIR"/"$CONNECTD_PORT".conf
 	        echo "password $secret" >> "$TMP_DIR"/"$CONNECTD_PORT".conf
-	    #       finally copy valid assembled enablement file to $CONNECTD_DIR
-	        mv "$TMP_DIR"/"$CONNECTD_PORT".conf "$CONNECTD_DIR"/"$CONNECTD_PORT".conf
+	    #       finally copy valid assembled enablement file to $CONNECTD_CONF_DIR
+	        mv "$TMP_DIR"/"$CONNECTD_PORT".conf "$CONNECTD_CONF_DIR"/"$CONNECTD_PORT".conf
     	    fi
         fi
 
@@ -1351,13 +1340,13 @@ startService()
 overridePort()
 {
     if [ "$CUSTOM" = 1 ]; then
-	cp "$CONNECTD_DIR"/"$CONNECTD_PORT".conf "$TMP_DIR"/
+	cp "$CONNECTD_CONF_DIR"/"$CONNECTD_PORT".conf "$TMP_DIR"/
 	echo "proxy_dest_port $PORT" >> "$TMP_DIR"/"$CONNECTD_PORT".conf
-	mv "$TMP_DIR"/"$CONNECTD_PORT".conf "$CONNECTD_DIR"/
+	mv "$TMP_DIR"/"$CONNECTD_PORT".conf "$CONNECTD_CONF_DIR"/
     elif [ "$CUSTOM" = 2 ]; then
-	cp "$CONNECTD_DIR"/"$CONNECTD_PORT".conf "$TMP_DIR"/
+	cp "$CONNECTD_CONF_DIR"/"$CONNECTD_PORT".conf "$TMP_DIR"/
 	echo "proxy_dest_port $PORT" >> "$TMP_DIR"/"$CONNECTD_PORT".conf
-	mv "$TMP_DIR"/"$CONNECTD_PORT".conf "$CONNECTD_DIR"/
+	mv "$TMP_DIR"/"$CONNECTD_PORT".conf "$CONNECTD_CONF_DIR"/
     fi
 }
 ######### End Port Override #########
@@ -1365,7 +1354,7 @@ overridePort()
 ######### Delete device #########
 deleteDevice()
 {
-    uid=$(grep ^UID "$CONNECTD_DIR"/"$CONNECTD_PORT".conf | awk '{print $2}' )
+    uid=$(grep ^UID "$CONNECTD_CONF_DIR"/"$CONNECTD_PORT".conf | awk '{print $2}' )
     result=$(curl ${CURL_OPTS} 'POST' $deleteURL -d "{\"deviceaddress\":\"$uid\"}" -H "Content-Type:application/json" -H "developerkey:$developerkey" -H "token:$token")
     checkAPIResult "$deleteURL $uid" "$result"
 
@@ -1399,7 +1388,7 @@ makeConnection()
     CUSTOM=2	# forces port to be written to conf file
     CONNECTD_PORT=Connectd"$PROTOCOL""$PORT"
     debug "$CONNECTD_PORT"
-    if [ -f "$CONNECTD_DIR"/"$CONNECTD_PORT".conf ]; then
+    if [ -f "$CONNECTD_CONF_DIR"/"$CONNECTD_PORT".conf ]; then
         echo "A $PROTOCOL service has already been configured on port $PORT."
         echo "Skipping $alias..."
     else

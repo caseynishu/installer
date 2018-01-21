@@ -40,8 +40,8 @@ DEVELOPERKEY=""
 # get global options such as NETIF, BASEDIR and PLATFORM
 # path to connectd_options has to be hardwired here and edited if needed
 # ----------------------------------------
-INSTALLPATH=/usr/bin
-. "$INSTALLPATH"/connectd_options
+BASEDIR=
+. "$BASEDIR"/usr/bin/connectd_options
 . "$BIN_DIR"/connectd_library
 # ----------------------------------------
 
