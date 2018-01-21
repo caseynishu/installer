@@ -21,23 +21,13 @@ BASEDIR=
 
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
-DESC="Description of the service"
+DESC="remot3it connectd server channel daemon"
 NAME=connectd_schannel
-DAEMON=/usr/bin/$NAME.$PLATFORM
-CONF_FILE=/etc/connectd/schannel.conf
+DAEMON="$BIN_DIR"/$NAME.$PLATFORM
+CONF_FILE="$BASEDIR"/etc/connectd/schannel.conf
 PIDFILE=/var/run/$NAME.pid
-SCRIPTNAME=/etc/init.d/$NAME
+SCRIPTNAME="$BASEDIR"/etc/init.d/$NAME
 #
-# Connectd related stuff
-CONNECTD_DIR="/etc/connectd"
-#Installed Provisioning files go here (unprovisioned only)
-PROVISION_DEFAULT="$CONNECTD_DIR/pfiles"
-#created devices are in available
-DEVICES_AVAILABLE="$CONNECTD_DIR/available"
-#active devices are sym linked in active
-DEVICES_ACTIVE="$CONNECTD_DIR/active"
-#running devices have pidfiles of the same name in running
-PID_DIR=/var/run
 
 # Exit if the package is not installed
 [ -x "$DAEMON" ] || exit 0
@@ -45,8 +35,8 @@ PID_DIR=/var/run
 # Read configuration variable file if it is present
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
 
-# Load the VERBOSE setting and other rcS variables
-. /lib/init/vars.sh
+# Load the VERBOSE setting and other rcS variables (OS dependent)
+# . /lib/init/vars.sh
 
 # Define LSB log_* functions.
 # Depend on lsb-base (>= 3.2-14) to ensure that this file is present

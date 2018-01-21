@@ -1,5 +1,5 @@
 #! /bin/sh
-# Version 0.6 January 04, 2018
+# Version 0.6 January 21, 2018
 ### BEGIN INIT INFO
 # Provides:          connectd
 # Required-Start:    $network $named $portmap $syslog $remote_fs
@@ -21,12 +21,12 @@ BASEDIR=
 
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
-DESC="Description of the service"
+DESC="remot3.it connection service"
 NAME=connectd
-DAEMON=/usr/bin/$NAME.$PLATFORM
+DAEMON="$BIN_DIR"/$NAME.$PLATFORM
 DAEMON_ARGS="--options args"
 START_PIDFILE=/var/run/connectd_start.pid
-SCRIPTNAME=/etc/init.d/$NAME
+SCRIPTNAME="$BASEDIR"/etc/init.d/$NAME
 
 # Exit if the package is not installed
 #[ -x "$DAEMON" ] || exit 0
@@ -34,8 +34,8 @@ SCRIPTNAME=/etc/init.d/$NAME
 # Read configuration variable file if it is present
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
 
-# Load the VERBOSE setting and other rcS variables
-. /lib/init/vars.sh
+# Load the VERBOSE setting and other rcS variables (OS dependent)
+# . /lib/init/vars.sh
 
 # Define LSB log_* functions.
 # Depend on lsb-base (>= 3.2-14) to ensure that this file is present
@@ -48,7 +48,7 @@ SCRIPTNAME=/etc/init.d/$NAME
 do_start()
 {
 	# startup monitor
-	nohup /usr/bin/connectd_start > /tmp/remot3_start.log 2>&1 &
+	nohup "$BIN_DIR"/connectd_start > /tmp/remot3_start.log 2>&1 &
 	echo $! > $START_PIDFILE  
 	#info=$(connectd_control bprovision all)
 	#logger [Weaved] $info
@@ -63,7 +63,7 @@ do_start()
     #logger [remot3.it] $info
 
 	# start things up
-	connectd_control start all
+	"$BIN_DIR"/connectd_control start all
 	return 0
 }
 
@@ -85,7 +85,7 @@ do_stop()
 	    rm  $START_PIDFILE
     fi
 
-	connectd_control stop all
+	"$BIN_DIR"/connectd_control stop all
 	RETVAL="$?"
 	
 	return "$RETVAL"

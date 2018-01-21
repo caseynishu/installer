@@ -1039,7 +1039,6 @@ convertExistingUIDs()
 installEnablement()
 {
     printf "."
-echo "CONNECTD_CONF_DIR: $CONNECTD_CONF_DIR"
     if [ ! -d "$CONNECTD_CONF_DIR" ]; then
 	mkdir -p "$CONNECTD_CONF_DIR"
     fi

@@ -39,7 +39,6 @@ DEVICES_AVAILABLE="$CONNECTD_DIR/available"
 #active devices are sym linked in active
 DEVICES_ACTIVE="$CONNECTD_DIR/active"
 #running devices have pidfiles of the same name in running
-PID_DIR=/var/run
 DEVICES_RUNNING="$PID_DIR/connectd"
 #
 CONNECTD_BULK_ID="$CONNECTD_DIR/bulk_identification_code.txt"
@@ -240,7 +239,7 @@ update_version()
             #push to service
             post='{"hardware_id":"'$hardware_id'","device_address":"'$uid'","device_secret":"'$secret'","component":"'$1'","version":"'$version'"}'
             # make curl call
-            resp=$(curl ${CURL_OPTS} POST -H "content-type:application/json" --data "$post" $ComponentVersionURL )
+            resp=$(curl -k -s -S -X POST -H "content-type:application/json" --data "$post" $ComponentVersionURL )
        
             echo "curl ret $?"
 
@@ -684,7 +683,7 @@ update_afile()
 dconfig()
 {
     #download the config fir th passed provisioning file
-    resp2=$(curl ${CURL_OPTS} GET -H "content-type:application/json" "$ProvisionConfig/$1/$2/")
+    resp2=$(curl -k -s -S -X GET -H "content-type:application/json" "$ProvisionConfig/$1/$2/")
     status=$(jsonvalx "$resp2" "status")
     if [ "$status" = "true" ]; then
     	#
@@ -759,7 +758,7 @@ dprovision()
 		# ProjectListURL		
 		#ProjectEnablement
         #ProjectListURL
-		resp=$(curl ${CURL_OPTS} GET -H "content-type:application/json" "$ProjectListURL/$bulk_id_code/$hardware_id/")
+		resp=$(curl -k -s -S -X GET -H "content-type:application/json" "$ProjectListURL/$bulk_id_code/$hardware_id/")
         # parse response "status"
         status=$(jsonvalx "$resp" "status")
         if [ "$status" = "true" ]; then
@@ -780,7 +779,7 @@ dprovision()
                     # download and store in directory
                     # ProjectEnablementGet
                     # in this case we write out the file and check the return code
-                    resp2=$(curl ${CURL_OPTS} --write-out %{http_code} -X GET -H "content-type:application/json" \
+                    resp2=$(curl --write-out %{http_code} -k -s -X GET -H "content-type:application/json" \
                                     -o "$PROVISION_DOWNLOAD/$i.tmp" "$ProvisionDownloadDirect/$i")
 
                     if [ "$resp2" = "200" ]; then
@@ -835,7 +834,7 @@ bprovisionit()
         	#data='{"project_id":"'$project_id'","hardware_id" : "'$hardware_id'", "registration_key" : "'$registration_key'"}'
         	data='{"queue_name":"WeavedTaskQueue_test","project_id":"'$project_id'","hardware_id" : "'$hardware_id'", "registration_key" : "'$registration_key'"}'
 
-        	resp=$(curl ${CURL_OPTS} POST -H "content-type:application/json" --data "$data" $BulkRegisterURL )
+        	resp=$(curl -k -s -S -X POST -H "content-type:application/json" --data "$data" $BulkRegisterURL )
 
         	#status=$(jsonval "$(echo -n "$resp")" "status")
         	status=$(jsonval "$resp" "status")
