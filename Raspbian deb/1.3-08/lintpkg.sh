@@ -52,6 +52,7 @@ echo "7) MIPS Broadcom 5354"
 echo "8) MIPS gcc 342"
 echo "9) ARM uClibc static"
 echo "10) mips-uclib-0.9.33.2"
+echo "11) i386 (32 bit) Intel/AMD Generic Linux"
 read archMenu
 
 
@@ -115,6 +116,14 @@ elif [ "$archMenu" -eq 10 ]; then
     PLATFORM=mips-uclib-0.9.33.2
     setOption options "PSFLAGS" "w"
     setOption options "mac" "\$(ifconfig $NETIF | grep HWaddr | awk \'{ print \$5 }\' | tail -n 1)"
+elif [ "$archMenu" -eq 11 ]; then
+    setOption options "PSFLAGS" "ax"
+#    setOption "mac" '$(ip addr | grep ether | tail -n 1 | awk "{ print $2 }")'
+    setOption options "mac" '$'"(ip addr | grep ether | tail -n 1 | awk" "'{ print" '$2' "}')"
+    arch="i386"
+    PLATFORM=x86
+    setOption options "BASEDIR" ""
+    buildDeb=0
 else
     echo "Menu setting not defined!"
     exit
@@ -179,9 +188,11 @@ version=$(grep -i version "$controlFile" | awk '{ print $2 }')
 # for now, mark all releases as BETA
 ./extractScripts "$pkgFolder".deb
 rm stage/*.gz
-mv "$pkgFolder".deb.gz stage/"${pkg}_${version}_$arch$RELEASE".gz
-./buildit.sh "${pkg}_${version}_$arch$RELEASE"
+filename="${pkg}_${version}_$arch$RELEASE"
+sed -i "/^FILE=/c\FILE=$filename" stage/install.sh
+mv "$pkgFolder".deb.gz stage/"$filename".gz
+./buildit.sh "$filename"
 
 fi
 
-ls -l "${pkg}*"
+ls -l "${pkg}"*

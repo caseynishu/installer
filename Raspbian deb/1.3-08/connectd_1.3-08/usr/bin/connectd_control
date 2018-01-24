@@ -12,7 +12,7 @@
 #
 # BASEDIR is the path relative to / where these files are installed
 # e.g. BASEDIR=/media/usb
-
+BULK_REG=1
 BASEDIR=
 
 # pick up global options, e.g. PLATFORM

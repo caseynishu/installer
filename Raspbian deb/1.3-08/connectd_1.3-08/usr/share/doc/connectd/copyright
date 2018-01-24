@@ -2,11 +2,11 @@ Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: connectd
 
 Files: *
-Copyright: 2017 Gary Worsham <gary@remot3it.com>
+Copyright: 2018 Gary Worsham <gary@remot3it.com>
 License: BSD-3-Clause
 
 Files: debian/*
-Copyright: 2016 Gary Worsham <gary@remot3it.com>
+Copyright: 2018 Gary Worsham <gary@remot3it.com>
 License: BSD-3-Clause
 
 License: BSD-3-Clause
