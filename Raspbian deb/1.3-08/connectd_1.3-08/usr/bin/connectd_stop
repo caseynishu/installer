@@ -1,0 +1,36 @@
+#!/bin/sh
+#
+#  Remot3.it stop script for connectd package
+#  Stops all running connectd and connectd_schannel daemons 
+#
+#  remot3.it Inc : remot3.it
+#
+#
+BASEDIR=
+. "$BASEDIR"/usr/bin/connectd_options
+# include shell script lib, must be in path or specify path here
+. "$BIN_DIR"/connectd_wlib
+
+#### Settings #####
+VERSION=0.0.4
+MODIFIED="January 24, 2018"
+#
+# Config 
+#mac
+LOG_NAME="connectd_stop"
+VERBOSE=0
+
+###################################################
+# Stop all bulk provisioned connectd daemons      #
+# and connectd_schannel daemon.                   #
+###################################################
+
+logger "[$LOG_NAME] Stop"
+connectd_control stop all
+"$INITDIR"/connectd_schannel stop
+
+logger "[$LOG_NAME] Exit... completed."
+
+exit 0
+
+

@@ -163,7 +163,9 @@ reset()
     # delete files
     null=$(rm -f $CONNECTD_DIR/*.ver 2>&1)
     null=$(rm -f $DEVICES_AVAILABLE/* 2>&1)
-    null=$(rm -f $DEVICES_ACTIVE/* 2>&1)
+    null=$(rm -f $DEVICES_AVAILABLE/* 2>&1)
+    null=$(rm -f $PROVISION_DOWNLOAD/* 2>&1)
+    null=$(rm -f $PROVISION_DEFAULT/* 2>&1)
 
     # check for success
     isDirEmpty "$CONNECTD_DIR/*ver"
@@ -172,8 +174,14 @@ reset()
         if [ "$?" -eq 1 ]; then
             isDirEmpty "$DEVICES_ACTIVE/*"
             if [ "$?" -eq 1 ]; then
-                echo "OK: factory reset"
-                return 0
+                isDirEmpty "$PROVISION_DOWNLOAD/*"
+                if [ "$?" -eq 1 ]; then
+                    isDirEmpty "$PROVISION_DEFAULT/*"
+                    if [ "$?" -eq 1 ]; then
+                        echo "OK: factory reset"
+                        return 0
+                    fi
+                fi
             fi
         fi
     fi
@@ -195,13 +203,10 @@ show()
 get_registration_data()
 {
     if [ $REG_DEBUG -gt 0 ]; then
-# override values set at top of file
-        hardware_id="00:ab:cd:ef:00:FF"
+# override values set in connectd_options
+        hardware_id="00:00:00:00:00:00"
         registration_key="MYSECRET"
     fi
-
-#    registration_key="FOOBAR"
-#    hardware_id="DEO_POOLED_1"
 
     if [ $VERBOSE -gt 0 ]; then
         printf "Hardware ID is %s registration key is %s\n" $hardware_id $registration_key
@@ -408,7 +413,7 @@ startit()
 cleanup_files()
 {
     if [ $VERBOSE -gt 0 ]; then
-        printf "Cleaning up Weaved runtime files.  Removing auth file and active files.\n"
+        printf "Cleaning up remot3.it runtime files.  Removing auth file and active files.\n"
     fi   
     # reset auth
     rm -f $AUTH
