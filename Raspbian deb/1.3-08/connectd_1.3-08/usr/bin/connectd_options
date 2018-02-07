@@ -9,7 +9,7 @@ BUILDDATE="Mon Feb  5 15:51:08 PST 2018"
 DEBUG="0"
 #===================================
 # BASEDIR is root on many systems. If so, leave it blank.
-BASEDIR=/home/user    
+BASEDIR=
 #===================================
 # BIN_DIR is default path for executables.  We install connectd scripts and binaries here.
 BIN_DIR="$BASEDIR"/usr/bin
