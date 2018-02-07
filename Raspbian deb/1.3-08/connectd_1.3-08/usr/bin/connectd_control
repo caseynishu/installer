@@ -163,7 +163,7 @@ reset()
     # delete files
     null=$(rm -f $CONNECTD_DIR/*.ver 2>&1)
     null=$(rm -f $DEVICES_AVAILABLE/* 2>&1)
-    null=$(rm -f $DEVICES_AVAILABLE/* 2>&1)
+    null=$(rm -f $DEVICES_ACTIVE/* 2>&1)
     null=$(rm -f $PROVISION_DOWNLOAD/* 2>&1)
     null=$(rm -f $PROVISION_DEFAULT/* 2>&1)
 
@@ -810,7 +810,8 @@ dprovision()
             IFS=${old_IFS}
             
         else
-            echo "failed"
+            reason=$(jsonvalx "$resp" "reason")
+            echo "dprovision for $bulk_id_code failed: $reason"
         fi
 	#fi
 }

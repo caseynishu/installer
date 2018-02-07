@@ -27,7 +27,7 @@ VERBOSE=0
 
 logger "[$LOG_NAME] Stop"
 connectd_control stop all
-"$INITDIR"/connectd_schannel stop
+"$INIT_DIR"/connectd_schannel stop
 
 logger "[$LOG_NAME] Exit... completed."
 

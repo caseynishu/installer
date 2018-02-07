@@ -71,7 +71,7 @@ do
         #
         if [ "$?" -eq 0 ]; then
             #need restart of schannel
-            "$INITDIR"/connectd_schannel restart
+            "$INIT_DIR"/connectd_schannel restart
         fi
         #
         break
