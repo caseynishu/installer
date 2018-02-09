@@ -834,6 +834,7 @@ bprovisionit()
             printf "Call API with project_id %s with hwid and reg key.\n" $project_id
         fi
 
+        retry_count=0
 		while : 
 		do
         	# make curl call
@@ -867,6 +868,13 @@ bprovisionit()
                 	printf "server said pending\n" 
             	fi
             	echo "RETRY: $1: $status"
+                #
+                # incerment and check retry count
+                retry_count=`expr $retry_count + 1`  # Increment the counter (old school Bourne compatable)
+                if [ $retry_count -gt 3 ]; then
+                    printf "FAIL: on retry count (still pending)\n" 
+                    return 1
+                fi
         		sleep $BULK_RETRY_TIME 
 				continue
 			;;
@@ -1220,7 +1228,11 @@ while getopts lvhmcr OPT; do
         exit 0
         ;;
       v)
-        VERBOSE=$((VERBOSE+1)) ;;
+        VERBOSE=$((VERBOSE+1)) 
+        if [ $VERBOSE -gt 2 ]; then
+            set -x
+        fi
+        ;;
       h | [?])
         # got invalid option
         usage
