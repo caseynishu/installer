@@ -1,7 +1,7 @@
 #===================================
 # remot3.it connectd package options
 #===================================
-MODIFIED="January 19, 2018"
+MODIFIED="February 10, 2018"
 #===================================
 BUILDDATE="Mon Feb  5 15:51:08 PST 2018"    
 #===================================
@@ -99,54 +99,56 @@ PACKAGE="connectd"
 #===================================
 # IMPORTANT CONFIG BELOW
 #
-#if BULK REG then we need hardware_id and registration_key, this is setup to use
-#the WLAN0 adapter MAC address  as the hardware_id and the eth0 as the registration_key
-#this is likely not what you want on your system.  hardware_id must be unique on the
-#remot3.it system, your device will be rejected if not unique.
+# if BULK_REG is 1 (set in script which includes this file, e.g. /usr/bin/connectd_control) 
+# then you need to define expressions for variables hardware_id and registration_key.
+# By default, this script uses the wlan0 adapter MAC address as the hardware_id 
+# and the eth0 MAC address as the registration_key.
+# This is likely not what you want on your system.  
+# hardware_id must be unique on the remot3.it system, and your device will be rejected 
+# when you upload the CSV for a Bulk Registration if hardware_id is not unique.
 #
-#Good hardware_id's are MAC+Random, UUID, IMEI etc.  You may want to pre or pospend
-#a static string onto IMEI or MAC addresses to know that you are unique on your 
-#product line, we are not sure if you can trust MAC addresses to be unique.
+# Good hardware_ids are MAC+Random, UUID, IMEI etc.  You may want to pre or postpend
+# a static string onto IMEI or MAC addresses to know that you are unique on your 
+# product line, as we are not sure that you can trust MAC addresses to be unique.
 #
-#Registration keys should be uniqe per Hardware ID, though it is not required. 
-#Pridictable registration keys are prone to cause problems if the hardware ID's
-#are also predictable.  Registration keys can be a different MAC than the 
-#hardware_id, preprogrammed random value, hash of hardware_id+secret, or any
-#other value you wish to use.   Remot3.it does not care as long as you provide
-#us the unique hardware_id and registration key for registration.
+# Registration keys should be unique per Hardware ID, though it is not required. 
+# Predictable registration keys are prone to cause problems if the hardware ID's
+# are also predictable.  Registration keys can be a different value than the 
+# hardware_id, preprogrammed random value, hash of hardware_id+secret, or any
+# other value you wish to use.   Remot3.it does not care as long as you provide
+# us the unique hardware_id and registration key in the CSV file for registration.
 #
-#registraiton key hash example:
-#company secret = "xyzzy"
-#registration_key=sha256(hardware_id,"xyzzy")
+# registration key hash example:
+# company secret = "xyzzy"
+# registration_key=sha256(hardware_id,"xyzzy")
 #
-#for testing you can create a harware_id.txt and a registraiton_key.txt in your
-#/etc/connectd directory and this software will use these values to override
-#the programatic methods used below.   Just make sure these files do not exist
-#in production unless you are using them to write unique values at production
-#time.
+# For testing you can create a hardware_id.txt and a registration_key.txt in your
+# /etc/connectd directory and this script will use these values to override
+# the programmatic methods used below. Just make sure these files do not exist
+# in production unless you are using them to write unique values at production
+# time.
 #
 
 #
 if [ "$BULK_REG" = 1 ]; then
 # Bulk Registration Variables
 #===================================
-# set reg debug = 1 to debug registration
+# set REG_DEBUG=1 to debug registration
+REG_DEBUG=0
 #===================================
 # The expressions below are supplied to provide the Bulk Registration API with the
 # Hardware ID (HWID) and Registration Key needed to identify the unique product
 # Hardware ID but be unique across the remot3.it system
 # Registration can be another unique value readable from the command line, the
 # same as the HWID, or a constant for all devices.
-#
-REG_DEBUG=0
+#=================================
 # if desired, customize these expressions for your platform, 
 # e.g to pick up the IMEI rather than the network adapter MAC address.
 # network adapter name to use for the HWID, if desired
 REG_ID_ADAPTER="wlan0"
-#REG_ID_ADAPTER="enp3s0"
 HW_ID_OVERRIDE_FILE="${CONNECTD_DIR}/hardware_id.txt"
 
-if [ -e $HW_ID_OVERRIDE_FILE ]; then
+if [ -e "$HW_ID_OVERRIDE_FILE" ]; then
     hardware_id="$(cat $HW_ID_OVERRIDE_FILE)"
 else
     id_address=/sys/class/net/"$REG_ID_ADAPTER"/address
@@ -162,10 +164,9 @@ fi
 
 # network adapter name to use for the Registration Key, if desired
 REG_KEY_ADAPTER="eth0"
-#REG_KEY_ADAPTER="wlp2s0"
 REG_KEY_OVERRIDE_FILE="${CONNECTD_DIR}/registration_key.txt"
 
-if [ -e $REG_KEY_OVERRIDE_FILE ]; then
+if [ -e "$REG_KEY_OVERRIDE_FILE" ]; then
     registration_key="$(cat $REG_KEY_OVERRIDE_FILE)"
 else
 	rk_address=/sys/class/net/"$REG_KEY_ADAPTER"/address
@@ -181,6 +182,3 @@ fi
 
 ### End if [ "$BULK_REG" = 1 ]
 fi
-
-
-
