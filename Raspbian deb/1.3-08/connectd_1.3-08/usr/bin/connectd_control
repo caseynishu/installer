@@ -865,19 +865,19 @@ bprovisionit()
         	;;
         	"pending")
             	if [ $VERBOSE -gt 0 ]; then
-                	printf "server said pending\n" 
+                	printf "server returned pending\n" 
             	fi
             	echo "RETRY: $1: $status"
                 #
-                # incerment and check retry count
-                retry_count=`expr $retry_count + 1`  # Increment the counter (old school Bourne compatable)
+                # increment and check retry count
+                retry_count=`expr $retry_count + 1`  # Increment the counter (old school Bourne shell compatible)
                 if [ $retry_count -gt 3 ]; then
                     printf "FAIL: on retry count (still pending)\n" 
                     return 1
                 fi
-        		sleep $BULK_RETRY_TIME 
-				continue
-			;;
+        	sleep $BULK_RETRY_TIME 
+		continue
+		;;
         	"false")
             	reason=$(jsonval "$(echo -n "$resp")" "reason")
             	if [ $VERBOSE -gt 0 ]; then
