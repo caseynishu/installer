@@ -3,13 +3,13 @@
 #===================================
 MODIFIED="February 10, 2018"
 #===================================
-BUILDDATE="Mon Feb  5 15:51:08 PST 2018"    
+BUILDDATE="Wed Feb 14 09:46:16 PST 2018"    
 #===================================
 # set DEBUG to 1 to enable debugging messages
 DEBUG="0"
 #===================================
 # BASEDIR is root on many systems. If so, leave it blank.
-BASEDIR=
+BASEDIR=    
 #===================================
 # BIN_DIR is default path for executables.  We install connectd scripts and binaries here.
 BIN_DIR="$BASEDIR"/usr/bin
@@ -44,7 +44,7 @@ PID_DIR=/var/run
 #===================================
 # PLATFORM is the extension for the binaries, depends on CPU architecture
 # and shared libraries
-PLATFORM=pi    
+PLATFORM=i686    
 #===================================
 # startupScripts = 0, ask; 1, init.d; 2, systemd; 3, crontab
 startupScripts=3

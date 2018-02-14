@@ -129,7 +129,7 @@ Task_Update()
 		while [ $retry -eq 1 ]
 		do
 			Wait_For_Internet
-			ret=$(${TOOL_DIR}/task_notify.sh 0 $jobid $api_server "$1")
+			ret=$(${TOOL_DIR}/connectd_task_notify 0 $jobid $api_server "$1")
 			
 			if [[ "$ret" == *"200"* ]]; then
 				retry=0
@@ -155,7 +155,7 @@ Task_Complete()
 	while [ $retry -eq 1 ]
 	do
 		Wait_For_Internet
-		ret=$(${TOOL_DIR}/task_notify.sh 1 $jobid $api_server "$1")
+		ret=$(${TOOL_DIR}/connectd_task_notify 1 $jobid $api_server "$1")
 		
 		if [[ "$ret" == *"200"* ]]; then
 			retry=0
@@ -182,7 +182,7 @@ Task_Failed()
 	while [ $retry -eq 1 ]
 	do
 		Wait_For_Internet
-		ret=$(${TOOL_DIR}/task_notify.sh 2 $jobid $api_server "$1")
+		ret=$(${TOOL_DIR}/connectd_task_notify 2 $jobid $api_server "$1")
 		
 		if [[ "$ret" == *"200"* ]]; then
 			retry=0
@@ -208,7 +208,7 @@ Status_A()
 		while [ $retry -eq 1 ]
 		do
 			Wait_For_Internet
-			ret=$(${TOOL_DIR}/task_notify.sh a $jobid $api_server "$1")
+			ret=$(${TOOL_DIR}/connectd_task_notify a $jobid $api_server "$1")
 			
 			if [[ "$ret" == *"200"* ]]; then
 				retry=0
@@ -235,7 +235,7 @@ Status_B()
 		while [ $retry -eq 1 ]
 		do
 			Wait_For_Internet
-			ret=$(${TOOL_DIR}/task_notify.sh b $jobid $api_server "$1")
+			ret=$(${TOOL_DIR}/connectd_task_notify b $jobid $api_server "$1")
 			
 			if [[ "$ret" == *"200"* ]]; then
 				retry=0
@@ -262,7 +262,7 @@ Status_C()
 		while [ $retry -eq 1 ]
 		do
 			Wait_For_Internet
-			ret=$(${TOOL_DIR}/task_notify.sh c $jobid $api_server "$1")
+			ret=$(${TOOL_DIR}/connectd_task_notify c $jobid $api_server "$1")
 			
 			if [[ "$ret" == *"200"* ]]; then
 				retry=0
@@ -289,7 +289,7 @@ Status_D()
 		while [ $retry -eq 1 ]
 		do
 			Wait_For_Internet
-			ret=$(${TOOL_DIR}/task_notify.sh d $jobid $api_server "$1")
+			ret=$(${TOOL_DIR}/connectd_task_notify d $jobid $api_server "$1")
 			
 			if [[ "$ret" == *"200"* ]]; then
 				retry=0
@@ -316,7 +316,7 @@ Status_E()
 		while [ $retry -eq 1 ]
 		do
 			Wait_For_Internet
-			ret=$(${TOOL_DIR}/task_notify.sh e $jobid $api_server "$1")
+			ret=$(${TOOL_DIR}/connectd_task_notify e $jobid $api_server "$1")
 			
 			if [[ "$ret" == *"200"* ]]; then
 				retry=0
