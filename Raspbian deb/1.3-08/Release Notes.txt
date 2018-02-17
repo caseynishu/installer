@@ -1,10 +1,12 @@
+Current status: NOT released for production.
+
 connectd_1.3-08j - February 14, 2018
 - Added ability to override hardware_id and registration_key by adding text files to /etc/connectd  
 - connectd_control dprovision will pass through after 3 retries to get provisioning files.
 
 connectd_1.3-08i - January 23, 2018  
 - Added BULK_REG variable to connectd_control and connectd_options to prevent
-  execution of expressions for hardware_i and registration_key when connectd_options
+  execution of expressions for hardware_id and registration_key when connectd_options
   is included in connectd_installer_deprecated and connectd_register_deprecated.
 - Cleared default setting for BASEDIR in connectd_options.
 - Refactored directory names in connectd_start
